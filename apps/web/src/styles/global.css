@@ -239,7 +239,7 @@ a {
     animation-timing-function: var(--ease-snappy);
   }
 
-  /* Intentionally no named transition on the sticky header / .nav-inner:
+  /* Intentionally no named transition on the fixed site header:
      Chromium jitters sticky + view-transition-name during scroll. The
      root cross-fade above is enough for page changes. */
 }

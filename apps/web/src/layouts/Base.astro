@@ -9,7 +9,7 @@
 // the <link rel="preload" as="font"> for this page.
 import { Font } from "../lib/astro-assets";
 import "../styles/apply-global";
-import Nav from "../components/layout/Nav.astro";
+import HomeHeader from "../components/home/HomeHeader.astro";
 import Footer from "../components/layout/Footer.astro";
 import LivePreviewBoot from "../components/live-preview/LivePreviewBoot.astro";
 import { getSiteSettings } from "../lib/content";
@@ -192,7 +192,12 @@ const pageEventAttrs = pageEvent
         focused) lives in global.css next to the shared :focus-visible rule. */
     }
     <a class="skip-link" href="#main-content">Skip to content</a>
-    <Nav />
+    {
+      /* A page may bring its own header (the homepage adds its intro);
+        every other page gets the site header (COMP-6) and a spacer so it
+        starts under the fixed bar. */
+      Astro.slots.has("header") ? <slot name="header" /> : <HomeHeader spacer />
+    }
     {
       /* tabindex="-1" makes main a valid focus target for the skip link
         (fragment navigation only) without adding it to the normal Tab

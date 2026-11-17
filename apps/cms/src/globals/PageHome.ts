@@ -353,7 +353,7 @@ export const PageHome: GlobalConfig = pageGlobal({
           type: "text",
           admin: {
             description:
-              'Badge on past speakers, e.g. "Past Speaker", so nobody reads them as booked for the next edition. Do not call them alumni: Q alumni are former team members. Leave empty for no badge.',
+              'Badge on past speakers, e.g. "Previous Speaker", so nobody reads them as booked for the next edition. Do not call them alumni: Q alumni are former team members. Leave empty for no badge.',
           },
         },
         stringArrayField("highlights", {
@@ -458,7 +458,7 @@ export const PageHome: GlobalConfig = pageGlobal({
           type: "text",
           admin: {
             description:
-              'Badge on a stand-in card, e.g. "Q-Summit 2026". It must say where the person spoke, so nobody reads them as booked for the next edition.',
+              'Badge on a stand-in card, e.g. "Previous Speaker". It must make clear the person is an earlier speaker, so nobody reads them as booked for the next edition.',
           },
         },
         pageLinkGroup("cta"),
@@ -602,6 +602,34 @@ export const PageHome: GlobalConfig = pageGlobal({
               },
             },
           ],
+        },
+      ],
+    }),
+    // The 2027 homepage's aftermovie block. The film is the site's own
+    // stream on R2 (not an upload: Media is images only), so only the words
+    // live here.
+    groupSection({
+      label: "Aftermovie",
+      name: "aftermovie",
+      description:
+        "The aftermovie block between the audience section and the partners. It appears once Heading is filled; leave Heading empty to hide it. The film itself is the one the homepage has always used.",
+      fields: [
+        {
+          name: "eyebrow",
+          type: "text",
+          admin: {
+            description:
+              'Small label at the top of the film, e.g. "Aftermovie Q-Summit 2026".',
+          },
+          validate: requiredWithSocialHeading,
+        },
+        {
+          name: "heading",
+          type: "text",
+          admin: {
+            description:
+              'Big line over the film, e.g. "Feel the energy." Filling it switches the block on.',
+          },
         },
       ],
     }),

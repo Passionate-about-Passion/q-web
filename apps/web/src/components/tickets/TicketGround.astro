@@ -1,7 +1,8 @@
 ---
 // The page ground behind the 2027 ticket page (DESIGN.md TICKETS-1): the
-// pale cool base of the Join Q quiz panel and glowing pools of ice, cyan and
-// Q27 blue light that drift slowly (no Q marks: the Q appears in the cards,
+// 2027 homepage's deep navy (HOME-1) and soft pools of its blues (the
+// visible dark blue, Q27 blue and a little sky) that drift slowly, each
+// falling off along a smoothstep curve so no pool shows a rim (no Q marks: the Q appears in the cards,
 // not behind the page). Fixed behind the content, so the glass header,
 // cards and panels have living light to refract. Decorative only:
 // aria-hidden, no pointer events, transform-only motion, paused by
@@ -24,22 +25,7 @@
     height: 100vh;
     height: 100lvh;
     overflow: hidden;
-    background:
-      radial-gradient(
-        90% 60% at 50% -10%,
-        color-mix(in srgb, var(--color-white) 90%, transparent),
-        transparent 70%
-      ),
-      linear-gradient(
-        180deg,
-        var(--color-ticket-ground) 0%,
-        color-mix(
-            in srgb,
-            var(--color-ticket-ice) 40%,
-            var(--color-ticket-ground)
-          )
-          100%
-      );
+    background: var(--t-ground);
     pointer-events: none;
   }
 
@@ -56,7 +42,10 @@
     left: -18vmax;
     background: radial-gradient(
       closest-side,
-      color-mix(in srgb, var(--color-ticket-ice) 95%, transparent),
+      color-mix(in srgb, var(--color-ticket-deep) 85%, transparent),
+      color-mix(in srgb, var(--color-ticket-deep) 58%, transparent) 38%,
+      color-mix(in srgb, var(--color-ticket-deep) 26%, transparent) 62%,
+      color-mix(in srgb, var(--color-ticket-deep) 7%, transparent) 84%,
       transparent
     );
   }
@@ -66,7 +55,10 @@
     right: -30vmax;
     background: radial-gradient(
       closest-side,
-      color-mix(in srgb, var(--color-ticket-sky) 42%, transparent),
+      color-mix(in srgb, var(--color-ticket-q27) 30%, transparent),
+      color-mix(in srgb, var(--color-ticket-q27) 20%, transparent) 38%,
+      color-mix(in srgb, var(--color-ticket-q27) 9%, transparent) 62%,
+      color-mix(in srgb, var(--color-ticket-q27) 2%, transparent) 84%,
       transparent
     );
   }
@@ -76,7 +68,10 @@
     left: 20vmax;
     background: radial-gradient(
       closest-side,
-      color-mix(in srgb, var(--color-ticket-cyan) 55%, transparent),
+      color-mix(in srgb, var(--color-ticket-deep) 70%, transparent),
+      color-mix(in srgb, var(--color-ticket-deep) 48%, transparent) 38%,
+      color-mix(in srgb, var(--color-ticket-deep) 21%, transparent) 62%,
+      color-mix(in srgb, var(--color-ticket-deep) 6%, transparent) 84%,
       transparent
     );
   }

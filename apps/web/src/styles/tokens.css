@@ -69,10 +69,16 @@
   --color-ticket-ice: #bbe4ff;
   --color-ticket-cyan: #8fd8ff;
   --color-ticket-sky: #3875df;
+  --color-ticket-q27: #2d56d6;
   --color-ticket-deep: #1b2284;
   --color-ticket-midnight: #080739;
   --color-ticket-ground: #f3f7fc;
   --color-ticket-press: #a8dcff;
+
+  /* Homepage 2027 only (DESIGN.md HOME-1): the middle of the navy ground,
+     sampled from the team's Office Visits recap post, between ticket-deep
+     (its brightest zone) and ticket-midnight (its deepest). */
+  --color-home-ground: #0b115e;
 
   /* Q-Hack x Hacktoberfest campaign, /hackathon only (DESIGN.md HACK-1).
      The Hack CI ships a background artwork, not a palette: the violet

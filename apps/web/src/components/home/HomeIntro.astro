@@ -1,0 +1,409 @@
+---
+// The homepage's loading intro (DESIGN.md HOME-1, after the 2027 concept
+// mockup): a navy field with a pool of light, the Q mark as a solid 3D
+// object in satin white (never glass), its rounded outline drawn in light, the years running from 2017
+// to the edition's year, "10 Years of Q-Summit", and a curtain that rises
+// into the page. "Loading" with three dots that light one after another
+// (each dot has a fixed place, so the word never moves).
+//
+// It never locks anyone out: the inline script below only plays it when
+// motion is welcome, the visitor did not see it in the last twelve hours
+// and did not arrive on a section link (#...). The CSS hides it after a
+// few seconds even if the page script never runs, a failed image only
+// leaves the outline, and any key, a click or "Skip intro" ends it at
+// once. home-stage.client.ts runs it and hands over to the hero.
+interface Props {
+  /** e.g. "10 Years of Q-Summit". */
+  edition: string;
+  /** e.g. "April 1-2, 2027" (as the content writes it). */
+  dates: string;
+  city: string;
+  /** The edition's year, the end of the run of years. */
+  year: number;
+}
+
+const { edition, dates, city, year } = Astro.props;
+const firstYear = 2017;
+---
+
+<script is:inline>
+  (function () {
+    var d = document.documentElement;
+    d.classList.add("h-js");
+    try {
+      var force = /[?&]intro=1\b/.test(location.search);
+      var calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      var last = Number(localStorage.getItem("q27-intro") || 0);
+      var recent = Date.now() - last < 12 * 3600 * 1000;
+      // Reduced motion always wins, even over the replay link.
+      if (!calm && (force || (!recent && !location.hash))) {
+        d.setAttribute("data-intro", "play");
+      }
+    } catch (e) {
+      /* no storage: play nothing rather than risk a loop */
+    }
+  })();
+</script>
+
+<div
+  class="hi"
+  data-home-intro
+  data-first-year={firstYear}
+  data-last-year={year}
+>
+  <span class="hi-glow" aria-hidden="true"></span>
+  <div class="hi-frame" aria-hidden="true">
+    <span class="hi-corner is-tl">Q-Summit {year}</span>
+    <span class="hi-corner is-tr">
+      Loading<span class="hi-dots"
+        ><span>.</span><span>.</span><span>.</span></span
+      >
+    </span>
+    <span class="hi-corner is-bl">{dates}</span>
+    <span class="hi-corner is-br">{city}</span>
+  </div>
+  <div class="hi-center" aria-hidden="true">
+    <div class="hi-mark" data-intro-mark>
+      <span class="hi-mark-glow" data-intro-glow></span>
+      <svg class="hi-outline" viewBox="0 0 160 160">
+        <rect
+          class="hi-outline-base"
+          x="4"
+          y="4"
+          width="152"
+          height="152"
+          rx="50"></rect>
+        <rect
+          class="hi-outline-trace"
+          x="4"
+          y="4"
+          width="152"
+          height="152"
+          rx="50"
+          pathLength="100"
+          data-intro-trace></rect>
+      </svg>
+      <span class="hi-q-flat"></span>
+      <img
+        class="hi-q is-a"
+        src="/home/intro/q-intro-a.webp"
+        alt=""
+        width="640"
+        height="640"
+        decoding="async"
+        fetchpriority="high"
+        onerror="this.remove()"
+        data-intro-q
+      />
+      <img
+        class="hi-q is-b"
+        src="/home/intro/q-intro-b.webp"
+        alt=""
+        width="640"
+        height="640"
+        decoding="async"
+        onerror="this.remove()"
+        data-intro-q-b
+      />
+    </div>
+    <p class="hi-year" data-intro-year>{firstYear}</p>
+    <p class="hi-caption" data-intro-caption>{edition}</p>
+    <span class="hi-bar"><span data-intro-bar></span></span>
+  </div>
+  <button type="button" class="hi-skip" data-intro-skip>Skip intro</button>
+</div>
+
+<style>
+  /* DESIGN.md HOME-1 */
+  .hi {
+    display: none;
+  }
+
+  :global(html[data-intro="play"]) .hi,
+  :global(html[data-intro="run"]) .hi {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    color: var(--color-white);
+    background:
+      radial-gradient(
+        55% 45% at 50% 44%,
+        color-mix(in srgb, var(--color-ticket-deep) 92%, transparent),
+        transparent 72%
+      ),
+      linear-gradient(
+        180deg,
+        var(--color-home-ground),
+        var(--color-ticket-midnight)
+      );
+  }
+
+  /* Failsafe: without the page script the intro clears itself. */
+  :global(html[data-intro="play"]) .hi {
+    animation: hi-failsafe var(--duration-hover) steps(1, end)
+      calc(var(--duration-reveal) * 9) forwards;
+  }
+
+  @keyframes hi-failsafe {
+    to {
+      visibility: hidden;
+      pointer-events: none;
+    }
+  }
+
+  .hi-glow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      35% 30% at 50% 42%,
+      color-mix(in srgb, var(--color-ticket-sky) 32%, transparent),
+      transparent 70%
+    );
+  }
+
+  .hi-frame {
+    position: absolute;
+    inset: clamp(0.75rem, 2.4vw, 1.75rem);
+    border: 1px solid color-mix(in srgb, var(--color-white) 14%, transparent);
+    border-radius: var(--radius-ticket-panel);
+    color: color-mix(in srgb, var(--color-white) 72%, transparent);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .hi-corner {
+    position: absolute;
+    white-space: nowrap;
+  }
+
+  .hi-corner.is-tl {
+    top: 1.1rem;
+    left: 1.35rem;
+  }
+
+  .hi-corner.is-tr {
+    top: 1.1rem;
+    right: 1.35rem;
+  }
+
+  .hi-corner.is-bl {
+    bottom: 1.1rem;
+    left: 1.35rem;
+  }
+
+  .hi-corner.is-br {
+    right: 1.35rem;
+    bottom: 1.1rem;
+  }
+
+  /* Three dots with a place each; they light one after another, then
+     start again. The word never moves. */
+  .hi-dots {
+    display: inline-flex;
+  }
+
+  .hi-dots span {
+    display: inline-block;
+    width: 0.55em;
+    text-align: center;
+    opacity: 0.2;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hi-dots span {
+      animation: hi-dot calc(var(--duration-reveal) * 2.8) steps(1, end)
+        infinite;
+    }
+
+    .hi-dots span:nth-child(2) {
+      animation-delay: calc(var(--duration-reveal) * 0.7);
+    }
+
+    .hi-dots span:nth-child(3) {
+      animation-delay: calc(var(--duration-reveal) * 1.4);
+    }
+  }
+
+  @keyframes hi-dot {
+    0% {
+      opacity: 1;
+    }
+
+    75% {
+      opacity: 0.2;
+    }
+  }
+
+  .hi-center {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: clamp(var(--space-sm), 3vh, var(--space-md));
+  }
+
+  .hi-mark {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: clamp(7.5rem, 22vw, 9.5rem);
+    aspect-ratio: 1;
+    margin-bottom: var(--space-sm);
+  }
+
+  .hi-mark-glow {
+    position: absolute;
+    inset: -45%;
+    border-radius: var(--radius-circle);
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--color-ticket-ice) 42%, transparent) 0%,
+      color-mix(in srgb, var(--color-ticket-sky) 18%, transparent) 40%,
+      transparent 70%
+    );
+  }
+
+  .hi-outline {
+    position: absolute;
+    inset: -7%;
+    width: 114%;
+    height: 114%;
+    overflow: visible;
+  }
+
+  .hi-outline rect {
+    fill: none;
+    stroke-linecap: round;
+  }
+
+  .hi-outline-base {
+    stroke: color-mix(in srgb, var(--color-ticket-ice) 16%, transparent);
+    stroke-width: 2;
+  }
+
+  .hi-outline-trace {
+    stroke: var(--color-ticket-ice);
+    stroke-width: 3;
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+    filter: drop-shadow(
+      0 0 6px color-mix(in srgb, var(--color-ticket-cyan) 80%, transparent)
+    );
+  }
+
+  /* The flat mark under the renders: shows if the renders fail. */
+  .hi-q-flat {
+    position: absolute;
+    inset: 12%;
+    background: var(--color-white);
+    -webkit-mask: url(/icon-512.png) center / contain no-repeat;
+    mask: url(/icon-512.png) center / contain no-repeat;
+  }
+
+  .hi-q {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .hi-q.is-b {
+    opacity: 0;
+  }
+
+  /* With a render present, the flat mark stays hidden under it. */
+  .hi-mark:has(.hi-q) .hi-q-flat {
+    visibility: hidden;
+  }
+
+  .hi-year {
+    margin: 0;
+    transition: color calc(var(--duration-reveal) * 2.2) var(--ease-buttery);
+    font-size: clamp(3.5rem, 13vw, 4.75rem);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+
+  .hi-year.is-now {
+    color: var(--color-ticket-ice);
+  }
+
+  .hi-caption {
+    margin: 0;
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+  }
+
+  .hi-bar {
+    display: block;
+    width: min(15rem, 60vw);
+    height: 3px;
+    margin-top: var(--space-2xs);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+    background: color-mix(in srgb, var(--color-white) 14%, transparent);
+  }
+
+  .hi-bar span {
+    display: block;
+    height: 100%;
+    background: var(--color-ticket-ice);
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+
+  .hi-skip {
+    position: absolute;
+    bottom: clamp(2.5rem, 7vh, 4rem);
+    left: 50%;
+    min-height: 2.75rem;
+    padding: 0 var(--space-sm);
+    border: 0;
+    border-radius: var(--radius-ticket-button);
+    background: transparent;
+    color: color-mix(in srgb, var(--color-white) 70%, transparent);
+    font: inherit;
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    transform: translateX(-50%);
+    cursor: pointer;
+  }
+
+  .hi-skip:focus-visible {
+    outline: 2px solid var(--color-ticket-ice);
+    outline-offset: 2px;
+  }
+
+  @media (hover: hover) {
+    .hi-skip:hover {
+      color: var(--color-white);
+    }
+  }
+
+  @media (max-width: 479px) {
+    .hi-corner {
+      letter-spacing: 0.12em;
+    }
+
+    .hi-corner.is-tl,
+    .hi-corner.is-bl {
+      left: 0.9rem;
+    }
+
+    .hi-corner.is-tr,
+    .hi-corner.is-br {
+      right: 0.9rem;
+    }
+  }
+</style>

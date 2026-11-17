@@ -1,0 +1,16 @@
+---
+// Heading text that never breaks at a hyphen (DESIGN.md HOME-1): a line
+// may wrap between words, but "Q-Summit" or "student-led" stays whole
+// (browsers otherwise break after the hyphen and leave "Q-" alone at the
+// end of a line). Each hyphenated word is one unbreakable piece; the rest
+// of the text is unchanged.
+interface Props {
+  text: string;
+}
+
+const { text } = Astro.props;
+// Odd entries are the hyphenated words.
+const parts = (text ?? "").split(/(\S+-\S+)/);
+---
+
+{parts.map((part, i) => (i % 2 ? <span class="h-nobreak">{part}</span> : part))}

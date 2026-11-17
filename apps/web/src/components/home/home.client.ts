@@ -1,105 +1,42 @@
 /**
- * Home page behavior (DESIGN.md HOME-1). Every part is an enhancement: the
- * page is complete without it.
+ * The homepage's behavior (DESIGN.md HOME-1). The page is complete
+ * without it; this adds:
  *
- *   reveal    content below the fold sharpens out of a blur, once
- *   thumbs    partner logos are swapped for copies at their drawn size
- *   video     the hero video rests while the hero is off screen
- *   count-up  the key figures count up once, the first time they are seen
+ *   stage     intro, hero entrance, pass, reveals, counters
+ *             (home-stage.client.ts, GSAP; ADR-0008)
  *   marquee   the partner strips stop off screen and with the Pause button
- *   ambient   the page light rests while the hero video covers it
- *   light     on a fine pointer, glass panes pick up the cursor as a light
+ *   logos     partner logos are swapped for copies at their drawn size
+ *   why       the audience picker: a tab list (hover picks on a fine
+ *             pointer, arrow keys move, the card links to the page)
+ *   film      the aftermovie loads near the window, plays muted in view,
+ *             pauses off screen, in hidden tabs and with its button (the
+ *             stage around it is CSS, Aftermovie.astro)
+ *   program   a click on a bar of the palace stage's programme scrolls to
+ *             that item (the stage itself is CSS, PalaceStage.astro)
+ *   clock     the countdown to the end of the discount phase on sale
+ *   hero film last edition's film behind the hero, after load, in view only
  */
+import { startHomeStage } from "./home-stage.client";
 
 const reduceMotion = () =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-/** Holds back what is below the fold, then lets it rise in once. */
-function initReveal(): void {
-  const els = [...document.querySelectorAll<HTMLElement>("[data-h-reveal]")];
-  if (!els.length || reduceMotion() || !("IntersectionObserver" in window)) {
-    return;
+/** WAI APG tab keys: the index a key moves to, or -1 for other keys. */
+function tabKeyTarget(key: string, index: number, last: number): number {
+  switch (key) {
+    case "ArrowDown":
+    case "ArrowRight":
+      return index === last ? 0 : index + 1;
+    case "ArrowUp":
+    case "ArrowLeft":
+      return index === 0 ? last : index - 1;
+    case "Home":
+      return 0;
+    case "End":
+      return last;
+    default:
+      return -1;
   }
-  const observer = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        const el = entry.target as HTMLElement;
-        observer.unobserve(el);
-        el.dataset.hReveal = "in";
-        // The animation leaves nothing behind (backwards fill); drop the
-        // marker once it has played.
-        el.addEventListener(
-          "animationend",
-          () => el.removeAttribute("data-h-reveal"),
-          { once: true },
-        );
-      }
-    },
-    { rootMargin: "0px 0px -8% 0px" },
-  );
-  for (const el of els) {
-    // Already on screen at load: leave it alone, no flash and no replay.
-    if (el.getBoundingClientRect().top < window.innerHeight) {
-      el.removeAttribute("data-h-reveal");
-      continue;
-    }
-    el.dataset.hReveal = "held";
-    observer.observe(el);
-  }
-}
-
-/** "1500", "30+", "1,500": the leading number counts, the rest stays. */
-const FIGURE = /^(\D*)(\d[\d.,]*)(.*)$/;
-const COUNT_MS = 1400;
-
-function countUp(el: HTMLElement): void {
-  const match = FIGURE.exec(el.textContent?.trim() ?? "");
-  if (!match) return;
-  const [, before, digits, after] = match;
-  const end = Number(digits.replace(/[.,]/g, ""));
-  if (!Number.isFinite(end) || end <= 0) return;
-  // Keep the content's own grouping ("1,500" or "1500").
-  const separator = /[.,]/.exec(digits)?.[0];
-  const format = (n: number) =>
-    separator
-      ? String(n).replace(/\B(?=(\d{3})+(?!\d))/g, separator)
-      : String(n);
-  // The figure sharpens out of a blur while it counts (StatsBand.astro).
-  el.classList.add("is-counting");
-  el.addEventListener(
-    "animationend",
-    () => el.classList.remove("is-counting"),
-    { once: true },
-  );
-  const start = performance.now();
-  const frame = (now: number) => {
-    const t = Math.min(1, (now - start) / COUNT_MS);
-    // Ease out: fast first, settling on the final figure.
-    const eased = 1 - Math.pow(1 - t, 3);
-    el.textContent = before + format(Math.round(end * eased)) + after;
-    if (t < 1) requestAnimationFrame(frame);
-  };
-  requestAnimationFrame(frame);
-}
-
-function initCountUp(): void {
-  const els = [...document.querySelectorAll<HTMLElement>("[data-count-up]")];
-  if (!els.length || reduceMotion() || !("IntersectionObserver" in window)) {
-    return;
-  }
-  const observer = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        // Once per page load: scrolling back never restarts it.
-        observer.unobserve(entry.target);
-        countUp(entry.target as HTMLElement);
-      }
-    },
-    { threshold: 0.6 },
-  );
-  els.forEach((el) => observer.observe(el));
 }
 
 function initMarquee(): void {
@@ -117,122 +54,21 @@ function initMarquee(): void {
   });
   if ("IntersectionObserver" in window) {
     new IntersectionObserver(([entry]) => {
-      root.toggleAttribute("data-offscreen", !entry.isIntersecting);
+      root.toggleAttribute("data-offscreen", !entry!.isIntersecting);
     }).observe(root);
   }
 }
 
 /**
- * The ground's light costs frames only while it can be seen: it is covered
- * by the hero video until the hero has scrolled away.
- */
-function initAmbient(): void {
-  if (!("IntersectionObserver" in window)) return;
-  const ground = document.querySelector<HTMLElement>("[data-home-ground]");
-  const hero = document.querySelector<HTMLElement>(".hero");
-  if (!ground || !hero) return;
-  new IntersectionObserver(
-    ([entry]) => {
-      // Still while the hero fills (nearly) the whole viewport.
-      ground.toggleAttribute(
-        "data-still",
-        entry.intersectionRect.height > window.innerHeight * 0.92,
-      );
-    },
-    { threshold: [0, 0.25, 0.5, 0.75, 0.92, 1] },
-  ).observe(hero);
-}
-
-/** Largest tilt of a pane toward the pointer, in degrees. */
-const TILT_DEG = 3;
-
-/**
- * Pointer light: a pane marked data-h-light shows a soft highlight where
- * the cursor is (--h-lx / --h-ly, read by .h-glare), and one that is also
- * marked data-h-tilt turns a few degrees toward it (--h-rx / --h-ry). Only
- * for a mouse or pen that can hover; touch and reduced motion get the
- * resting pane. One listener for the page, one write per frame.
- */
-function initPointerLight(): void {
-  if (
-    reduceMotion() ||
-    !window.matchMedia("(hover: hover) and (pointer: fine)").matches
-  ) {
-    return;
-  }
-  let pane: HTMLElement | null = null;
-  let x = 0;
-  let y = 0;
-  let queued = false;
-
-  const rest = (el: HTMLElement) => {
-    el.classList.remove("is-lit-by-pointer");
-    el.style.removeProperty("--h-rx");
-    el.style.removeProperty("--h-ry");
-  };
-
-  const paint = () => {
-    queued = false;
-    if (!pane) return;
-    const box = pane.getBoundingClientRect();
-    const px = (x - box.left) / Math.max(1, box.width);
-    const py = (y - box.top) / Math.max(1, box.height);
-    pane.style.setProperty("--h-lx", `${(px * 100).toFixed(1)}%`);
-    pane.style.setProperty("--h-ly", `${(py * 100).toFixed(1)}%`);
-    if (pane.hasAttribute("data-h-tilt")) {
-      pane.style.setProperty(
-        "--h-ry",
-        `${((px - 0.5) * 2 * TILT_DEG).toFixed(2)}deg`,
-      );
-      pane.style.setProperty(
-        "--h-rx",
-        `${((0.5 - py) * 2 * TILT_DEG).toFixed(2)}deg`,
-      );
-    }
-    pane.classList.add("is-lit-by-pointer");
-  };
-
-  document.addEventListener(
-    "pointermove",
-    (event) => {
-      if (event.pointerType === "touch") return;
-      const next =
-        event.target instanceof Element
-          ? event.target.closest<HTMLElement>("[data-h-light]")
-          : null;
-      if (next !== pane) {
-        if (pane) rest(pane);
-        pane = next;
-      }
-      if (!pane) return;
-      x = event.clientX;
-      y = event.clientY;
-      if (!queued) {
-        queued = true;
-        requestAnimationFrame(paint);
-      }
-    },
-    { passive: true },
-  );
-  document.addEventListener("pointerleave", () => {
-    if (pane) rest(pane);
-    pane = null;
-  });
-}
-
-/**
- * The partner files are made for the partner page: several hundred pixels
- * wide, here drawn about a hundred wide. Left as they are, the browser
- * decodes and scales one every time it slides into view, a hitch every
- * second or two across three strips. Once the page is idle each distinct
- * logo is drawn once into a bitmap of its drawn size (times the device
- * pixel ratio) and every copy of it in the strips points at that small
- * image instead. Same origin only, nothing leaves the page, and a logo
- * that cannot be converted simply stays as it is.
+ * The partner files are made for the partner page, several hundred pixels
+ * wide; here they are drawn about a hundred wide. Once the page is idle
+ * each distinct logo is drawn once into a bitmap of its drawn size and
+ * every copy points at it, so the strip never decodes a large file while
+ * it moves. The pixels are the logo's own; nothing is recolored.
  */
 function initLogoThumbs(): void {
   const imgs = [
-    ...document.querySelectorAll<HTMLImageElement>(".h-partner-slab img"),
+    ...document.querySelectorAll<HTMLImageElement>(".pl-plate img"),
   ];
   if (!imgs.length || !("createImageBitmap" in window)) return;
   const bySrc = new Map<string, HTMLImageElement[]>();
@@ -243,13 +79,12 @@ function initLogoThumbs(): void {
   }
   const scale = Math.min(3, Math.ceil(window.devicePixelRatio || 1));
 
-  async function convert(src: string, copies: HTMLImageElement[]) {
-    const first = copies[0];
+  async function convert(copies: HTMLImageElement[]) {
+    const first = copies[0]!;
     try {
       await first.decode();
       const width = Math.max(1, Math.round(first.width * scale));
       const height = Math.max(1, Math.round(first.height * scale));
-      // Nothing to gain from a file that is already small.
       if (first.naturalWidth <= width * 1.25) return;
       const canvas = document.createElement("canvas");
       canvas.width = width;
@@ -257,7 +92,6 @@ function initLogoThumbs(): void {
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
       ctx.imageSmoothingQuality = "high";
-      // Fit inside the box, as object-fit: contain draws it.
       const ratio = Math.min(
         width / first.naturalWidth,
         height / first.naturalHeight,
@@ -272,14 +106,13 @@ function initLogoThumbs(): void {
       const url = URL.createObjectURL(blob);
       for (const img of copies) img.src = url;
     } catch {
-      // A logo that cannot be read (broken file, tainted canvas) stays.
+      // A logo that cannot be read stays as it is.
     }
   }
 
   const run = async () => {
-    for (const [src, copies] of bySrc) {
-      await convert(src, copies);
-      // One logo per idle slice, so the conversion itself never hitches.
+    for (const copies of bySrc.values()) {
+      await convert(copies);
       await new Promise((resolve) => setTimeout(resolve, 0));
     }
   };
@@ -291,40 +124,296 @@ function initLogoThumbs(): void {
   else window.addEventListener("load", start, { once: true });
 }
 
-/** The hero video costs decoding only while the hero can be seen. */
-function initHeroVideo(): void {
-  const hero = document.querySelector<HTMLElement>(".hero");
-  if (!hero || !("IntersectionObserver" in window)) return;
-  new IntersectionObserver(([entry]) => {
-    // Looked up each time: the element is removed for reduced motion and
-    // data saver, and only starts playing once its stream is ready.
-    const video = hero.querySelector<HTMLVideoElement>("video");
-    if (!video) return;
-    if (entry.isIntersecting) {
-      if (video.paused && video.readyState > 1) {
-        video.play().catch(() => {});
+/** The audience picker: WAI APG tabs, plus hover on a fine pointer. */
+function initWhyTabs(): void {
+  const root = document.querySelector<HTMLElement>("[data-why]");
+  if (!root) return;
+  const tabs = [...root.querySelectorAll<HTMLButtonElement>("[data-why-tab]")];
+  const panels = [...root.querySelectorAll<HTMLElement>("[data-why-panel]")];
+  if (tabs.length === 0) return;
+
+  const narrow = window.matchMedia("(max-width: 860px)");
+  function select(index: number, focus = false, fromTap = false): void {
+    tabs.forEach((tab, i) => {
+      const on = i === index;
+      tab.setAttribute("aria-selected", String(on));
+      tab.tabIndex = on ? 0 : -1;
+    });
+    panels.forEach((panel, i) =>
+      panel.toggleAttribute("data-selected", i === index),
+    );
+    if (focus) tabs[index]!.focus();
+    // On a narrow screen the card sits under the list: bring it into view.
+    if (fromTap && narrow.matches) {
+      const card = panels[index];
+      const rect = card?.getBoundingClientRect();
+      if (card && rect && rect.bottom > window.innerHeight) {
+        card.scrollIntoView({
+          behavior: reduceMotion() ? "auto" : "smooth",
+          block: "nearest",
+        });
       }
-    } else if (!video.paused) {
-      video.pause();
     }
-  }).observe(hero);
+  }
+
+  tabs.forEach((tab, i) => {
+    tab.addEventListener("click", () => select(i, false, true));
+    tab.addEventListener("keydown", (event) => {
+      const to = tabKeyTarget(event.key, i, tabs.length - 1);
+      if (to < 0) return;
+      event.preventDefault();
+      select(to, true);
+    });
+  });
+
+  // A fine pointer picks on hover, after a short rest so passing over the
+  // rows on the way somewhere else does not flicker the card.
+  if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+    let timer = 0;
+    tabs.forEach((tab, i) => {
+      tab.addEventListener("pointerenter", () => {
+        window.clearTimeout(timer);
+        timer = window.setTimeout(() => select(i), 90);
+      });
+      tab.addEventListener("pointerleave", () => window.clearTimeout(timer));
+    });
+  }
 }
 
-/** A glass Q that cannot load leaves no broken image behind. */
-function initGlassQ(): void {
-  document.querySelectorAll<HTMLImageElement>("img.h-q").forEach((img) => {
-    if (img.complete && img.naturalWidth === 0) img.remove();
-    else img.addEventListener("error", () => img.remove(), { once: true });
+/**
+ * The aftermovie: poster first, the stream near the window, muted loop.
+ * The button always shows what a press does (pause while the film plays,
+ * play while it stands), so a blocked autoplay leaves the poster with a
+ * working play button. Where the poster stays on purpose (reduced motion,
+ * data saving, a slow connection) nothing loads until the button asks.
+ */
+function initFilm(): void {
+  const frame = document.querySelector<HTMLElement>("[data-film]");
+  const video = frame?.querySelector<HTMLVideoElement>("[data-film-video]");
+  const toggle = frame?.querySelector<HTMLButtonElement>("[data-film-toggle]");
+  if (!frame || !video) return;
+
+  const conn = (
+    navigator as { connection?: { saveData?: boolean; effectiveType?: string } }
+  ).connection;
+  const lean =
+    reduceMotion() ||
+    !!conn?.saveData ||
+    /^(slow-2g|2g|3g)$/.test(conn?.effectiveType ?? "") ||
+    window.matchMedia("(prefers-reduced-data: reduce)").matches;
+  const observe = "IntersectionObserver" in window;
+
+  let loading: Promise<void> | undefined;
+  // In lean mode the film waits for the button; otherwise it plays in view.
+  let userPaused = lean || !observe;
+  let inView = !observe;
+
+  const sync = () => {
+    if (!toggle) return;
+    const playing = !video.paused;
+    toggle.dataset.state = playing ? "playing" : "paused";
+    toggle.setAttribute(
+      "aria-label",
+      playing ? "Pause the film" : "Play the film",
+    );
+  };
+  video.addEventListener("play", sync);
+  video.addEventListener("pause", sync);
+
+  const play = () => {
+    if (userPaused || !inView || document.hidden) return;
+    // A blocked autoplay keeps the poster; the button then offers play.
+    video.play().catch(sync);
+  };
+  const pause = () => video.pause();
+
+  /** Attaches the stream once; resolves when it can play. */
+  function load(): Promise<void> {
+    loading ??= (async () => {
+      const desktop = window.innerWidth >= 810;
+      const master = desktop
+        ? "/media/hero-hls/hero.m3u8"
+        : "/media/hero-hls/hero-mobile.m3u8";
+      const { default: Hls } = await import("hls.js/light");
+      if (Hls.isSupported()) {
+        const hls = new Hls({ capLevelToPlayerSize: true, startLevel: -1 });
+        await new Promise<void>((resolve) => {
+          hls.on(Hls.Events.MANIFEST_PARSED, () => resolve());
+          hls.loadSource(master);
+          hls.attachMedia(video!);
+        });
+      } else if (video!.canPlayType("application/vnd.apple.mpegurl")) {
+        video!.src = master;
+      } else {
+        video!.src = "/media/hero-480.mp4";
+      }
+    })();
+    return loading;
+  }
+
+  if (toggle) {
+    toggle.hidden = false;
+    sync();
+  }
+
+  if (observe) {
+    if (!lean) {
+      new IntersectionObserver(
+        ([entry]) => {
+          if (entry!.isIntersecting) void load().then(play);
+        },
+        { rootMargin: "600px 0px" },
+      ).observe(frame);
+    }
+    new IntersectionObserver(([entry]) => {
+      inView = entry!.isIntersecting;
+      if (inView) play();
+      else pause();
+    }).observe(frame);
+  }
+  document.addEventListener("visibilitychange", () =>
+    document.hidden ? pause() : play(),
+  );
+
+  toggle?.addEventListener("click", () => {
+    if (video.paused) {
+      userPaused = false;
+      inView = true;
+      void load().then(play);
+    } else {
+      userPaused = true;
+      pause();
+    }
   });
 }
 
+/**
+ * The palace stage's programme runs with the scroll (CSS). A click on one
+ * of its bars scrolls to the middle of that item's stretch of the hold,
+ * the same place a visitor reaches by scrolling. Pointer shortcut only:
+ * every item is in the page as text.
+ */
+function initPalaceProgram(): void {
+  const root = document.querySelector<HTMLElement>("[data-palace-program]");
+  const stage = root?.closest<HTMLElement>("section");
+  const pin = root?.closest<HTMLElement>(".ps-pin");
+  if (!root || !stage || !pin) return;
+  const bars = [...root.querySelectorAll<HTMLElement>("[data-palace-bar]")];
+  bars.forEach((bar, i) => {
+    bar.addEventListener("click", () => {
+      const hold = stage.offsetHeight - pin.offsetHeight;
+      if (hold <= 0) return;
+      const top = stage.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({
+        top: top + (hold * (i + 0.5)) / bars.length,
+        behavior: reduceMotion() ? "auto" : "smooth",
+      });
+    });
+  });
+}
+
+/**
+ * The countdown to the end of the discount phase on sale (SalePhases):
+ * shown once the script runs, ticking once a second only while it is in
+ * view and the tab is visible, and gone once the end has passed. The
+ * ticking digits are hidden from screen readers; the day the phase ends
+ * is in the text beside them.
+ */
+function initPhaseClock(): void {
+  const clock = document.querySelector<HTMLElement>("[data-sp-clock]");
+  const out = clock?.querySelector<HTMLElement>("[data-sp-time]");
+  const end = Date.parse(clock?.dataset.spClock ?? "");
+  if (!clock || !out || Number.isNaN(end)) return;
+
+  const two = (n: number) => String(n).padStart(2, "0");
+  let timer = 0;
+  const tick = (): boolean => {
+    const left = Math.floor((end - Date.now()) / 1000);
+    if (left <= 0) {
+      clock.hidden = true;
+      return false;
+    }
+    const d = Math.floor(left / 86400);
+    const h = Math.floor((left % 86400) / 3600);
+    const m = Math.floor((left % 3600) / 60);
+    out.textContent = `${d}d ${two(h)}h ${two(m)}m ${two(left % 60)}s`;
+    clock.hidden = false;
+    return true;
+  };
+  const stop = () => {
+    window.clearInterval(timer);
+    timer = 0;
+  };
+  const start = () => {
+    if (timer || document.hidden || !tick()) return;
+    timer = window.setInterval(() => {
+      if (!tick()) stop();
+    }, 1000);
+  };
+
+  if (!tick()) return;
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(([entry]) =>
+      entry!.isIntersecting ? start() : stop(),
+    ).observe(clock);
+  } else {
+    start();
+  }
+  document.addEventListener("visibilitychange", () =>
+    document.hidden ? stop() : start(),
+  );
+}
+
+/**
+ * Last edition's film behind the hero (HomeHero.astro): decoration only.
+ * It starts once the page has loaded (never competing with the first
+ * paint), plays muted while the hero is in view and the tab visible, and
+ * never with reduced motion, data saving or a slow connection, where the
+ * dimmed poster stays.
+ */
+function initHeroFilm(): void {
+  const video = document.querySelector<HTMLVideoElement>("[data-hero-film]");
+  if (!video || !("IntersectionObserver" in window)) return;
+  const conn = (
+    navigator as { connection?: { saveData?: boolean; effectiveType?: string } }
+  ).connection;
+  if (
+    reduceMotion() ||
+    conn?.saveData ||
+    /^(slow-2g|2g|3g)$/.test(conn?.effectiveType ?? "") ||
+    window.matchMedia("(prefers-reduced-data: reduce)").matches
+  )
+    return;
+
+  let inView = false;
+  let loaded = false;
+  const play = () => {
+    if (loaded && inView && !document.hidden) video.play().catch(() => {});
+  };
+  const start = () => {
+    loaded = true;
+    video.preload = "auto";
+    play();
+  };
+  new IntersectionObserver(([entry]) => {
+    inView = entry!.isIntersecting;
+    if (inView) play();
+    else video.pause();
+  }).observe(video);
+  document.addEventListener("visibilitychange", () =>
+    document.hidden ? video.pause() : play(),
+  );
+  if (document.readyState === "complete") start();
+  else window.addEventListener("load", start, { once: true });
+}
+
 export function initHomePage(): void {
-  initGlassQ();
-  initReveal();
-  initCountUp();
+  void startHomeStage();
   initMarquee();
-  initAmbient();
-  initPointerLight();
   initLogoThumbs();
-  initHeroVideo();
+  initWhyTabs();
+  initFilm();
+  initPalaceProgram();
+  initPhaseClock();
+  initHeroFilm();
 }

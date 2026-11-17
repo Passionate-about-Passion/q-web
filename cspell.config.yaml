@@ -48,9 +48,19 @@ ignorePaths:
   - apps/cms/src/migrations/**
 useGitignore: true
 words:
+  - absarc
+  - aftermovie
+  - clearcoat
+  - crossfade
   - ERSTI
   - Ersti
   - ersti
+  - GLTF
+  - lerp
+  - metalness
+  - PMREM
+  - Raycaster
+  - Verlet
   - wifo
   - activedescendant
   - actuals
@@ -66,6 +76,7 @@ words:
   - aula
   - authjs
   - autocapture
+  - autoplay
   - autoplaying
   - autoplays
   - auxww
@@ -105,6 +116,7 @@ words:
   - dtcg
   - elevenlabs
   - EMEA
+  - emissivemap
   - esbuild
   - eslint
   - Ewma

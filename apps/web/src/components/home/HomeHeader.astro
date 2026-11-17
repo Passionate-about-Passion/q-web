@@ -1,0 +1,655 @@
+---
+// The site header and its fullscreen menu (DESIGN.md COMP-6, HOME-1),
+// first built for the 2027 homepage after the concept mockup and now on
+// every page (Base.astro renders it when a page brings no header of its
+// own): a full-width bar of dark liquid glass with the white Q alone, the
+// Tickets button and, at the far right, the menu as three stripes as
+// tall as that button. On every page but the homepage a spacer of the
+// bar's height follows it, so the page starts under the bar (the homepage
+// hero runs under it on purpose).
+//
+// The menu is a native popover (works without JavaScript; Escape closes
+// it): the items from Site Settings navigation in their order, an item
+// with children ("Why Q?" and its four audience pages) as a native
+// disclosure, and beside them the edition, dates, the ticket link and the
+// social profiles. home-menu.client.ts adds focus handling and the scroll
+// lock. Every ticket link goes to the ticket page, never to an anchor.
+//
+// Edition, dates, city and the offer come from the content when the page
+// does not pass them (the hero badge "10 Years of Q-Summit · April 1-2,
+// 2027 · Mannheim" and the ticket page's phase on sale).
+import { getPageContent, getSiteSettings } from "../../lib/content";
+import { TICKETS_HREF } from "../../lib/home-links";
+import "./home-theme.css";
+
+interface Props {
+  /** e.g. "10 Years of Q-Summit". */
+  edition?: string;
+  /** e.g. "April 1-2, 2027" (as the content writes it). */
+  dates?: string;
+  /** e.g. "Mannheim". */
+  city?: string;
+  /** e.g. "30% off", from the discount phase on sale now. */
+  offer?: string;
+  /** Adds the spacer that keeps the page under the fixed bar. */
+  spacer?: boolean;
+}
+
+const props = Astro.props;
+const { nav, footer } = await getSiteSettings();
+
+// What the page does not pass comes from the content.
+let { edition, dates, city, offer } = props;
+if (!edition || !dates || !city || offer === undefined) {
+  const { home, ticketCategories } = await getPageContent();
+  const badge = (home.hero.badge ?? "")
+    .split("·")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  edition ??= badge[0] ?? "Q-Summit";
+  dates ??=
+    badge[1] ??
+    new Intl.DateTimeFormat("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "UTC",
+    }).formatRange(
+      new Date(home.event.startDate),
+      new Date(home.event.endDate),
+    );
+  city ??= badge[2] ?? "Mannheim";
+  const phases = ticketCategories.phases;
+  const active = phases?.items.find((item) => item.key === phases.activeKey);
+  offer ??=
+    active && phases
+      ? phases.discountLabel.replace("{discount}", String(active.discount))
+      : undefined;
+}
+
+const socials = footer.socialLinks.filter((link) =>
+  ["instagram-qsummit", "linkedin", "tiktok", "youtube"].includes(
+    link.platform,
+  ),
+);
+const socialName = (platform: string, label: string) =>
+  platform.startsWith("instagram") ? "Instagram" : label;
+// The Q alone: the site icon, drawn white through a mask.
+const markStyle = "--hh-logo: url(/icon-512.png); --hh-logo-ratio: 1 / 1";
+---
+
+<header class="hh" id="site-header" data-home-header>
+  <div class="hh-bar">
+    <span class="hh-rim" aria-hidden="true"></span>
+    <div class="h-shell hh-inner">
+      <a class="hh-brand" href="/" aria-label="Q-Summit home">
+        <span class="hh-logo" style={markStyle} aria-hidden="true"></span>
+      </a>
+      <a class="h-btn hh-tickets" href={TICKETS_HREF}>Tickets</a>
+      <button
+        type="button"
+        class="hh-menu"
+        popovertarget="home-menu"
+        aria-controls="home-menu"
+        aria-expanded="false"
+        aria-label="Menu"
+        data-home-menu-open
+      >
+        <svg class="hh-menu-icon" viewBox="0 0 22 16" aria-hidden="true">
+          <path
+            d="M1.5 1.5h19M1.5 8h19M1.5 14.5h19"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</header>
+{props.spacer && <div class="hh-spacer" aria-hidden="true" />}
+
+<div
+  class="hm h-home"
+  id="home-menu"
+  popover
+  role="dialog"
+  aria-modal="true"
+  aria-label="Menu"
+  data-home-menu
+>
+  <div class="hm-top h-shell">
+    <a class="hh-brand" href="/" aria-label="Q-Summit home">
+      <span class="hh-logo" style={markStyle} aria-hidden="true"></span>
+    </a>
+    <button
+      type="button"
+      class="hh-menu hm-close"
+      popovertarget="home-menu"
+      popovertargetaction="hide"
+      aria-label="Close menu"
+      data-home-menu-close
+    >
+      <svg class="hh-menu-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M6 6l12 12M18 6L6 18"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"></path>
+      </svg>
+    </button>
+  </div>
+
+  <div class="hm-body h-shell">
+    <nav class="hm-nav" aria-label="Main">
+      <ol class="hm-list">
+        {
+          nav.map((item, i) =>
+            item.children && item.children.length > 0 ? (
+              <li class="hm-item" style={`--hm-i: ${i}`}>
+                <details class="hm-group">
+                  <summary class="hm-link">
+                    <span class="hm-label">{item.label}</span>
+                    <svg
+                      class="hm-chevron"
+                      width="28"
+                      height="28"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M6 9l6 6 6-6"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </summary>
+                  <ul class="hm-sub">
+                    {item.children.map((child) => (
+                      <li>
+                        <a class="hm-child" href={child.href}>
+                          {child.label}
+                          <span class="hm-arrow" aria-hidden="true">
+                            ↗
+                          </span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </li>
+            ) : (
+              <li class="hm-item" style={`--hm-i: ${i}`}>
+                <a class="hm-link" href={item.href}>
+                  <span class="hm-label">{item.label}</span>
+                  <span class="hm-arrow" aria-hidden="true">
+                    ↗
+                  </span>
+                </a>
+              </li>
+            ),
+          )
+        }
+      </ol>
+    </nav>
+
+    <aside class="hm-side" aria-label="Event">
+      <div class="hm-fact">
+        <p class="h-eyebrow">{edition}</p>
+        <p class="hm-when">
+          {dates}<br /><span class="h-accent">{city}</span>
+        </p>
+      </div>
+      <a class="h-btn hm-cta" href={TICKETS_HREF}>
+        Tickets{offer ? ` · ${offer}` : ""}
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M4 12h15M13 6l6 6-6 6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"></path>
+        </svg>
+      </a>
+      {
+        socials.length > 0 && (
+          <ul class="hm-socials">
+            {socials.map((link) => (
+              <li>
+                <a href={link.href} target="_blank" rel="noopener noreferrer">
+                  {socialName(link.platform, link.label)}
+                  <span class="u-visually-hidden"> (opens in a new tab)</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </aside>
+  </div>
+</div>
+
+<script>
+  import { initHomeMenu } from "./home-menu.client";
+
+  initHomeMenu();
+</script>
+
+<style is:global>
+  /* The header's height for every page: anchors land below it, and parts
+     that stick under it (the ticket compare bar) read it. */
+  :root {
+    --site-header-height: 4.5rem;
+  }
+
+  @media (max-width: 767px) {
+    :root {
+      --site-header-height: 4rem;
+    }
+  }
+
+  html {
+    scroll-padding-top: calc(var(--site-header-height) + var(--space-xs));
+  }
+</style>
+
+<style>
+  /* DESIGN.md COMP-6, HOME-1. */
+  .hh {
+    --h-gutter: clamp(1rem, 5vw, 2.5rem);
+
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 50;
+    height: var(--site-header-height);
+    color: var(--color-white);
+    pointer-events: none;
+  }
+
+  .hh-spacer {
+    flex-shrink: 0;
+    height: var(--site-header-height);
+  }
+
+  .hh-bar {
+    position: absolute;
+    inset: 0;
+    pointer-events: auto;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-ticket-midnight) 90%, transparent),
+      color-mix(in srgb, var(--color-ticket-midnight) 80%, transparent)
+    );
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    backdrop-filter: blur(16px) saturate(150%);
+    box-shadow: 0 12px 30px -24px var(--color-ticket-midnight);
+  }
+
+  /* The lit lower edge of the glass: brightest under the middle. */
+  .hh-rim {
+    position: absolute;
+    inset: auto 0 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 6%,
+      color-mix(in srgb, var(--color-ticket-ice) 10%, transparent) 26%,
+      color-mix(in srgb, var(--color-ticket-ice) 22%, transparent) 50%,
+      color-mix(in srgb, var(--color-ticket-ice) 10%, transparent) 74%,
+      transparent 94%
+    );
+  }
+
+  .hh-inner {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: clamp(var(--space-2xs), 2.4vw, var(--space-lg));
+    height: 100%;
+  }
+
+  .hh-brand {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    margin-right: auto;
+    border-radius: var(--radius-ticket-button);
+  }
+
+  .hh-logo {
+    display: block;
+    height: clamp(1.875rem, 4vw, 2.25rem);
+    aspect-ratio: var(--hh-logo-ratio);
+    background: var(--color-white);
+    -webkit-mask: var(--hh-logo) center / contain no-repeat;
+    mask: var(--hh-logo) center / contain no-repeat;
+  }
+
+  /* Only the stripes: a square as tall as the Tickets button, the
+     stripes filling most of it, so both read as one pair. */
+  .hh-menu {
+    display: inline-grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-ticket-button);
+    background: transparent;
+    color: var(--color-white);
+    font: inherit;
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color var(--duration-hover) var(--ease-snappy);
+  }
+
+  @media (hover: hover) {
+    .hh-menu:hover {
+      background: color-mix(in srgb, var(--color-white) 8%, transparent);
+    }
+  }
+
+  .hh-menu-icon {
+    width: 2rem;
+    height: 1.5rem;
+  }
+
+  .hh-menu:focus-visible,
+  .hh-brand:focus-visible {
+    outline: 2px solid var(--color-ticket-ice);
+    outline-offset: 2px;
+  }
+
+  .hh-tickets.h-btn {
+    min-height: 2.75rem;
+    padding: 0 1.25rem;
+    font-size: var(--text-size-tiny);
+  }
+
+  @media (max-width: 359px) {
+    .hh-tickets.h-btn {
+      padding: 0 0.85rem;
+    }
+  }
+
+  /* ---- the fullscreen menu ---- */
+  .hm {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    color: var(--color-white);
+    background:
+      radial-gradient(
+        60% 50% at 85% 10%,
+        color-mix(in srgb, var(--color-ticket-deep) 90%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        50% 40% at 0% 100%,
+        color-mix(in srgb, var(--color-ticket-sky) 22%, transparent),
+        transparent 70%
+      ),
+      var(--color-ticket-midnight);
+  }
+
+  .hm:popover-open {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .hm-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: var(--h-header-height, 4.5rem);
+    border-bottom: 1px solid;
+    border-image: var(--h-fade-x) 1;
+  }
+
+  .hm-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 24rem);
+    gap: clamp(var(--space-lg), 6vw, 4.5rem);
+    flex: 1;
+    align-items: center;
+    padding-block: clamp(var(--space-lg), 5vh, 3.5rem);
+  }
+
+  .hm-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-bottom: 1px solid;
+    border-image: var(--h-fade-x) 1;
+  }
+
+  .hm-item {
+    border-top: 1px solid;
+    border-image: var(--h-fade-x) 1;
+  }
+
+  .hm-link {
+    display: flex;
+    align-items: center;
+    gap: clamp(var(--space-sm), 2.5vw, 1.75rem);
+    padding-block: clamp(0.6rem, 1.6vh, 1.1rem);
+    color: var(--color-white);
+    text-decoration: none;
+    cursor: pointer;
+    list-style: none;
+    transition:
+      color var(--duration-hover) var(--ease-snappy),
+      transform var(--duration-hover) var(--ease-snappy);
+  }
+
+  .hm-link::-webkit-details-marker {
+    display: none;
+  }
+
+  .hm-label {
+    flex: 1;
+    font-size: clamp(2rem, 5.2vw, 4rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+  }
+
+  .hm-arrow {
+    flex: none;
+    font-size: clamp(1.25rem, 2.4vw, 2rem);
+    font-weight: var(--font-weight-extrabold);
+    opacity: 0.35;
+    transition:
+      opacity var(--duration-hover) var(--ease-snappy),
+      transform var(--duration-hover) var(--ease-snappy);
+  }
+
+  .hm-chevron {
+    flex: none;
+    opacity: 0.6;
+    transition: transform var(--duration-open) var(--ease-snappy);
+  }
+
+  .hm-group[open] .hm-chevron {
+    transform: rotate(180deg);
+  }
+
+  .hm-group[open] > .hm-link {
+    color: var(--color-ticket-ice);
+  }
+
+  @media (hover: hover) {
+    .hm-link:hover,
+    .hm-child:hover {
+      color: var(--color-ticket-ice);
+    }
+
+    .hm-link:hover .hm-arrow,
+    .hm-child:hover .hm-arrow {
+      opacity: 1;
+      transform: translate(4px, -4px);
+    }
+  }
+
+  .hm-link:focus-visible,
+  .hm-child:focus-visible,
+  .hm-socials a:focus-visible {
+    outline: 2px solid var(--color-ticket-ice);
+    outline-offset: 2px;
+    border-radius: var(--radius-ticket-button);
+  }
+
+  /* The four audience pages, indented under "Why Q?" with a rule. */
+  .hm-sub {
+    margin: 0 0 var(--space-sm)
+      calc(var(--space-lg) + clamp(var(--space-sm), 2.5vw, 1.75rem));
+    padding: 0 0 0 var(--space-md);
+    border-left: 1px solid;
+    border-image: var(--h-fade-y) 1;
+    list-style: none;
+  }
+
+  .hm-child {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    min-height: 2.75rem;
+    color: var(--h-text-soft);
+    font-size: clamp(1.125rem, 2vw, 1.5rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.015em;
+    text-decoration: none;
+    transition: color var(--duration-hover) var(--ease-snappy);
+  }
+
+  .hm-child .hm-arrow {
+    font-size: var(--text-size-large);
+  }
+
+  .hm-side {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+    padding-left: clamp(var(--space-lg), 4vw, 3.5rem);
+    border-left: 1px solid;
+    border-image: var(--h-fade-y) 1;
+  }
+
+  .hm-fact {
+    display: grid;
+    gap: var(--space-2xs);
+  }
+
+  .hm-when {
+    margin: 0;
+    font-size: clamp(1.5rem, 2.4vw, 2rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.02em;
+    line-height: 1.12;
+  }
+
+  .hm-cta {
+    align-self: flex-start;
+  }
+
+  .hm-socials {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs) var(--space-md);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .hm-socials a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    color: var(--h-text-soft);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.12em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  @media (hover: hover) {
+    .hm-socials a:hover {
+      color: var(--color-white);
+    }
+  }
+
+  @media (max-width: 860px) {
+    .hm-body {
+      grid-template-columns: minmax(0, 1fr);
+      align-items: start;
+    }
+
+    .hm-side {
+      padding-left: 0;
+      border-left: 0;
+    }
+  }
+
+  /* Opening: the sheet fades in, the items rise one after another.
+     Closing is quick and has no stagger. */
+  @media (prefers-reduced-motion: no-preference) {
+    .hm {
+      transition:
+        opacity var(--duration-close) var(--ease-snappy),
+        overlay var(--duration-close) allow-discrete,
+        display var(--duration-close) allow-discrete;
+      opacity: 0;
+    }
+
+    .hm:popover-open {
+      opacity: 1;
+      transition:
+        opacity var(--duration-open) var(--ease-emphasized),
+        overlay var(--duration-open) allow-discrete,
+        display var(--duration-open) allow-discrete;
+    }
+
+    @starting-style {
+      .hm:popover-open {
+        opacity: 0;
+      }
+    }
+
+    .hm-item,
+    .hm-side {
+      transition:
+        opacity var(--duration-glass-unfold) var(--ease-emphasized),
+        transform var(--duration-glass-unfold) var(--ease-emphasized);
+      transition-delay: calc(
+        var(--duration-hover) * 0.5 + var(--hm-i, 6) *
+          var(--duration-glass-stagger) * 1.6
+      );
+    }
+
+    @starting-style {
+      .hm:popover-open .hm-item,
+      .hm:popover-open .hm-side {
+        opacity: 0;
+        transform: translateY(1rem);
+      }
+    }
+  }
+</style>

@@ -107,7 +107,7 @@ Every known styling gap is either fixed or written into
 [`DESIGN.md`](DESIGN.md) as a rule; there is no separate debt list. So an
 inconsistency you find is either covered by a rule, carries a code comment
 citing the rule it deviates from, or is a genuine bug worth fixing. Seven of the
-literal rules are machine-enforced, and the four remaining allowed literals are
+literal rules are machine-enforced, and the two remaining allowed literals are
 listed in `design-baseline.json`.
 
 ## Content and Worker

@@ -62,7 +62,7 @@ function getIndex(): AssetIndex {
  * ImageMetadata, or undefined (with a console warning) when no matching
  * asset was migrated to src/assets/media/.
  *
- * Pass `{ quiet: true }` for optional fixed paths (e.g. WhyCards) where a
+ * Pass `{ quiet: true }` for optional fixed paths (e.g. home audience photos) where a
  * miss against a non-empty local tree is expected until `pnpm picture:sync`
  * -- otherwise the fixture gate treats the warn as a real mismatch.
  */

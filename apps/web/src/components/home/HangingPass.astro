@@ -1,0 +1,212 @@
+---
+// The event pass hanging on its lanyard in the hero (DESIGN.md HOME-1,
+// ADR-0008). Decoration: everything it says (dates, city, edition) is in
+// the hero's own text, so the object is hidden from assistive tech. A tap
+// or click on the card turns it; the quiet line under it says so and is
+// itself a button, so keyboards can turn the pass too.
+//
+// The frame is taller than the column it stands in (--hp-scale, set by
+// the hero) and hangs from above it: the card comes out large, the long
+// lanyard runs up out of the hero behind the header.
+//
+// The still (public/home/pass/pass-fallback*.webp, rendered in Blender
+// from the same model) shows first and stays when WebGL, motion or data
+// are not available; hanging-pass.client.ts swaps in the live 3D object
+// (pass-scene.ts) once it is ready, in the same pose, so nothing jumps.
+---
+
+<div class="hp-wrap">
+  <div class="hp" data-pass aria-hidden="true">
+    <img
+      class="hp-still"
+      data-pass-still
+      src="/home/pass/pass-fallback.webp"
+      srcset="/home/pass/pass-fallback-sm.webp 450w, /home/pass/pass-fallback.webp 900w"
+      sizes="(max-width: 767px) 40vw, 30vw"
+      alt=""
+      width="900"
+      height="1600"
+      decoding="async"
+      draggable="false"
+      onerror="this.hidden=true"
+    />
+  </div>
+  <button
+    type="button"
+    class="hp-turn"
+    data-pass-turn
+    aria-pressed="false"
+    hidden
+  >
+    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.2"
+        stroke-linecap="round"
+        stroke-linejoin="round"></path>
+    </svg>
+    <span class="hp-hint-fine">Click the pass to turn it</span>
+    <span class="hp-hint-touch">Tap the pass to turn it</span>
+  </button>
+</div>
+
+<style>
+  /* DESIGN.md HOME-1 */
+  .hp-wrap {
+    position: absolute;
+    inset: 0;
+    container-type: size;
+  }
+
+  /* The 9 : 16 frame of the still, --hp-scale times the column's height
+     (room below for the hint line), standing on the column's foot and
+     reaching up past its top. */
+  .hp {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    height: calc((100cqh - 2rem) * var(--hp-scale, 1));
+    aspect-ratio: 9 / 16;
+    transform: translateX(-50%);
+    touch-action: pan-y;
+    cursor: grab;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  .hp:global(.is-grabbing) {
+    cursor: grabbing;
+  }
+
+  .hp-still {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    transform-origin: 50% 0;
+  }
+
+  /* The canvas is wider than the frame so a swing is never cut. */
+  .hp :global(.hp-canvas) {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    display: block;
+    opacity: 0;
+    transform: translateX(-50%);
+    pointer-events: none;
+    transition: opacity var(--duration-reveal) var(--ease-emphasized);
+  }
+
+  .hp:global(.is-3d) :global(.hp-canvas) {
+    opacity: 1;
+  }
+
+  .hp:global(.is-3d) .hp-still {
+    opacity: 0;
+    transition: opacity var(--duration-reveal) var(--ease-emphasized);
+  }
+
+  /* Before the entrance the pass waits unseen (the rule lives in
+     home-theme.css: a scoped :not() with a global class is dropped). */
+
+  /* The still's own entrance (only while the 3D pass is not ready): it
+     drops from above and settles in a few calm swings. */
+  .hp:global(.is-swinging) .hp-still {
+    animation: hp-swing calc(var(--duration-reveal) * 5) var(--ease-emphasized)
+      both;
+  }
+
+  @keyframes hp-swing {
+    0% {
+      transform: translateY(-105%) rotate(0deg);
+    }
+
+    36% {
+      transform: translateY(0) rotate(5deg);
+    }
+
+    54% {
+      transform: translateY(0) rotate(-3deg);
+    }
+
+    70% {
+      transform: translateY(0) rotate(1.6deg);
+    }
+
+    84% {
+      transform: translateY(0) rotate(-0.7deg);
+    }
+
+    100% {
+      transform: none;
+    }
+  }
+
+  /* The hint under the card: a quiet line, a button all the same. */
+  .hp-turn {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    min-height: 1.75rem;
+    padding: 0 var(--space-2xs);
+    border: 0;
+    border-radius: var(--radius-button-small);
+    background: none;
+    color: var(--h-text-faint);
+    font: inherit;
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    transform: translateX(-50%);
+    cursor: pointer;
+    transition: color var(--duration-hover) var(--ease-snappy);
+  }
+
+  .hp-turn[hidden] {
+    display: none;
+  }
+
+  .hp-hint-touch {
+    display: none;
+  }
+
+  @media (hover: none) {
+    .hp-hint-fine {
+      display: none;
+    }
+
+    .hp-hint-touch {
+      display: inline;
+    }
+  }
+
+  @media (hover: hover) {
+    .hp-turn:hover {
+      color: var(--color-white);
+    }
+  }
+
+  .hp-turn:focus-visible {
+    outline: 2px solid var(--color-ticket-ice);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hp-still {
+      animation: none;
+    }
+
+    .hp-turn {
+      transition: none;
+    }
+  }
+</style>
