@@ -130,7 +130,7 @@ Also (pnpm only): `content:import`, `content:fixture`, `content:upload-media`, `
 | `docs.mjs` | Structural docs / AGENTS pairing / house style |
 | `design.mjs` | apps/web: DESIGN.md ↔ tokens ↔ citations ↔ baseline |
 | `cms-styles.mjs` | apps/cms admin: no inline style objects, `custom.css` stays on Payload tokens (`check:cms-styles`) |
-| `build-web.mjs` | Fixture build, failing on any content warning (part of `check:web:build`); `WARNING_TAG` must list every tag apps/web can emit, and `scripts.test.mjs` enforces that |
+| `build-web.mjs` | Fixture build, failing on any content warning and on scroll-driven animations the CSS minifier folded into an invalid `animation` shorthand (part of `check:web:build`); `WARNING_TAG` must list every tag apps/web can emit, and `scripts.test.mjs` enforces that |
 | `budgets.mjs` | Dist asset caps + share-image size/dimensions (part of `check:web:build`) |
 | `lighthouse.mjs` | Local mobile Lighthouse vs CF-shaped preview (`make lighthouse`; not in CI) |
 | `lighthouse-report.mjs` | Agent findings from LHR (CWV bands, CLS/LCP, opportunities) |

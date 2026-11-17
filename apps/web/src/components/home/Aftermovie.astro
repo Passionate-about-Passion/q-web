@@ -335,6 +335,9 @@ const lineBCaps = lineB.toUpperCase();
    */
   @media (prefers-reduced-motion: no-preference) {
     @supports (animation-timeline: view()) {
+      /* Longhands, never the animation shorthand: the minifier folds a
+         shorthand and animation-timeline into one declaration browsers
+         reject (scripts/check/build-web.mjs). */
       .am {
         height: 260lvh;
         padding-block: 0;
@@ -369,7 +372,9 @@ const lineBCaps = lineB.toUpperCase();
         clip-path: inset(
           var(--am-y) var(--am-x) var(--am-yb) round var(--am-r)
         );
-        animation: am-open linear both;
+        animation-name: am-open;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
         animation-timeline: --am-film;
         animation-range: contain 0% contain 42%;
       }
@@ -424,7 +429,9 @@ const lineBCaps = lineB.toUpperCase();
         text-shadow: 0 0.04em 0.4em
           color-mix(in srgb, var(--color-ticket-midnight) 35%, transparent);
         will-change: translate;
-        animation: am-run linear both;
+        animation-name: am-run;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
         animation-timeline: --am-film;
         animation-range: entry 55% contain 78%;
       }
@@ -477,7 +484,9 @@ const lineBCaps = lineB.toUpperCase();
       .am-eyebrow {
         translate: calc(var(--am-x) + var(--am-pad) - var(--h-gutter))
           calc(var(--am-y) - var(--h-header-height));
-        animation: am-corner-start linear both;
+        animation-name: am-corner-start;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
         animation-timeline: --am-film;
         animation-range: contain 0% contain 42%;
       }
@@ -485,7 +494,9 @@ const lineBCaps = lineB.toUpperCase();
       .am-more {
         translate: calc(-1 * (var(--am-x) + var(--am-pad) - var(--h-gutter)))
           calc(var(--am-y) - var(--h-header-height));
-        animation: am-corner-top-end linear both;
+        animation-name: am-corner-top-end;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
         animation-timeline: --am-film;
         animation-range: contain 0% contain 42%;
       }
@@ -499,7 +510,9 @@ const lineBCaps = lineB.toUpperCase();
       }
 
       .am-title {
-        animation: am-in linear both;
+        animation-name: am-in;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
         animation-timeline: --am-film;
         animation-range: contain 72% contain 86%;
       }
@@ -507,7 +520,9 @@ const lineBCaps = lineB.toUpperCase();
       /* The button comes in with the film's big line, as in the mockup
          (hidden until then, so it is not reachable while unseen). */
       .am-control {
-        animation: am-in-hidden linear both;
+        animation-name: am-in-hidden;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
         animation-timeline: --am-film;
         animation-range: contain 72% contain 86%;
       }

@@ -147,6 +147,9 @@ const {
      gate as the row and dot reveals below, not just the @supports gate. */
   @media (prefers-reduced-motion: no-preference) {
     @supports (animation-timeline: view()) {
+      /* Longhands, never the animation shorthand: the minifier folds a
+         shorthand and animation-timeline into one declaration browsers
+         reject (scripts/check/build-web.mjs). */
       .timeline[data-reveal]::after {
         content: "";
         position: absolute;
@@ -162,7 +165,9 @@ const {
           var(--color-primary) calc(100% - 4rem),
           transparent
         );
-        animation: timeline-progress linear forwards;
+        animation-name: timeline-progress;
+        animation-timing-function: linear;
+        animation-fill-mode: forwards;
         animation-timeline: view();
         animation-range: entry 25% exit 75%;
       }
@@ -185,13 +190,17 @@ const {
   @media (prefers-reduced-motion: no-preference) {
     @supports (animation-timeline: view()) {
       .timeline[data-reveal] .row {
-        animation: timeline-row-reveal linear both;
+        animation-name: timeline-row-reveal;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
         animation-timeline: view();
         animation-range: entry 0% entry 55%;
       }
 
       .timeline[data-reveal] .dot {
-        animation: timeline-dot-reveal linear both;
+        animation-name: timeline-dot-reveal;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
         animation-timeline: view();
         animation-range: entry 0% entry 45%;
       }
