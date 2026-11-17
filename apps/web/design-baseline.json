@@ -3,9 +3,6 @@
   "files": {
     "apps/web/src/components/hackathon/HackHero.astro": {
       "TYPE-2": ["font-size: 0.5rem"]
-    },
-    "apps/web/src/components/home/Hero.astro": {
-      "TYPE-2": ["font-size: 2.75rem"]
     }
   }
 }

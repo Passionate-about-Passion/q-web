@@ -1,0 +1,658 @@
+---
+// The aftermovie (DESIGN.md HOME-1), after the team's second 2027 mockup:
+// last edition's film in a rounded window that grows to the whole screen
+// while the page scrolls, two huge lines of words running across it in
+// opposite directions, then the film's name and a big line.
+//
+// The film is the site's own stream from R2 (the HLS ladder the old hero
+// used, /media/hero-hls/, video only; there is no audio track yet, so
+// there is no sound control). Until the window comes near, only the
+// poster shows; then the film loads (at most 720p on phones) and plays
+// muted in a loop while it is in view, pausing off screen and in hidden
+// tabs. The round liquid glass button pauses and resumes it (WCAG 2.2.2)
+// and starts it where autoplay is blocked or the poster stays on purpose
+// (reduced motion, data saving, a slow connection): home.client.ts. A
+// click anywhere else on the film opens the YouTube channel, as does the
+// small "More on YouTube" link at the top right.
+//
+// The stage is pure CSS (scroll-driven animations on the section's view
+// timeline, MOTION-4): the section is as long as the mockup's (260 % of
+// the window height, 160 % of it with the film held in place) and never
+// longer. Each line runs from just outside the window's right edge (the
+// lower one from outside the left) until its last letter has left on the
+// other side, so every word passes in full; the distance is the line's own
+// width plus the window's width (`100%` and `100cqw`), so fonts, resizes
+// and turning the phone need no script. With reduced motion or without
+// scroll-driven animations it is the plain rounded frame with the film's
+// name, and the running words are not drawn (MOTION-2).
+import "./home-theme.css";
+
+interface Props {
+  eyebrow: string;
+  heading: string;
+  /** The YouTube channel (Site Settings social links): the whole film
+      and the small link at the top right lead there. */
+  youtubeHref?: string;
+}
+
+const { eyebrow, heading, youtubeHref } = Astro.props;
+
+// The two running lines, as in the team's mockup. Decorative: hidden from
+// assistive technology, so nothing is read twice.
+const lineA = "Founders · Talents · Investors · Founders · Talents";
+const lineB = "Two days · One palace · Two days · One palace";
+// The lower line is drawn as a fine outline around each letter's
+// silhouette only. A text stroke would also trace the font's inner,
+// overlapping contours (a variable font keeps them, where strokes cross
+// in A, W or Y); here a stroke twice as wide is masked by the filled
+// letters, so only its outer half shows and no inner edge is left. An
+// invisible copy of the line gives the box its width, so the run still
+// measures the real text.
+const lineBCaps = lineB.toUpperCase();
+---
+
+<section class="h-section am" id="aftermovie" aria-labelledby="home-film-title">
+  <div class="h-shell am-shell" data-h-reveal>
+    <div class="am-frame" data-film>
+      <video
+        class="am-video"
+        muted
+        loop
+        playsinline
+        preload="none"
+        poster="/media/hero-poster.jpg"
+        width="1920"
+        height="1080"
+        aria-hidden="true"
+        data-film-video></video>
+      <span class="am-shade" aria-hidden="true"></span>
+      <div class="am-words" aria-hidden="true">
+        <span class="am-line am-line-a">{lineA}</span>
+        <span class="am-line am-line-b">
+          <span class="am-twin">{lineB}</span>
+          <svg class="am-hollow" focusable="false">
+            <mask
+              id="am-hollow-mask"
+              maskUnits="userSpaceOnUse"
+              x="-5%"
+              y="-50%"
+              width="110%"
+              height="200%"
+            >
+              <rect
+                class="am-hollow-keep"
+                x="-5%"
+                y="-50%"
+                width="110%"
+                height="200%"></rect>
+              <text class="am-hollow-cut" x="0" y="0.8em">{lineBCaps}</text>
+            </mask>
+            <text
+              class="am-hollow-text"
+              x="0"
+              y="0.8em"
+              mask="url(#am-hollow-mask)">{lineBCaps}</text
+            >
+          </svg>
+        </span>
+      </div>
+      {
+        youtubeHref && (
+          <a
+            class="am-cover"
+            href={youtubeHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            tabindex="-1"
+            aria-hidden="true"
+          />
+        )
+      }
+      <div class="am-top">
+        <p class="h-eyebrow am-eyebrow" data-lp="aftermovie.eyebrow">
+          {eyebrow}
+        </p>
+        {
+          youtubeHref && (
+            <a
+              class="h-eyebrow am-more"
+              href={youtubeHref}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span class="am-more-lead">More on </span>YouTube{" "}
+              <span aria-hidden="true">↗</span>
+              <span class="u-visually-hidden"> (opens in a new tab)</span>
+            </a>
+          )
+        }
+      </div>
+      <div class="am-bottom">
+        <h2 class="am-title" id="home-film-title" data-lp="aftermovie.heading">
+          {heading}
+        </h2>
+        <button
+          type="button"
+          class="h-glass-btn am-control"
+          aria-label="Pause the film"
+          data-state="playing"
+          data-film-toggle
+          data-glass-press
+          hidden
+        >
+          <svg
+            class="am-icon is-pause"
+            width="30"
+            height="30"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="M8 5v14M16 5v14"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="3"
+              stroke-linecap="round"></path>
+          </svg>
+          <svg
+            class="am-icon is-play"
+            width="30"
+            height="30"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path d="M8 5.5v13l11-6.5z" fill="currentColor"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* DESIGN.md HOME-1 */
+  .am-frame {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: clamp(26rem, 52vw, 40rem);
+    padding: clamp(var(--space-md), 4vw, 3.5rem);
+    overflow: hidden;
+    border-radius: var(--radius-ticket-card);
+    background:
+      radial-gradient(
+        circle at 20% 110%,
+        color-mix(in srgb, var(--color-ticket-ice) 60%, transparent),
+        transparent 45%
+      ),
+      linear-gradient(
+        135deg,
+        var(--color-ticket-sky),
+        var(--color-navy) 55%,
+        var(--color-ticket-midnight)
+      );
+    box-shadow: inset 0 0 0 1px
+      color-mix(in srgb, var(--color-white) 14%, transparent);
+  }
+
+  .am-video {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* A navy shade, deepest behind the words, so they read on any frame. */
+  .am-shade {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      linear-gradient(
+        200deg,
+        transparent 30%,
+        color-mix(in srgb, var(--color-ticket-midnight) 78%, transparent) 92%
+      ),
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--color-ticket-midnight) 45%, transparent),
+        transparent 30%
+      );
+  }
+
+  /* The running words exist only on the stage below. */
+  .am-words {
+    display: none;
+  }
+
+  /* The whole film leads to YouTube: one link under the words, for the
+     pointer (the small "More on YouTube" link is the one for keyboards
+     and screen readers). Words and titles let clicks through to it. */
+  .am-cover {
+    position: absolute;
+    inset: 0;
+    cursor: pointer;
+  }
+
+  /* Positioned, so they sit above the cover link (only their link and
+     button take clicks). */
+  .am-top {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-2xs) var(--space-md);
+    pointer-events: none;
+  }
+
+  .am-more {
+    position: relative;
+    color: var(--color-white);
+    text-decoration: none;
+    pointer-events: auto;
+    transition: color var(--duration-hover) var(--ease-snappy);
+  }
+
+  @media (hover: hover) {
+    .am-more:hover {
+      color: var(--color-ticket-ice);
+    }
+  }
+
+  /* Narrow phones: the short "YouTube" keeps the name and the link
+     apart on the small window. */
+  @media (max-width: 30rem) {
+    .am-more-lead {
+      display: none;
+    }
+  }
+
+  .am-more:focus-visible {
+    border-radius: var(--radius-button-small);
+    outline: 2px solid var(--color-ticket-ice);
+    outline-offset: 4px;
+  }
+
+  .am-bottom {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-lg);
+    pointer-events: none;
+  }
+
+  .am-title {
+    max-width: 9ch;
+    margin: 0;
+    font-size: clamp(3.25rem, 8vw, 8.5rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.045em;
+    line-height: 0.95;
+    text-wrap: balance;
+  }
+
+  /* The play and pause button: the page's round clear glass
+     (home-theme.css .h-glass-btn), no glow. */
+  .am-control {
+    width: clamp(4rem, 7vw, 5.5rem);
+    pointer-events: auto;
+  }
+
+  .am-control[hidden] {
+    display: none;
+  }
+
+  /* The icon shows what a press does: pause while it plays, play while
+     it stands. */
+  .am-control[data-state="playing"] .am-icon.is-play,
+  .am-control[data-state="paused"] .am-icon.is-pause {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .am-more {
+      transition: none;
+    }
+  }
+
+  /*
+   * The stage. Progress comes from the section's view timeline:
+   *   entry       the section's top climbs from the window's foot to its head
+   *   contain     the film is held in place (160 % of the window height)
+   * The window opens over the first 42 % of the hold, eased through four
+   * steps (a smoothstep), the lines run from late in the entry to 78 % of
+   * the hold, and the film's name comes in once the last word has left.
+   * The window's insets: 15 % of the width and 17 % of the visible height
+   * on wide screens, the page gutter and 24 % on narrow ones; the bottom
+   * inset adds the part of the screen a phone's browser bar may cover
+   * (100lvh - 100svh), so the window and its button always sit in view.
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .am {
+        height: 260lvh;
+        padding-block: 0;
+        view-timeline: --am-film block;
+        /* Measured against the whole window, not the header-aware scroll
+           padding, so the hold starts exactly when the film sticks. */
+        view-timeline-inset: 0;
+      }
+
+      .am-shell {
+        position: sticky;
+        top: 0;
+        width: 100%;
+        height: 100lvh;
+        container-type: inline-size;
+        --am-x: 15cqw;
+        --am-y: 17svh;
+        --am-pad: clamp(1.25rem, 3vw, 2.5rem);
+        --am-yb: calc(var(--am-y) + 100lvh - 100svh);
+        --am-r: var(--radius-ticket-card);
+      }
+
+      .am-frame {
+        position: absolute;
+        inset: 0;
+        display: block;
+        min-height: 0;
+        padding: 0;
+        border-radius: 0;
+        background: var(--color-ticket-midnight);
+        box-shadow: none;
+        clip-path: inset(
+          var(--am-y) var(--am-x) var(--am-yb) round var(--am-r)
+        );
+        animation: am-open linear both;
+        animation-timeline: --am-film;
+        animation-range: contain 0% contain 42%;
+      }
+
+      /* At full size the film's foot melts into the ground (an S-curve
+         over its lowest third), so it leaves without a cut or a glow. */
+      .am-shade {
+        background:
+          linear-gradient(
+            180deg,
+            transparent 64%,
+            color-mix(in srgb, var(--h-ground) 14%, transparent) 72%,
+            color-mix(in srgb, var(--h-ground) 46%, transparent) 81%,
+            color-mix(in srgb, var(--h-ground) 82%, transparent) 90%,
+            var(--h-ground) 98%
+          ),
+          linear-gradient(
+            200deg,
+            transparent 34%,
+            color-mix(in srgb, var(--color-ticket-midnight) 72%, transparent)
+              78%
+          ),
+          linear-gradient(
+            180deg,
+            color-mix(in srgb, var(--color-ticket-midnight) 55%, transparent),
+            transparent 28%
+          );
+      }
+
+      .am-words {
+        position: absolute;
+        inset: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 0.06em;
+        height: 100svh;
+        color: var(--color-white);
+        font-size: clamp(4.25rem, min(12cqw, 19svh), 13rem);
+        font-weight: var(--font-weight-extrabold);
+        letter-spacing: -0.05em;
+        line-height: 0.88;
+        text-transform: uppercase;
+        white-space: nowrap;
+        pointer-events: none;
+      }
+
+      .am-line {
+        position: relative;
+        display: block;
+        width: max-content;
+        text-shadow: 0 0.04em 0.4em
+          color-mix(in srgb, var(--color-ticket-midnight) 35%, transparent);
+        will-change: translate;
+        animation: am-run linear both;
+        animation-timeline: --am-film;
+        animation-range: entry 55% contain 78%;
+      }
+
+      .am-line-b {
+        text-shadow: none;
+        animation-name: am-run-back;
+      }
+
+      .am-twin {
+        visibility: hidden;
+      }
+
+      .am-hollow {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+      }
+
+      .am-hollow-keep {
+        fill: var(--color-white);
+      }
+
+      .am-hollow-cut {
+        fill: var(--color-black);
+      }
+
+      /* 4px wide, half of it under the letters: a 2px outline outside. */
+      .am-hollow-text {
+        fill: none;
+        stroke: var(--color-ticket-ice);
+        stroke-width: 4px;
+        stroke-linejoin: round;
+      }
+
+      /* The name sits under the header at the top left; on the card it
+         follows the window's corner. */
+      .am-top {
+        position: absolute;
+        top: calc(var(--h-header-height) + var(--am-pad));
+        left: var(--h-gutter);
+        right: var(--h-gutter);
+        flex-wrap: nowrap;
+      }
+
+      /* The film's name and the YouTube link each follow their corner of
+         the window while it opens. */
+      .am-eyebrow {
+        translate: calc(var(--am-x) + var(--am-pad) - var(--h-gutter))
+          calc(var(--am-y) - var(--h-header-height));
+        animation: am-corner-start linear both;
+        animation-timeline: --am-film;
+        animation-range: contain 0% contain 42%;
+      }
+
+      .am-more {
+        translate: calc(-1 * (var(--am-x) + var(--am-pad) - var(--h-gutter)))
+          calc(var(--am-y) - var(--h-header-height));
+        animation: am-corner-top-end linear both;
+        animation-timeline: --am-film;
+        animation-range: contain 0% contain 42%;
+      }
+
+      .am-bottom {
+        position: absolute;
+        right: var(--h-gutter);
+        bottom: calc(100lvh - 100svh + var(--am-pad));
+        left: var(--h-gutter);
+        flex-wrap: nowrap;
+      }
+
+      .am-title {
+        animation: am-in linear both;
+        animation-timeline: --am-film;
+        animation-range: contain 72% contain 86%;
+      }
+
+      /* The button comes in with the film's big line, as in the mockup
+         (hidden until then, so it is not reachable while unseen). */
+      .am-control {
+        animation: am-in-hidden linear both;
+        animation-timeline: --am-film;
+        animation-range: contain 72% contain 86%;
+      }
+    }
+  }
+
+  @media (max-width: 60rem) {
+    .am-shell {
+      --am-x: var(--h-gutter);
+      --am-y: 24svh;
+    }
+  }
+
+  /* Smoothstep in four steps: 0, .156, .5, .844, 1. */
+  @keyframes am-open {
+    0% {
+      clip-path: inset(var(--am-y) var(--am-x) var(--am-yb) round var(--am-r));
+    }
+
+    25% {
+      clip-path: inset(
+        calc(var(--am-y) * 0.844) calc(var(--am-x) * 0.844)
+          calc(var(--am-yb) * 0.844) round calc(var(--am-r) * 0.844)
+      );
+    }
+
+    50% {
+      clip-path: inset(
+        calc(var(--am-y) * 0.5) calc(var(--am-x) * 0.5) calc(var(--am-yb) * 0.5)
+          round calc(var(--am-r) * 0.5)
+      );
+    }
+
+    75% {
+      clip-path: inset(
+        calc(var(--am-y) * 0.156) calc(var(--am-x) * 0.156)
+          calc(var(--am-yb) * 0.156) round calc(var(--am-r) * 0.156)
+      );
+    }
+
+    100% {
+      clip-path: inset(0 0 0 round 0);
+    }
+  }
+
+  @keyframes am-corner-start {
+    0% {
+      translate: calc(var(--am-x) + var(--am-pad) - var(--h-gutter))
+        calc(var(--am-y) - var(--h-header-height));
+    }
+
+    25% {
+      translate: calc((var(--am-x) + var(--am-pad) - var(--h-gutter)) * 0.844)
+        calc((var(--am-y) - var(--h-header-height)) * 0.844);
+    }
+
+    50% {
+      translate: calc((var(--am-x) + var(--am-pad) - var(--h-gutter)) * 0.5)
+        calc((var(--am-y) - var(--h-header-height)) * 0.5);
+    }
+
+    75% {
+      translate: calc((var(--am-x) + var(--am-pad) - var(--h-gutter)) * 0.156)
+        calc((var(--am-y) - var(--h-header-height)) * 0.156);
+    }
+
+    100% {
+      translate: 0 0;
+    }
+  }
+
+  @keyframes am-corner-top-end {
+    0% {
+      translate: calc(-1 * (var(--am-x) + var(--am-pad) - var(--h-gutter)))
+        calc(var(--am-y) - var(--h-header-height));
+    }
+
+    25% {
+      translate: calc(-0.844 * (var(--am-x) + var(--am-pad) - var(--h-gutter)))
+        calc((var(--am-y) - var(--h-header-height)) * 0.844);
+    }
+
+    50% {
+      translate: calc(-0.5 * (var(--am-x) + var(--am-pad) - var(--h-gutter)))
+        calc((var(--am-y) - var(--h-header-height)) * 0.5);
+    }
+
+    75% {
+      translate: calc(-0.156 * (var(--am-x) + var(--am-pad) - var(--h-gutter)))
+        calc((var(--am-y) - var(--h-header-height)) * 0.156);
+    }
+
+    100% {
+      translate: 0 0;
+    }
+  }
+
+  /* From just outside the right edge until the last letter has left on
+     the left; the lower line the other way round. Both start and end
+     half a letter further out: the soft shadow under the white line, the
+     outline of the lower one and the tight letter spacing reach a little
+     past the text's box, and nothing of them may stay at an edge. */
+  @keyframes am-run {
+    from {
+      translate: calc(100cqw + 0.5em) 0;
+    }
+
+    to {
+      translate: calc(-100% - 0.5em) 0;
+    }
+  }
+
+  @keyframes am-run-back {
+    from {
+      translate: calc(-100% - 0.5em) 0;
+    }
+
+    to {
+      translate: calc(100cqw + 0.5em) 0;
+    }
+  }
+
+  @keyframes am-in-hidden {
+    from {
+      opacity: 0;
+      visibility: hidden;
+      translate: 0 1rem;
+    }
+
+    to {
+      opacity: 1;
+      visibility: visible;
+      translate: 0 0;
+    }
+  }
+
+  @keyframes am-in {
+    from {
+      opacity: 0;
+      translate: 0 1rem;
+    }
+
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+</style>

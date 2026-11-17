@@ -1,35 +1,28 @@
 ---
-// Partner rows on the home page (DESIGN.md HOME-1): one logo strip per
-// group (Startups, Corporates, Network), running from one edge of the
-// window to the other, straight and on no surface of its own. Only the
-// row's name sits on glass: a milky pane at the left, opaque behind the
-// words and clearing only to their right, so the logos pass under it and
-// dissolve into it. Every logo
-// sits on a small slab of glass with a visible lower edge.
+// Partners (DESIGN.md HOME-1, after the 2027 concept mockup): the
+// heading names the edition the logos belong to ("Partners of Q-Summit
+// 2026", from the content, so last year's partners are never shown as
+// this year's), a link to all partners, then one row per group (Startups,
+// Corporates, Network): its number, name and line at the left, a running
+// strip of logos at the right.
 //
-// Built to stay smooth:
-//   - a strip is two identical groups moving by translate3d(-50%), on its
-//     own compositor layer (will-change), so a frame only moves a texture
-//     and never repaints or lays out;
-//   - nothing filters or masks the moving strips: the milky pane is a
-//     plain gradient fill, not a backdrop blur, so it costs nothing per
-//     frame;
-//   - logos load eagerly, and home.client.ts swaps every logo for a copy
-//     scaled to its drawn size once the page is idle: the partner files
-//     are several hundred pixels wide, and decoding one each time it
-//     slid into view is what made the strips stutter;
-//   - a group repeats its logos only until it covers a wide window;
-//   - motion stops on hover and keyboard focus, with the Pause button and
-//     while the section is off screen (home.client.ts).
-// The repeats are decorative (aria-hidden, no link), so keyboard and
-// screen reader users meet every partner once. Reduced motion shows the
-// strips as plain rows that scroll sideways by hand.
+// Each logo sits on a carrier in the header's dark liquid glass: rounded,
+// a fine lit rim, restrained depth, and inside it a light plate, because
+// most partner logos are drawn dark for light ground. The logos stay
+// exactly as their owners made them (never recolored, cropped or rounded);
+// every logo gets the same optical area, so a wide wordmark and a square
+// mark carry the same weight.
 //
-// Logos keep their proportions and get the same optical size: every logo
-// is scaled to the same area inside a fixed slab, so a wide wordmark and a
-// square mark carry the same weight.
+// Smooth by construction: a strip is two identical groups moving by
+// translate3d(-50%) on its own layer; nothing filters it, and its soft ends
+// are one static mask on the row, so the logos fade in from the row's name
+// and out towards the window's edge; logos are swapped
+// for copies at their drawn size once the page is idle (home.client.ts);
+// the strip stops on hover and keyboard focus, with the Pause button and
+// off screen. The repeats are decorative, so each partner is met once by
+// keyboard and screen reader. Reduced motion shows plain rows that scroll
+// sideways by hand.
 import "./home-theme.css";
-import IconArrowRight from "../icons/IconArrowRight.astro";
 
 export interface PartnerLogo {
   name: string;
@@ -46,26 +39,22 @@ export interface PartnerLogoGroup {
 }
 
 interface Props {
-  eyebrow?: string;
   heading?: string;
   groups: PartnerLogoGroup[];
   cta?: { label: string; href: string };
 }
 
-const { eyebrow, heading, groups, cta } = Astro.props;
+const { heading, groups, cta } = Astro.props;
 
-// Mirrors the CSS below (rem = 16px): slab 10rem wide, 0.75rem gap.
-const SLAB_PX = 160;
+// Mirrors the CSS below (rem = 16px): carrier 11rem wide, 0.75rem gap.
+const CARRIER_PX = 176;
 const GAP_PX = 12;
-// One group must cover a wide window (the strips run edge to edge).
-const GROUP_MIN_PX = 2600;
-// Every strip moves this many pixels per second.
-const SPEED_PX_S = 30;
+const GROUP_MIN_PX = 2400;
+const SPEED_PX_S = 28;
 
-// Same optical size for every logo: equal area, capped to the slab.
-const LOGO_AREA = 2600;
-const LOGO_MAX_W = 118;
-const LOGO_MAX_H = 46;
+const LOGO_AREA = 2500;
+const LOGO_MAX_W = 116;
+const LOGO_MAX_H = 44;
 
 function logoBox(logo: PartnerLogo): { width: number; height: number } {
   const ratio = logo.width / logo.height;
@@ -78,7 +67,7 @@ function logoBox(logo: PartnerLogo): { width: number; height: number } {
 }
 
 const rows = groups.map((group, index) => {
-  const setWidth = group.logos.length * (SLAB_PX + GAP_PX);
+  const setWidth = group.logos.length * (CARRIER_PX + GAP_PX);
   const repeats =
     setWidth > 0 ? Math.max(1, Math.ceil(GROUP_MIN_PX / setWidth)) : 1;
   return {
@@ -89,131 +78,153 @@ const rows = groups.map((group, index) => {
     logos: group.logos.map((logo) => ({ ...logo, box: logoBox(logo) })),
   };
 });
+
+// "Partners of Q-Summit 2026": the edition in ice on its own line.
+const split = heading ? /^(.*\bof)\s+(.+)$/i.exec(heading) : null;
 ---
 
 {
   rows.length > 0 && (
     <section
-      class="h-section h-partners"
+      class="h-section pl"
+      id="partners"
       aria-labelledby={heading ? "home-partners-title" : undefined}
       aria-label={heading ? undefined : "Partners"}
       data-marquee
     >
       <div class="h-shell">
-        <div class="h-head">
-          <div>
-            {eyebrow && (
-              <p class="h-eyebrow" data-lp="partnerBand.eyebrow">
-                {eyebrow}
-              </p>
-            )}
-            {heading && (
-              <h2
-                id="home-partners-title"
-                class="h-title"
-                data-lp="partnerBand.heading"
-                data-h-reveal
+        <div class="pl-head">
+          {heading && (
+            <h2
+              id="home-partners-title"
+              class="h-title pl-title"
+              data-lp="partnerBand.heading"
+              data-h-reveal
+            >
+              {split ? (
+                <>
+                  {split[1]}
+                  <br />
+                  <span class="h-accent">{split[2]}</span>
+                </>
+              ) : (
+                heading
+              )}
+            </h2>
+          )}
+          <div class="pl-actions" data-h-reveal>
+            <button
+              type="button"
+              class="pl-pause"
+              aria-pressed="false"
+              data-marquee-toggle
+            >
+              <span class="pl-pause-icon" aria-hidden="true" />
+              <span
+                data-marquee-label
+                data-pause="Pause logos"
+                data-play="Play logos"
               >
-                {heading}
-              </h2>
+                Pause logos
+              </span>
+            </button>
+            {cta && (
+              <a
+                class="h-btn"
+                href={cta.href}
+                data-lp="partnerBand.cta"
+                data-lp-href="partnerBand.cta.href"
+              >
+                <span data-lp-label>{cta.label}</span>
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M4 12h15M13 6l6 6-6 6"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.4"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </a>
             )}
           </div>
-          {cta && (
-            <a
-              class="h-more"
-              href={cta.href}
-              data-lp="partnerBand.cta"
-              data-lp-href="partnerBand.cta.href"
-            >
-              <span data-lp-label>{cta.label}</span>
-              <IconArrowRight />
-            </a>
-          )}
         </div>
-      </div>
 
-      <div class="h-partner-band">
-        {rows.map((row) => (
-          <div class="h-partner-row">
-            <div class="h-partner-label">
-              <h3>{row.label}</h3>
-              {row.description && <p>{row.description}</p>}
-            </div>
-            <div class="h-partner-viewport">
-              <div
-                class:list={["h-partner-track", { "is-reverse": row.reverse }]}
-                style={`--marquee-seconds: ${row.seconds}s`}
-              >
-                {[0, 1].map((half) => (
-                  <div class="h-partner-group" aria-hidden={half === 1}>
-                    {Array.from({ length: row.repeats }).map((_, repeat) => {
-                      const real = half === 0 && repeat === 0;
-                      return (
-                        <ul
-                          class="h-partner-logos"
-                          aria-label={
-                            real ? `${row.label} partners` : undefined
-                          }
-                          aria-hidden={!real && half === 0 ? "true" : undefined}
-                        >
-                          {row.logos.map((logo) => {
-                            const image = (
-                              <img
-                                src={logo.src}
-                                alt=""
-                                width={logo.box.width}
-                                height={logo.box.height}
-                                style={`--w: ${logo.box.width}; --h: ${logo.box.height}`}
-                                decoding="async"
-                              />
-                            );
-                            return (
-                              <li>
-                                {real ? (
-                                  <a
-                                    class="h-partner-slab"
-                                    href={logo.href}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    aria-label={`${logo.name} (opens in a new tab)`}
-                                  >
-                                    {image}
-                                  </a>
-                                ) : (
-                                  <span class="h-partner-slab">{image}</span>
-                                )}
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      );
-                    })}
-                  </div>
-                ))}
+        <div class="pl-rows">
+          {rows.map((row, r) => (
+            <div class="pl-row" data-h-reveal style={`--h-i: ${r}`}>
+              <div class="pl-label">
+                <h3>{row.label}</h3>
+                {row.description && <p>{row.description}</p>}
+              </div>
+              <div class="pl-viewport">
+                <div
+                  class:list={["pl-track", { "is-reverse": row.reverse }]}
+                  style={`--marquee-seconds: ${row.seconds}s`}
+                >
+                  {[0, 1].map((half) => (
+                    <div
+                      class="pl-group"
+                      aria-hidden={half === 1 ? "true" : undefined}
+                    >
+                      {Array.from({ length: row.repeats }).map((_, repeat) => {
+                        const real = half === 0 && repeat === 0;
+                        return (
+                          <ul
+                            class="pl-logos"
+                            aria-label={
+                              real ? `${row.label} partners` : undefined
+                            }
+                            aria-hidden={
+                              !real && half === 0 ? "true" : undefined
+                            }
+                          >
+                            {row.logos.map((logo) => {
+                              const image = (
+                                <img
+                                  src={logo.src}
+                                  alt=""
+                                  width={logo.box.width}
+                                  height={logo.box.height}
+                                  decoding="async"
+                                />
+                              );
+                              return (
+                                <li>
+                                  {real ? (
+                                    <a
+                                      class="pl-carrier"
+                                      href={logo.href}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      aria-label={`${logo.name} (opens in a new tab)`}
+                                    >
+                                      <span class="pl-plate">{image}</span>
+                                    </a>
+                                  ) : (
+                                    <span class="pl-carrier" tabindex="-1">
+                                      <span class="pl-plate">{image}</span>
+                                    </span>
+                                  )}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-
-      <div class="h-shell">
-        <button
-          type="button"
-          class="h-marquee-toggle"
-          aria-pressed="false"
-          data-marquee-toggle
-          data-glass-press
-        >
-          <span class="glass-light" aria-hidden="true" />
-          <span class="h-marquee-icon" aria-hidden="true" />
-          <span
-            data-marquee-label
-            data-pause="Pause logos"
-            data-play="Play logos"
-          >
-            Pause logos
-          </span>
-        </button>
+          ))}
+        </div>
       </div>
     </section>
   )
@@ -221,280 +232,250 @@ const rows = groups.map((group, index) => {
 
 <style>
   /* DESIGN.md HOME-1 */
-  /* Edge to edge: the band is not inside the page width. */
-  .h-partner-band {
-    --band-gutter: max(
-      clamp(1rem, 5vw, 2.5rem),
-      (100% - var(--container-large)) / 2
-    );
-
-    display: grid;
-    /* One column no wider than the window, however long a strip is. */
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-2xs);
-  }
-
-  .h-partner-row {
-    position: relative;
-    min-width: 0;
-  }
-
-  /*
-   * The row's name on milky glass: opaque from the window's left edge to
-   * just past the name, then clearing toward the right until it is gone, so
-   * the logos seem to slide under frosted glass. A plain gradient (no
-   * backdrop blur): it lies over a moving layer and must cost nothing per
-   * frame. The name starts at the page's left edge (--band-gutter).
-   */
-  .h-partner-label {
-    position: absolute;
-    inset: 0 auto 0 0;
-    z-index: 1;
+  .pl-head {
     display: flex;
-    flex-direction: column;
-    justify-content: center;
-    width: calc(var(--band-gutter) + 20rem);
-    padding-left: var(--band-gutter);
-    /* Opaque behind the name, so no logo ever shows through the words;
-       it starts to clear only to the right of them. Its lit upper edge
-       and cool lower edge are two more gradients that fade with it, so
-       the pane needs no mask (a mask over a moving layer costs a blend
-       every frame). */
-    background:
-      linear-gradient(
-          90deg,
-          var(--color-white) calc(var(--band-gutter) + 10.5rem),
-          transparent
-        )
-        top / 100% 1px no-repeat,
-      linear-gradient(
-          90deg,
-          color-mix(in srgb, var(--color-ticket-cyan) 60%, transparent)
-            calc(var(--band-gutter) + 10.5rem),
-          transparent
-        )
-        bottom / 100% 1px no-repeat,
-      linear-gradient(
-        90deg,
-        var(--color-ticket-ground) 0%,
-        var(--color-white) calc(var(--band-gutter) + 10.5rem),
-        color-mix(in srgb, var(--color-white) 55%, transparent)
-          calc(var(--band-gutter) + 14.5rem),
-        transparent 100%
-      );
-    pointer-events: none;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-lg);
+    margin-bottom: clamp(var(--space-lg), 5vw, 3.5rem);
   }
 
-  /* The right end: the strip dissolves into the ground instead of being
-     cut by the window edge. A plain gradient again, no mask. */
-  .h-partner-row::after {
-    content: "";
-    position: absolute;
-    inset: 0 0 0 auto;
-    z-index: 1;
-    width: clamp(3rem, 9vw, 9rem);
-    background: linear-gradient(
-      270deg,
-      var(--color-ticket-ground) 0%,
-      color-mix(in srgb, var(--color-ticket-ground) 70%, transparent) 35%,
-      transparent 100%
-    );
-    pointer-events: none;
+  .pl-title {
+    font-size: clamp(2.5rem, 5.4vw, 5.25rem);
   }
 
-  .h-partner-label h3 {
-    margin: 0;
-    color: var(--color-navy);
-    font-size: var(--heading-h5-size);
-    font-weight: var(--font-weight-extrabold);
-    letter-spacing: -0.02em;
-    line-height: 1.15;
-  }
-
-  .h-partner-label p {
-    margin: var(--space-2xs) 0 0;
-    color: color-mix(in srgb, var(--color-navy) 76%, transparent);
-    font-size: var(--text-size-small);
-    line-height: 1.3;
-  }
-
-  /* Clips the strip; no mask, so a frame never has to re-blend it. */
-  .h-partner-viewport {
-    overflow: hidden;
-    contain: layout paint;
-  }
-
-  .h-partner-track {
+  .pl-actions {
     display: flex;
-    width: max-content;
-    padding-block: var(--space-2xs) var(--space-xs);
-    /* Its own layer: the loop only moves this texture. */
-    will-change: transform;
-    backface-visibility: hidden;
-  }
-
-  .h-partner-group,
-  .h-partner-logos {
-    display: flex;
-    flex: 0 0 auto;
-  }
-
-  .h-partner-logos {
+    flex-wrap: wrap;
+    align-items: center;
     gap: var(--space-xs);
-    margin: 0;
-    padding: 0 var(--space-xs) 0 0;
-    list-style: none;
   }
 
-  /* A slab of glass under each logo: a calm, light face, a lit upper
-     edge, a visible lower edge (its thickness) and a soft shadow on the
-     plane. No blur of its own: it moves. */
-  .h-partner-slab {
-    display: grid;
-    place-items: center;
-    width: 10rem;
-    height: 4.25rem;
-    border-radius: var(--radius-ticket-panel);
-    background: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--color-white) 86%, transparent),
-      color-mix(in srgb, var(--color-white) 64%, transparent)
-    );
-    box-shadow:
-      inset 0 1px 0 var(--color-white),
-      inset 0 -3px 0
-        color-mix(in srgb, var(--color-ticket-ice) 85%, transparent),
-      0 3px 0 color-mix(in srgb, var(--color-ticket-sky) 26%, transparent),
-      0 12px 14px -10px color-mix(in srgb, var(--color-navy) 50%, transparent);
-  }
-
-  /* The build-time box (equal area for every logo), scaled with the slab. */
-  .h-partner-slab img {
-    display: block;
-    width: calc(var(--w) * var(--logo-scale, 1) * 1px);
-    height: calc(var(--h) * var(--logo-scale, 1) * 1px);
-    object-fit: contain;
-  }
-
-  /* Pause control: a small pill of glass. */
-  .h-marquee-toggle {
-    position: relative;
+  .pl-pause {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-2xs);
+    gap: 0.6rem;
     min-height: 2.75rem;
-    margin-top: var(--space-sm);
     padding: 0 var(--space-sm);
     border: 0;
-    border-radius: var(--radius-ticket-pill);
-    background: color-mix(in srgb, var(--color-white) 30%, transparent);
-    box-shadow:
-      inset 0 1px 0 color-mix(in srgb, var(--color-white) 90%, transparent),
-      inset 0 0 0 1px color-mix(in srgb, var(--color-white) 55%, transparent);
-    color: var(--color-navy);
+    border-radius: var(--radius-ticket-button);
+    background: transparent;
+    color: var(--h-text-soft);
     font: inherit;
     font-size: var(--text-size-tiny);
-    font-weight: var(--font-weight-semibold);
-    letter-spacing: 0.08em;
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    transition: transform var(--duration-glass-release) var(--ease-glass-spring);
   }
 
-  .h-marquee-toggle:active,
-  .h-marquee-toggle.is-pressed {
-    transform: scale(0.96);
-    transition-duration: var(--duration-glass-press);
+  @media (hover: hover) {
+    .pl-pause:hover {
+      color: var(--color-white);
+    }
   }
 
-  /* Two bars (pause) that become a triangle (play). */
-  .h-marquee-icon {
-    width: 0.625rem;
-    height: 0.75rem;
-    border-inline: 0.2rem solid currentcolor;
+  .pl-pause:focus-visible {
+    outline: 2px solid var(--color-ticket-ice);
+    outline-offset: 2px;
   }
 
-  .h-marquee-toggle[aria-pressed="true"] .h-marquee-icon {
+  /* Pause: two bars; play: a triangle. */
+  .pl-pause-icon {
+    width: 0.7rem;
+    height: 0.8rem;
+    border-inline: 0.22rem solid currentColor;
+  }
+
+  .pl-pause[aria-pressed="true"] .pl-pause-icon {
     width: 0;
-    border-block: 0.375rem solid transparent;
-    border-left: 0.625rem solid currentcolor;
+    height: 0;
+    border-block: 0.42rem solid transparent;
+    border-left: 0.7rem solid currentColor;
     border-right: 0;
   }
 
+  .pl-row {
+    display: grid;
+    grid-template-columns: minmax(11rem, 15rem) minmax(0, 1fr);
+    align-items: center;
+    border-bottom: 1px solid;
+    border-image: var(--h-fade-x) 1;
+  }
+
+  /* Hinted lines between the groups only: the list's outer edges stay
+     open, so the section never ends on a line. */
+  .pl-row:last-child {
+    border-bottom: 0;
+  }
+
+  .pl-label {
+    display: grid;
+    gap: 0.3rem;
+    padding: var(--space-md) var(--space-md) var(--space-md) 0;
+  }
+
+  .pl-label h3 {
+    margin: 0;
+    font-size: var(--text-size-large);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.01em;
+  }
+
+  .pl-label p {
+    margin: 0;
+    color: var(--h-text-faint);
+    font-size: var(--text-size-small);
+  }
+
+  .pl-viewport {
+    position: relative;
+    overflow: hidden;
+    padding-block: var(--space-md);
+    -webkit-mask: linear-gradient(
+      90deg,
+      transparent,
+      var(--color-black) 12%,
+      var(--color-black) 80%,
+      transparent
+    );
+    mask: linear-gradient(
+      90deg,
+      transparent,
+      var(--color-black) 12%,
+      var(--color-black) 80%,
+      transparent
+    );
+  }
+
+  .pl-track {
+    display: flex;
+    width: max-content;
+    will-change: transform;
+  }
+
+  .pl-group,
+  .pl-logos {
+    display: flex;
+    gap: var(--space-xs);
+  }
+
+  .pl-group {
+    padding-right: var(--space-xs);
+  }
+
+  .pl-logos {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* The carrier: dark liquid glass, rounded, a fine lit rim. */
+  .pl-carrier {
+    display: block;
+    width: 11rem;
+    padding: 0.35rem;
+    border-radius: var(--radius-ticket-panel);
+    background: linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--color-ticket-sky) 22%, transparent),
+      color-mix(in srgb, var(--color-navy) 30%, transparent)
+    );
+    box-shadow:
+      inset 0 0 0 1px
+        color-mix(in srgb, var(--color-ticket-ice) 20%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--color-white) 34%, transparent),
+      0 14px 26px -20px var(--color-ticket-midnight);
+    transition: transform var(--duration-hover) var(--ease-snappy);
+  }
+
+  /* Pure white, the white most logo files are drawn on, so a logo with
+     its own white ground melts into the plate with no visible edge. */
+  .pl-plate {
+    display: grid;
+    place-items: center;
+    height: 4.25rem;
+    border-radius: var(--radius-ticket-button);
+    background: var(--color-white);
+  }
+
+  .pl-plate img {
+    display: block;
+    max-width: 82%;
+    height: auto;
+    object-fit: contain;
+  }
+
+  @media (hover: hover) {
+    a.pl-carrier:hover {
+      transform: translateY(-2px);
+    }
+  }
+
+  a.pl-carrier:focus-visible {
+    outline: 2px solid var(--color-ticket-ice);
+    outline-offset: 2px;
+  }
+
   @media (prefers-reduced-motion: no-preference) {
-    .h-partner-track {
-      animation: h-marquee var(--marquee-seconds) linear infinite;
+    .pl-track {
+      animation: pl-run var(--marquee-seconds) linear infinite;
     }
 
-    .h-partner-track.is-reverse {
+    .pl-track.is-reverse {
       animation-direction: reverse;
     }
 
-    /* Hover, keyboard focus, the Pause button, or off screen. */
-    .h-partner-viewport:hover .h-partner-track,
-    .h-partner-viewport:focus-within .h-partner-track,
-    .h-partners[data-paused] .h-partner-track,
-    .h-partners[data-offscreen] .h-partner-track {
+    .pl-viewport:hover .pl-track,
+    .pl-viewport:focus-within .pl-track,
+    .pl[data-paused] .pl-track,
+    .pl[data-offscreen] .pl-track {
       animation-play-state: paused;
     }
   }
 
-  @keyframes h-marquee {
+  @keyframes pl-run {
     to {
       transform: translate3d(-50%, 0, 0);
     }
   }
 
-  /* Reduced motion: no loop, one set, scrolled by hand, on a flat plane;
-     no control needed. */
   @media (prefers-reduced-motion: reduce) {
-    .h-partner-viewport {
+    .pl-viewport {
       overflow-x: auto;
-      overscroll-behavior-x: contain;
     }
 
-    .h-partner-track {
-      will-change: auto;
-    }
-
-    .h-partner-group[aria-hidden="true"],
-    .h-partner-logos[aria-hidden="true"],
-    .h-marquee-toggle {
+    .pl-group[aria-hidden="true"],
+    .pl-logos[aria-hidden="true"],
+    .pl-pause {
       display: none;
     }
 
-    .h-marquee-toggle {
+    .pl-carrier {
       transition: none;
     }
   }
 
-  /* Phones: the name stands above its strip, on the same milky glass,
-     now a short bar that clears toward the right. */
   @media (max-width: 767px) {
-    .h-partner-band {
-      gap: var(--space-xs);
+    .pl-row {
+      grid-template-columns: minmax(0, 1fr);
     }
 
-    .h-partner-label {
-      position: relative;
-      inset: auto;
-      flex-direction: row;
-      align-items: baseline;
-      justify-content: flex-start;
-      gap: var(--space-xs);
-      width: auto;
-      padding-block: var(--space-2xs);
+    .pl-label {
+      padding: var(--space-md) 0 0;
     }
 
-    .h-partner-label p {
-      margin: 0;
+    .pl-viewport {
+      margin-inline: calc(-1 * var(--h-gutter));
+      border-left: 0;
     }
 
-    .h-partner-slab {
-      --logo-scale: 0.82;
+    .pl-carrier {
+      width: 9.5rem;
+    }
 
-      width: 8.25rem;
+    .pl-plate {
       height: 3.75rem;
     }
   }

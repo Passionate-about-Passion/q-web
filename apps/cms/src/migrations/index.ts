@@ -10,6 +10,8 @@ import * as migration_20261107_215149_ticket_page_2027 from './20261107_215149_t
 import * as migration_20261108_160000_ticket_rows_checkboxes_additive from './20261108_160000_ticket_rows_checkboxes_additive';
 import * as migration_20261109_195959_ticket_phases from './20261109_195959_ticket_phases';
 import * as migration_20261111_104849_home_2027 from './20261111_104849_home_2027';
+import * as migration_20261116_221744_home_aftermovie from './20261116_221744_home_aftermovie';
+import * as migration_20261117_140507_ticket_phase_ends from './20261117_140507_ticket_phase_ends';
 
 export const migrations = [
   {
@@ -70,6 +72,16 @@ export const migrations = [
   {
     up: migration_20261111_104849_home_2027.up,
     down: migration_20261111_104849_home_2027.down,
-    name: '20261111_104849_home_2027'
+    name: '20261111_104849_home_2027',
+  },
+  {
+    up: migration_20261116_221744_home_aftermovie.up,
+    down: migration_20261116_221744_home_aftermovie.down,
+    name: '20261116_221744_home_aftermovie',
+  },
+  {
+    up: migration_20261117_140507_ticket_phase_ends.up,
+    down: migration_20261117_140507_ticket_phase_ends.down,
+    name: '20261117_140507_ticket_phase_ends'
   },
 ];

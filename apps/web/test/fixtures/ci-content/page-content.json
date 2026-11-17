@@ -166,6 +166,10 @@
       "linkedinLabel": "Fixture channel one",
       "instagramLabel": "Fixture channel two",
       "posts": []
+    },
+    "aftermovie": {
+      "eyebrow": "Fixture aftermovie",
+      "heading": "Fixture aftermovie heading"
     }
   },
   "whyq": {

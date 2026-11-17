@@ -1,237 +1,666 @@
 /*
- * Shared chrome of the 2027 home page (DESIGN.md HOME-1): page width,
- * section rhythm, headers, the glass material and the scroll reveal.
- * The home page has its own visual system: it shares the brand (colors,
- * type, the Q mark) and proven techniques with the ticket page, not its
- * surfaces. Only components under home/ import this file. Deviates from
- * LAYOUT-1, LAYOUT-3, COMP-1, TYPE-1 and DEPTH-1 as HOME-1 allows.
+ * The 2027 homepage's own system (DESIGN.md HOME-1), after the team's
+ * "Q-Summit 2027 · Website concept" mockup: a dark, high-contrast page in
+ * navy and the Q blues with ice accents, large heavy type, fine lines and
+ * sparing liquid glass. Every homepage component imports this file.
+ *
+ * Ground: the colors of the team's Office Visits recap post. Its visible
+ * dark blue (ticket-deep) is the brightest zone, it falls off through
+ * home-ground into ticket-midnight; nothing is black or colorless, so the
+ * navy still reads on a phone screen.
  */
 
-.h-shell {
+.h-home {
   --h-gutter: clamp(1rem, 5vw, 2.5rem);
+  --h-line: color-mix(in srgb, var(--color-white) 14%, transparent);
+  --h-line-strong: color-mix(in srgb, var(--color-white) 24%, transparent);
+  --h-text-soft: color-mix(in srgb, var(--color-white) 78%, transparent);
+  --h-text-faint: color-mix(in srgb, var(--color-white) 62%, transparent);
+  --h-header-height: 4.5rem;
+  /* Hinted dividers: lines that fade out before they reach an edge. */
+  --h-fade-x: linear-gradient(
+    90deg,
+    transparent,
+    var(--h-line) 18%,
+    var(--h-line) 82%,
+    transparent
+  );
+  --h-fade-y: linear-gradient(
+    180deg,
+    transparent,
+    var(--h-line-strong) 24%,
+    var(--h-line-strong) 76%,
+    transparent
+  );
+  --h-ground: color-mix(
+    in srgb,
+    var(--color-ticket-midnight) 64%,
+    var(--color-black)
+  );
 
+  position: relative;
+  isolation: isolate;
+  color: var(--color-white);
+  /* A very deep navy, never black; lighter zones come only where a
+     section needs them (the pools below and the light behind the pass). */
+  background: var(--h-ground);
+  overflow-x: clip;
+}
+
+@media (max-width: 767px) {
+  .h-home {
+    --h-header-height: 4rem;
+  }
+}
+
+/* Headings take the page color (global.css sets navy for the light
+   pages). */
+.h-home :where(h1, h2, h3, h4) {
+  color: inherit;
+}
+
+/* The page under the homepage keeps the same navy, so overscroll and the
+   gaps around the fixed header never flash white. */
+body:has(main .h-home) {
+  background: color-mix(
+    in srgb,
+    var(--color-ticket-midnight) 64%,
+    var(--color-black)
+  );
+}
+
+/* One page width with an even gutter (LAYOUT-1 deviation, HOME-1). */
+.h-shell {
   width: min(100% - 2 * var(--h-gutter), var(--container-large));
   margin-inline: auto;
 }
 
 .h-section {
   position: relative;
-  padding-block: clamp(var(--space-xl), 9vw, 6.5rem);
+  padding-block: clamp(4.5rem, 10vw, 8.5rem);
 }
 
-.h-section.is-tight {
-  padding-block: clamp(var(--space-lg), 5vw, var(--space-xl));
-}
-
-/* In-page jumps land below the floating header. */
-.h-anchor {
-  scroll-margin-top: 5.5rem;
-}
-
-/* Section header: eyebrow, title, optional intro; a link may sit at its
-   right on wide screens (View all partners, See all speakers). */
-.h-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--space-sm) var(--space-lg);
-  margin-bottom: clamp(var(--space-md), 4vw, var(--space-xl));
-}
-
-.h-head.is-center {
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
+/* Sections below the first screen are laid out and painted only as they
+   come near the window (the page is long and most of it starts far away);
+   the reserved height keeps the scrollbar honest. */
+.h-home .h-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 56rem;
 }
 
 .h-eyebrow {
-  margin: 0 0 var(--space-2xs);
-  color: var(--color-ticket-sky);
-  font-size: var(--text-size-small);
+  margin: 0;
+  color: var(--color-ticket-ice);
+  font-size: var(--text-size-tiny);
   font-weight: var(--font-weight-extrabold);
-  letter-spacing: 0.16em;
-  line-height: 1.2;
+  letter-spacing: 0.18em;
+  line-height: 1.3;
   text-transform: uppercase;
-}
-
-@media (min-width: 768px) {
-  .h-eyebrow {
-    font-size: var(--text-size-regular);
-  }
 }
 
 .h-title {
   margin: 0;
-  color: var(--color-navy);
-  font-size: clamp(2rem, 4.6vw, 3.25rem);
+  color: var(--color-white);
+  font-size: clamp(2.6rem, 6.4vw, 6.25rem);
   font-weight: var(--font-weight-extrabold);
-  letter-spacing: -0.035em;
-  line-height: 1.05;
+  letter-spacing: -0.045em;
+  line-height: 0.94;
   text-wrap: balance;
 }
 
+.h-accent {
+  color: var(--color-ticket-ice);
+}
+
 .h-intro {
-  max-width: 36rem;
-  margin: var(--space-xs) 0 0;
-  color: color-mix(in srgb, var(--color-navy) 76%, transparent);
-  font-size: var(--text-size-medium);
-  line-height: 1.55;
+  max-width: 34rem;
+  margin: 0;
+  color: var(--h-text-soft);
+  font-size: clamp(1rem, 1.3vw, 1.125rem);
+  line-height: 1.6;
+  text-wrap: pretty;
 }
 
-.h-head.is-center .h-intro {
-  margin-inline: auto;
+.h-nobreak {
+  white-space: nowrap;
 }
 
-/* Quiet arrow link beside a section header. */
-.h-more {
+/*
+ * Buttons: clear liquid glass, the same material as the round controls
+ * over the film and the speaker rail (.h-glass-btn below), in the shape
+ * of the ticket page's buy button: a faint white body that blurs what
+ * lies behind it, a one-pixel specular rim (brightest at the upper left),
+ * a soft drop shadow and a white uppercase label with a trailing arrow.
+ * Hover lightens the glass and nudges the arrow, a press gives a little
+ * and springs back (MOTION-6). No glow. The same everywhere on the
+ * homepage, the header's Tickets too.
+ */
+.h-btn {
+  position: relative;
+  isolation: isolate;
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  min-height: 2.75rem;
-  color: var(--color-navy);
+  justify-content: center;
+  gap: var(--space-xs);
+  min-height: 3.5rem;
+  padding: 0 1.75rem;
+  border: 0;
+  border-radius: var(--radius-ticket-button);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-white) 18%, transparent),
+    color-mix(in srgb, var(--color-white) 6%, transparent)
+  );
+  box-shadow:
+    inset 0 1px 1px color-mix(in srgb, var(--color-white) 75%, transparent),
+    inset 0 -1px 1px color-mix(in srgb, var(--color-white) 20%, transparent),
+    0 12px 26px -16px var(--color-ticket-midnight);
+  color: var(--color-white);
+  font: inherit;
   font-size: var(--text-size-small);
-  font-weight: var(--font-weight-extrabold);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.09em;
+  line-height: 1;
   text-decoration: none;
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--color-black) 35%, transparent);
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(10px) saturate(150%) brightness(0.8);
+  backdrop-filter: blur(10px) saturate(150%) brightness(0.8);
+  transition: transform var(--duration-glass-release) var(--ease-glass-spring);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
 }
 
-.h-more svg {
-  width: 1rem;
-  height: 1rem;
+/* The specular rim: one pixel, bright where light meets the edge. */
+.h-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    140deg,
+    color-mix(in srgb, var(--color-white) 95%, transparent) 0%,
+    color-mix(in srgb, var(--color-white) 35%, transparent) 30%,
+    color-mix(in srgb, var(--color-white) 12%, transparent) 55%,
+    color-mix(in srgb, var(--color-white) 30%, transparent) 85%,
+    color-mix(in srgb, var(--color-white) 90%, transparent) 100%
+  );
+  pointer-events: none;
+  -webkit-mask:
+    linear-gradient(var(--color-black) 0 0) content-box,
+    linear-gradient(var(--color-black) 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(var(--color-black) 0 0) content-box exclude,
+    linear-gradient(var(--color-black) 0 0);
+}
+
+/* Hover and press: the glass lightens a step. */
+.h-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--color-white) 10%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-hover) var(--ease-snappy);
+}
+
+.h-btn svg {
+  flex: none;
+  filter: drop-shadow(
+    0 1px 2px color-mix(in srgb, var(--color-black) 35%, transparent)
+  );
   transition: transform var(--duration-hover) var(--ease-snappy);
 }
 
 @media (hover: hover) {
-  .h-more:hover svg {
-    transform: translateX(3px);
-  }
-}
-
-/*
- * Glass, in the ticket page's transparent finish: barely any fill and a
- * light blur, so the page light and the glass Qs behind stay visible as
- * color and shape. The pane reads from one hairline rim, a lit top edge, a
- * fine cyan line inside the lower edge and a soft cyan halo; there is no
- * second border and no bevel band. Text on it stays navy at full strength.
- */
-.h-glass {
-  position: relative;
-  border-radius: var(--radius-ticket-card);
-  background: linear-gradient(
-    160deg,
-    color-mix(in srgb, var(--color-white) 16%, transparent) 0%,
-    color-mix(in srgb, var(--color-white) 4%, transparent) 50%,
-    color-mix(in srgb, var(--color-ticket-sky) 8%, transparent) 100%
-  );
-  box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--color-white) 60%, transparent),
-    inset 0 1px 1px color-mix(in srgb, var(--color-white) 90%, transparent),
-    inset 0 -10px 16px -16px var(--color-ticket-cyan),
-    0 14px 32px -26px color-mix(in srgb, var(--color-navy) 35%, transparent),
-    0 0 22px -12px color-mix(in srgb, var(--color-ticket-cyan) 30%, transparent);
-  -webkit-backdrop-filter: blur(5px) saturate(110%);
-  backdrop-filter: blur(5px) saturate(110%);
-}
-
-/* Without backdrop blur, a near-opaque fill keeps text on a calm surface. */
-@supports not (
-  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
-) {
-  .h-glass {
-    background: color-mix(in srgb, var(--color-white) 88%, transparent);
-  }
-}
-
-/*
- * Pointer light (home.client.ts): on a fine pointer, a soft highlight
- * follows the cursor across a pane marked data-h-light and the pane turns
- * a degree or two toward it, like a piece of glass picking up a lamp.
- * --h-lx / --h-ly are the pointer in percent; --h-rx / --h-ry the tilt.
- */
-.h-glare {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  border-radius: inherit;
-  background: radial-gradient(
-    22rem circle at var(--h-lx, 50%) var(--h-ly, 0%),
-    color-mix(in srgb, var(--color-white) 55%, transparent),
-    color-mix(in srgb, var(--color-ticket-cyan) 14%, transparent) 38%,
-    transparent 62%
-  );
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--duration-open) var(--ease-snappy);
-}
-
-[data-h-light].is-lit-by-pointer > .h-glare {
-  opacity: 1;
-}
-
-/*
- * Scroll reveal (page-local, HOME-1): what home.client.ts finds below the
- * fold is held back and then sharpens out of a blur while it rises a
- * little, once, a few frames apart inside a group (--i). Content is
- * visible by default, so a page without the script is complete. A
- * keyframe animation with backwards fill, not a transition: it cannot
- * clash with a tile's own hover transition and leaves no state behind.
- */
-[data-h-reveal="held"] {
-  opacity: 0;
-}
-
-[data-h-reveal="in"] {
-  animation: h-blur-in var(--duration-reveal) var(--ease-emphasized) backwards;
-  animation-delay: calc(var(--duration-glass-stagger) * 3 * var(--i, 0));
-}
-
-@keyframes h-blur-in {
-  from {
-    opacity: 0;
-    filter: blur(10px);
-    transform: translateY(1rem);
-  }
-}
-
-/*
- * Into the footer: the page light fades to the footer's white under a
- * short veil, so the ground never ends on a hard edge.
- */
-.h-page-fade {
-  --h-fade: clamp(4rem, 8vw, 6rem);
-
-  position: relative;
-  z-index: 1;
-  height: var(--h-fade);
-  margin-top: calc(-1 * var(--h-fade));
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    color-mix(in srgb, var(--color-white) 45%, transparent) 55%,
-    var(--color-background) 100%
-  );
-  pointer-events: none;
-}
-
-body:has(.h-page-fade) .site-footer {
-  border-top-color: transparent;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-h-reveal="held"] {
+  .h-btn:hover::before {
     opacity: 1;
   }
 
-  [data-h-reveal="in"] {
-    animation: none;
+  .h-btn:hover svg {
+    transform: translateX(2px);
   }
+}
 
-  .h-more svg,
-  .h-glare {
+.h-btn:active::before,
+.h-btn:focus-visible::before {
+  opacity: 1;
+}
+
+.h-btn:active {
+  transform: scale(0.97);
+  transition-duration: var(--duration-glass-press);
+  transition-timing-function: var(--ease-snappy);
+}
+
+/* Without backdrop blur, a dark tint keeps the label on a calm surface. */
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .h-btn {
+    background: color-mix(in srgb, var(--color-navy) 55%, transparent);
+  }
+}
+
+.h-btn:focus-visible {
+  outline: 2px solid var(--color-ticket-ice);
+  outline-offset: 3px;
+}
+
+/*
+ * Round controls of clear liquid glass (the film's play button, the
+ * speaker arrows): the recipe of the site's glass buy button (global.css
+ * .button.is-glass) without its glow: a faint white body that blurs what
+ * lies behind it, a one-pixel specular rim, a lighter body on hover and
+ * focus, and the shared press (MOTION-6, [data-glass-press]). Size and
+ * place come from the component.
+ */
+.h-glass-btn {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-circle);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-white) 18%, transparent),
+    color-mix(in srgb, var(--color-white) 6%, transparent)
+  );
+  box-shadow:
+    inset 0 1px 1px color-mix(in srgb, var(--color-white) 75%, transparent),
+    inset 0 -1px 1px color-mix(in srgb, var(--color-white) 20%, transparent);
+  color: var(--color-white);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-backdrop-filter: blur(10px) saturate(150%) brightness(0.8);
+  backdrop-filter: blur(10px) saturate(150%) brightness(0.8);
+  transition: transform var(--duration-glass-release) var(--ease-glass-spring);
+}
+
+.h-glass-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    140deg,
+    color-mix(in srgb, var(--color-white) 95%, transparent) 0%,
+    color-mix(in srgb, var(--color-white) 35%, transparent) 30%,
+    color-mix(in srgb, var(--color-white) 12%, transparent) 55%,
+    color-mix(in srgb, var(--color-white) 30%, transparent) 85%,
+    color-mix(in srgb, var(--color-white) 90%, transparent) 100%
+  );
+  pointer-events: none;
+  -webkit-mask:
+    linear-gradient(var(--color-black) 0 0) content-box,
+    linear-gradient(var(--color-black) 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(var(--color-black) 0 0) content-box exclude,
+    linear-gradient(var(--color-black) 0 0);
+}
+
+.h-glass-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--color-white) 10%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-hover) var(--ease-snappy);
+}
+
+.h-glass-btn svg {
+  filter: drop-shadow(
+    0 1px 2px color-mix(in srgb, var(--color-black) 45%, transparent)
+  );
+}
+
+@media (hover: hover) {
+  .h-glass-btn:hover::before {
+    opacity: 1;
+  }
+}
+
+.h-glass-btn:focus-visible::before,
+.h-glass-btn:active::before,
+.h-glass-btn.is-pressed::before {
+  opacity: 1;
+}
+
+.h-glass-btn:active,
+.h-glass-btn.is-pressed {
+  transform: scale(0.94);
+  transition-duration: var(--duration-glass-press);
+  transition-timing-function: var(--ease-snappy);
+}
+
+.h-glass-btn:focus-visible {
+  outline: 2px solid var(--color-ticket-ice);
+  outline-offset: 4px;
+}
+
+/* Without backdrop blur, a dark tint keeps the icon on a calm surface. */
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .h-glass-btn {
+    background: color-mix(in srgb, var(--color-navy) 55%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .h-glass-btn,
+  .h-glass-btn::before {
     transition: none;
   }
 
-  .h-more:hover svg {
+  .h-glass-btn:active,
+  .h-glass-btn.is-pressed {
     transform: none;
+  }
+}
+
+/*
+ * Dark liquid glass, the material of the mockup's header, used sparingly
+ * (header, partner logo carriers, countdown, small controls): a
+ * transparent navy body, a fine lit rim brighter at the top, a faint ice
+ * line inside the lower edge and restrained depth. No backdrop blur on
+ * resting panes: behind them lies only the slow ground.
+ */
+.h-glass {
+  position: relative;
+  border-radius: var(--radius-ticket-panel);
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--color-ticket-sky) 16%, transparent),
+    color-mix(in srgb, var(--color-navy) 22%, transparent) 55%,
+    color-mix(in srgb, var(--color-ticket-midnight) 30%, transparent)
+  );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--color-ticket-ice) 16%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--color-white) 26%, transparent),
+    inset 0 -10px 16px -14px
+      color-mix(in srgb, var(--color-ticket-cyan) 55%, transparent),
+    0 18px 40px -26px
+      color-mix(in srgb, var(--color-ticket-midnight) 90%, transparent);
+}
+
+/*
+ * Reveals: early and quick. home.client.ts adds .is-in as soon as an
+ * element's top reaches 6% below the window (so text is readable before
+ * it is reached), and at once, without motion, for anything already
+ * scrolled past (a jump to a section, a reload halfway down). Once in, it
+ * stays in. Hidden only while the page script runs (html.h-js, set inline
+ * before the content), and a failsafe shows everything if the script
+ * never does.
+ */
+.h-js [data-h-reveal]:not(.is-in) {
+  opacity: 0;
+  transform: translateY(1.25rem);
+  animation: h-failsafe var(--duration-hover) steps(1, end)
+    calc(var(--duration-reveal) * 8) forwards;
+}
+
+.h-js [data-h-reveal].is-in {
+  animation: h-rise var(--duration-reveal) var(--ease-emphasized) both;
+  animation-delay: calc(var(--h-i, 0) * var(--duration-ticket-stagger) * 3);
+}
+
+.h-js [data-h-reveal].is-in.is-instant {
+  animation: none;
+}
+
+@keyframes h-rise {
+  from {
+    opacity: 0;
+    transform: translateY(1.25rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes h-failsafe {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .h-js [data-h-reveal]:not(.is-in),
+  .h-js [data-h-reveal].is-in {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
+  .h-btn,
+  .h-btn svg {
+    transition: none;
+  }
+
+  .h-btn:hover,
+  .h-btn:active,
+  .h-btn:hover svg {
+    transform: none;
+  }
+}
+
+/*
+ * The site footer on the homepage (DESIGN.md HOME-1) stays the white
+ * footer of every page. The navy page melts into it through a long fade
+ * (.h-page-fade, the last element of the page), so there is no hard edge
+ * and no hairline between them: an S-curve of lightness (slow at both ends, so
+ * neither end shows where it starts) through the page's navy and ice,
+ * interpolated in OKLab so it never turns grey and never passes a band.
+ */
+body:has(main .h-home) .site-footer.site-footer {
+  border-top: 0;
+}
+
+body:has(main .h-home) .site-footer .footer-inner {
+  width: min(100% - 2 * clamp(1rem, 5vw, 2.5rem), var(--container-large));
+  padding-inline: 0;
+}
+
+.h-page-fade {
+  position: relative;
+  height: clamp(16rem, 34vw, 26rem);
+  margin-top: calc(-1 * clamp(var(--space-lg), 6vw, 5rem));
+  /* Stops at evenly rising OKLab lightness (an S-curve), so no part of
+     the fade is steeper than another and no band stands out. */
+  background: linear-gradient(
+    in oklab 180deg,
+    transparent 0%,
+    color-mix(in oklab, var(--color-ticket-deep) 23%, var(--h-ground)) 8%,
+    color-mix(in oklab, var(--color-ticket-deep) 54%, var(--h-ground)) 17%,
+    color-mix(in oklab, var(--color-ticket-deep) 93%, var(--h-ground)) 25%,
+    color-mix(in oklab, var(--color-ticket-ice) 12%, var(--color-ticket-deep))
+      33%,
+    color-mix(in oklab, var(--color-ticket-ice) 27%, var(--color-ticket-deep))
+      42%,
+    color-mix(in oklab, var(--color-ticket-ice) 43%, var(--color-ticket-deep))
+      50%,
+    color-mix(in oklab, var(--color-ticket-ice) 59%, var(--color-ticket-deep))
+      58%,
+    color-mix(in oklab, var(--color-ticket-ice) 74%, var(--color-ticket-deep))
+      67%,
+    color-mix(in oklab, var(--color-ticket-ice) 88%, var(--color-ticket-deep))
+      75%,
+    color-mix(in oklab, var(--color-white) 2%, var(--color-ticket-ice)) 83%,
+    color-mix(in oklab, var(--color-white) 59%, var(--color-ticket-ice)) 92%,
+    var(--color-white) 100%
+  );
+  pointer-events: none;
+}
+
+/*
+ * Section grounds: one continuous navy from the hero to the footer, with
+ * no lines, no lenses and no cuts at any seam. A section may bring its own
+ * pool of light (--h-pool-color, centred at --h-pool-at, --h-pool-size
+ * large): it falls off along a smoothstep curve, so it has no visible rim,
+ * and a vertical mask (--h-edge-mask) takes it to nothing well before the
+ * section's top and bottom edge, whatever the section's height. Every
+ * seam therefore meets on the bare ground. Static gradients: no cost per
+ * frame.
+ */
+.h-home {
+  /* Eased to nothing over the outer fifth of the height. */
+  --h-edge-mask: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--color-black) 4%, transparent) 4%,
+    color-mix(in srgb, var(--color-black) 26%, transparent) 9%,
+    color-mix(in srgb, var(--color-black) 62%, transparent) 14%,
+    color-mix(in srgb, var(--color-black) 90%, transparent) 19%,
+    var(--color-black) 24%,
+    var(--color-black) 76%,
+    color-mix(in srgb, var(--color-black) 90%, transparent) 81%,
+    color-mix(in srgb, var(--color-black) 62%, transparent) 86%,
+    color-mix(in srgb, var(--color-black) 26%, transparent) 91%,
+    color-mix(in srgb, var(--color-black) 4%, transparent) 96%,
+    transparent 100%
+  );
+}
+
+.h-home :is(.wp, .am, .pl, .sr, .sp, .h-social)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(
+    ellipse var(--h-pool-size) at var(--h-pool-at),
+    var(--h-pool-color) 0%,
+    color-mix(in srgb, var(--h-pool-color) 91%, transparent) 18%,
+    color-mix(in srgb, var(--h-pool-color) 68%, transparent) 38%,
+    color-mix(in srgb, var(--h-pool-color) 38%, transparent) 58%,
+    color-mix(in srgb, var(--h-pool-color) 12%, transparent) 78%,
+    color-mix(in srgb, var(--h-pool-color) 2%, transparent) 92%,
+    transparent 100%
+  );
+  -webkit-mask-image: var(--h-edge-mask);
+  mask-image: var(--h-edge-mask);
+  pointer-events: none;
+}
+
+/* The pools: lighter zones that bring a section forward, never extreme. */
+.h-home .wp {
+  --h-pool-color: color-mix(in srgb, var(--color-ticket-deep) 80%, transparent);
+  --h-pool-at: 72% 50%;
+  --h-pool-size: 48% 46%;
+}
+
+.h-home .am {
+  --h-pool-color: color-mix(in srgb, var(--color-ticket-sky) 16%, transparent);
+  --h-pool-at: 50% 50%;
+  --h-pool-size: 56% 40%;
+}
+
+.h-home .pl {
+  --h-pool-color: color-mix(in srgb, var(--color-ticket-deep) 66%, transparent);
+  --h-pool-at: 66% 52%;
+  --h-pool-size: 54% 46%;
+}
+
+.h-home .sr {
+  --h-pool-color: color-mix(
+    in srgb,
+    color-mix(in srgb, var(--color-ticket-sky) 30%, var(--color-ticket-deep))
+      80%,
+    transparent
+  );
+  --h-pool-at: 50% 56%;
+  --h-pool-size: 62% 46%;
+}
+
+.h-home .sp {
+  --h-pool-color: color-mix(
+    in srgb,
+    color-mix(in srgb, var(--color-ticket-sky) 26%, var(--color-ticket-deep))
+      78%,
+    transparent
+  );
+  --h-pool-at: 50% 52%;
+  --h-pool-size: 58% 46%;
+}
+
+.h-home .h-social {
+  --h-pool-color: color-mix(in srgb, var(--color-ticket-deep) 76%, transparent);
+  --h-pool-at: 50% 46%;
+  --h-pool-size: 52% 44%;
+}
+
+/*
+ * The palace's light (PalaceStage.astro) only rises: it stands behind the
+ * building, is strongest a little above its ground line and fades upwards
+ * into the night. Below the ground line there is no light at all, so the
+ * stage ends on the bare ground and the speakers follow without a seam.
+ */
+.h-home {
+  --h-palace-color: color-mix(
+    in srgb,
+    color-mix(in srgb, var(--color-ticket-sky) 70%, var(--color-ticket-ice)) 80%,
+    transparent
+  );
+  --h-palace-light: radial-gradient(
+    ellipse 64% 78% at 50% 100%,
+    var(--h-palace-color) 0%,
+    color-mix(in srgb, var(--h-palace-color) 88%, transparent) 14%,
+    color-mix(in srgb, var(--h-palace-color) 62%, transparent) 32%,
+    color-mix(in srgb, var(--h-palace-color) 34%, transparent) 52%,
+    color-mix(in srgb, var(--h-palace-color) 12%, transparent) 72%,
+    color-mix(in srgb, var(--h-palace-color) 2%, transparent) 90%,
+    transparent 100%
+  );
+  /* Nothing at the ground line, full a little above it; the top fades
+     too, so the stage never meets the partners above in a cut. */
+  --h-palace-mask: linear-gradient(
+    0deg,
+    transparent 0%,
+    color-mix(in srgb, var(--color-black) 20%, transparent) 3%,
+    color-mix(in srgb, var(--color-black) 62%, transparent) 8%,
+    var(--color-black) 16%,
+    var(--color-black) 70%,
+    color-mix(in srgb, var(--color-black) 40%, transparent) 84%,
+    transparent 96%
+  );
+}
+
+/*
+ * The hanging pass's waiting state (HangingPass.astro): until its entrance
+ * the still stays unseen, so it never shows before the pass drops; a
+ * failsafe shows it if the script never runs. Reduced motion shows it at
+ * once (there is no entrance then).
+ */
+.h-js [data-pass]:not(.is-entered) [data-pass-still] {
+  opacity: 0;
+  animation: h-failsafe var(--duration-hover) steps(1, end)
+    calc(var(--duration-reveal) * 10) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .h-js [data-pass]:not(.is-entered) [data-pass-still] {
+    opacity: 1;
+    animation: none;
   }
 }

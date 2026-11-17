@@ -1,4 +1,4 @@
-// VRT variants for TicketHero: the glass Q tile, the discount phase
+// VRT variants for TicketHero: the Q tile, the discount phase
 // timeline (or, without phases, the eyebrow), display heading and the
 // compare link. See docs/dev/visual-testing.md.
 import TicketHero from "./TicketHero.astro";

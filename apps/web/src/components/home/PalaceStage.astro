@@ -1,0 +1,732 @@
+---
+// Mannheim Palace, right before the speakers (DESIGN.md HOME-1), after the
+// team's second 2027 mockup ("What's inside"): the palace as a line
+// drawing standing flush on the window's lower edge, whose lines draw
+// themselves as it comes in and whose windows then light one after the
+// other, from the centre outwards, while the stage is held in place for
+// one screen of scrolling. A count at the top right climbs with the
+// lights to the number of people; when every window is lit the lines turn
+// white and the light behind the building is at its brightest.
+//
+// The programme on the left (keynotes, Qube pitches, workshops, campfire
+// sessions, evening events) runs through with the scroll, as in the
+// mockup: the hold is split into one stretch per item, each fades in and
+// out in its own, and the bar under it marks where the visitor is. A
+// click on a bar scrolls to that item's stretch (home.client.ts); the
+// bars are a pointer shortcut only, every item is in the page as text.
+// With reduced motion or without scroll-driven animations every item is
+// listed and there are no bars.
+//
+// The whole building always fits: the drawing's full canvas (1600 x 420)
+// scales to the space under the words, never wider than the window and
+// never panned. Pure CSS for everything that follows the scroll
+// (scroll-driven animations on the section's view timeline, MOTION-4);
+// with reduced motion or without scroll-driven animations the palace
+// stands fully drawn and lit, the count shows its total, and the section
+// scrolls like any other (MOTION-2). The palace's light only rises from
+// the building (home-theme.css, --h-palace-light); nothing lies below the
+// ground line, so the speakers follow on the bare ground without a cut.
+import "./home-theme.css";
+import { drawPalace, GROUND_SHARE, PALACE_VIEW_BOX } from "./palace-drawing";
+
+interface Props {
+  /** Small line above the heading. */
+  eyebrow: string;
+  /** The heading's first part, e.g. "Two days". */
+  heading: string;
+  /** The heading's light second line, e.g. "inside a palace". */
+  accent: string;
+  /** How many people the count climbs to. */
+  total: number;
+}
+
+const { eyebrow, heading, accent, total } = Astro.props;
+const { lines, ground, windows } = drawPalace();
+const fmt = new Intl.NumberFormat("en-US");
+// The count climbs in steps of ten, as in the mockup.
+const tens = Math.round(total / 10);
+const foot = `${(GROUND_SHARE * 100).toFixed(3)}%`;
+
+// The programme, as in the team's mockup.
+const steps = [
+  {
+    title: "Keynotes & panels",
+    text: "Founders, operators and investors on the main stage.",
+  },
+  { title: "Qube pitches", text: "Startups pitch live to an investor jury." },
+  {
+    title: "Workshops",
+    text: "Hands-on sessions hosted by partner companies.",
+  },
+  {
+    title: "Campfire sessions",
+    text: "Small rounds where you ask the questions.",
+  },
+  {
+    title: "Evening events",
+    text: "The best contacts happen after the last talk.",
+  },
+];
+---
+
+<section class="h-section ps" id="mannheim" aria-labelledby="home-palace-title">
+  <div class="ps-pin">
+    <div class="h-shell ps-top">
+      <div class="ps-head" data-h-reveal>
+        <p class="h-eyebrow">{eyebrow}</p>
+        <h2 class="h-title ps-title" id="home-palace-title">
+          {heading}{" "}<span class="h-accent ps-accent">{accent}</span>
+        </h2>
+      </div>
+      <p class="ps-tally" style={`--ps-end: ${tens}`}>
+        <span class="ps-num" aria-hidden="true"></span>
+        <span class="ps-label" aria-hidden="true">
+          <span class="ps-label-run">of {fmt.format(total)} are in</span>
+          <span class="ps-label-full">people, one palace</span>
+        </span>
+        <span class="u-visually-hidden"
+          >{fmt.format(total)} people, one palace</span
+        >
+      </p>
+      <div
+        class="ps-program"
+        style={`--n: ${steps.length}`}
+        data-palace-program
+      >
+        <ol class="ps-steps">
+          {
+            steps.map((step, i) => (
+              <li
+                class:list={[
+                  "ps-step",
+                  { "is-first": i === 0, "is-last": i === steps.length - 1 },
+                ]}
+                style={`--k: ${i}`}
+              >
+                <h3 class="ps-step-title">{step.title}</h3>
+                <p class="ps-step-text">{step.text}</p>
+              </li>
+            ))
+          }
+        </ol>
+        <div class="ps-bars" aria-hidden="true">
+          {
+            steps.map((step, i) => (
+              <span
+                class="ps-bar"
+                style={`--k: ${i}`}
+                title={step.title}
+                data-palace-bar={i}
+              />
+            ))
+          }
+        </div>
+      </div>
+    </div>
+    <div class="ps-art" aria-hidden="true">
+      <div class="ps-draw" style={`--ps-foot: ${foot}`}>
+        <svg
+          class="ps-glow"
+          viewBox={PALACE_VIEW_BOX}
+          preserveAspectRatio="xMidYMid meet"
+          focusable="false"
+        >
+          {windows.map((w) => <path d={w.d} style={`--t: ${w.t}`} />)}
+        </svg>
+        <svg
+          class="ps-svg"
+          viewBox={PALACE_VIEW_BOX}
+          preserveAspectRatio="xMidYMid meet"
+          focusable="false"
+        >
+          <g class="ps-lines">
+            <linearGradient
+              id="ps-ground-fade"
+              gradientUnits="userSpaceOnUse"
+              x1="0"
+              y1="0"
+              x2="1600"
+              y2="0"
+            >
+              <stop class="ps-stop is-clear" offset="0"></stop>
+              <stop class="ps-stop" offset="0.1"></stop>
+              <stop class="ps-stop" offset="0.9"></stop>
+              <stop class="ps-stop is-clear" offset="1"></stop>
+            </linearGradient>
+            {
+              lines.map((d, i) => (
+                <path d={d} pathLength="1" style={`--i: ${i}`} />
+              ))
+            }
+            <path
+              class="ps-ground"
+              d={ground}
+              pathLength="1"
+              style={`--i: ${lines.length}`}></path>
+          </g>
+          <g class="ps-wins">{windows.map((w) => <path d={w.d} />)}</g>
+          <g class="ps-lit">
+            {windows.map((w) => <path d={w.d} style={`--t: ${w.t}`} />)}
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* DESIGN.md HOME-1 */
+
+  /* The count: a whole number that scroll-driven animations can move. It
+     counts in tens (--ps-end is the total divided by ten); the digits are
+     drawn as CSS counters, with a thousands comma once it passes 999. */
+  @property --ps-n {
+    syntax: "<integer>";
+    inherits: true;
+    initial-value: 0;
+  }
+
+  @counter-style ps-three {
+    system: extends decimal;
+    pad: 3 "0";
+  }
+
+  .ps {
+    padding-bottom: 0;
+  }
+
+  .ps-pin {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(2.5rem, 7vw, 5rem);
+  }
+
+  /* The light behind the building (home-theme.css): it only rises from
+     the palace into the night, with nothing below the ground line, so the
+     stage ends on the bare ground. */
+  .ps-pin::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--h-palace-light);
+    -webkit-mask-image: var(--h-palace-mask);
+    mask-image: var(--h-palace-mask);
+    pointer-events: none;
+  }
+
+  .ps-top {
+    display: grid;
+    grid-template-areas:
+      "head"
+      "tally"
+      "program";
+    gap: var(--space-md);
+    align-items: start;
+  }
+
+  .ps-head {
+    grid-area: head;
+  }
+
+  .ps-title {
+    margin-top: var(--space-sm);
+  }
+
+  .ps-accent {
+    display: block;
+  }
+
+  .ps-tally {
+    --ps-n: var(--ps-end);
+    --ps-big: clamp(0, var(--ps-n) - 99, 1);
+    --ps-full: clamp(0, var(--ps-n) - var(--ps-end) + 1, 1);
+
+    grid-area: tally;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2xs) var(--space-sm);
+    margin: 0;
+    counter-reset: ps-v calc(var(--ps-n) * 10) ps-k
+      round(down, var(--ps-n) / 100, 1) ps-r calc(mod(var(--ps-n), 100) * 10);
+  }
+
+  /* The digits keep the room of the full number and sit at its right
+     edge, so the label beside them never moves while the count climbs. */
+  .ps-num {
+    display: grid;
+    justify-items: end;
+    color: var(--color-ticket-ice);
+    font-size: clamp(2.75rem, min(7.4vw, 12svh), 7.25rem);
+    font-weight: var(--font-weight-extrabold);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.05em;
+    line-height: 0.9;
+  }
+
+  .ps-num::before,
+  .ps-num::after,
+  .ps-label > span {
+    grid-area: 1 / 1;
+  }
+
+  .ps-num::before {
+    content: counter(ps-v);
+    opacity: calc(1 - var(--ps-big));
+  }
+
+  .ps-num::after {
+    content: counter(ps-k) "," counter(ps-r, ps-three);
+    opacity: var(--ps-big);
+  }
+
+  .ps-label {
+    display: grid;
+    color: var(--h-text-soft);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.18em;
+    line-height: 1.3;
+    text-transform: uppercase;
+  }
+
+  .ps-label-run {
+    opacity: calc(1 - var(--ps-full));
+  }
+
+  .ps-label-full {
+    opacity: var(--ps-full);
+  }
+
+  /* The programme without the stage: every item listed side by side. */
+  .ps-program {
+    grid-area: program;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .ps-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: var(--space-md) var(--space-lg);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ps-step-title {
+    margin: 0;
+    font-size: clamp(1.125rem, 1.8vw, 1.5rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  .ps-step-text {
+    margin: var(--space-2xs) 0 0;
+    color: var(--h-text-soft);
+    font-size: clamp(0.95rem, 1.3vw, 1.125rem);
+    line-height: 1.5;
+  }
+
+  /* The bars mark the item on screen; they exist only on the stage. */
+  .ps-bars {
+    display: none;
+    gap: var(--space-2xs);
+  }
+
+  /* Each bar is a 24px tall target around a 4px track; on the stage an
+     ice fill runs along it while its item is on screen and stays full
+     after (like story progress), so the bars move as one flowing line. */
+  .ps-bar {
+    display: grid;
+    align-items: center;
+    inline-size: 2.75rem;
+    block-size: 1.5rem;
+    cursor: pointer;
+  }
+
+  .ps-bar::before,
+  .ps-bar::after {
+    content: "";
+    grid-area: 1 / 1;
+    block-size: 4px;
+    border-radius: var(--radius-pill);
+  }
+
+  .ps-bar::before {
+    background: color-mix(in srgb, var(--color-white) 24%, transparent);
+  }
+
+  .ps-bar::after {
+    background: var(--color-ticket-ice);
+    transform-origin: left center;
+    scale: 0 1;
+  }
+
+  @media (min-width: 48rem) {
+    .ps-top {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        "head tally"
+        "program program";
+      column-gap: var(--space-xl);
+    }
+
+    .ps-tally {
+      flex-direction: column;
+      align-items: flex-end;
+      text-align: right;
+    }
+
+    .ps-label {
+      justify-items: end;
+    }
+  }
+
+  /* The palace stands on the stage's foot: its ground line lies on the
+     lower edge (the sliver of canvas under the ground goes below it). */
+  .ps-art {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  .ps-draw {
+    position: relative;
+    width: min(100%, 110rem);
+    container-type: inline-size;
+    translate: 0 calc(var(--ps-foot) - 1px);
+  }
+
+  .ps-draw svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1600 / 420;
+    overflow: visible;
+  }
+
+  /* The windows' halo: a blurred copy, its blur in step with the
+     drawing's size (10 of 1600 units). */
+  .ps-glow {
+    position: absolute;
+    inset: 0;
+    filter: blur(0.625cqw);
+  }
+
+  .ps-glow path {
+    fill: var(--color-ticket-ice);
+    opacity: 0.9;
+  }
+
+  .ps-lines {
+    color: color-mix(in srgb, var(--color-white) 92%, transparent);
+  }
+
+  .ps-lines path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  /* The ground fades out towards both ends, so no line runs to an edge. */
+  .ps-lines .ps-ground {
+    stroke: url(#ps-ground-fade);
+  }
+
+  .ps-stop {
+    stop-color: currentColor;
+  }
+
+  .ps-stop.is-clear {
+    stop-opacity: 0;
+  }
+
+  .ps-wins path {
+    fill: color-mix(in srgb, var(--color-ticket-ice) 5%, transparent);
+    stroke: color-mix(in srgb, var(--color-ticket-ice) 34%, transparent);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .ps-lit path {
+    fill: color-mix(in srgb, var(--color-white) 82%, var(--color-ticket-ice));
+    stroke: var(--color-white);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+
+  /*
+   * The stage. Progress comes from the section's view timeline:
+   *   entry     the section's top climbs from the window's foot to its head
+   *             (the palace, on the stage's foot, comes into view late in it)
+   *   contain   the stage is held in place for one screen
+   * The lines draw from late in the entry to a fifth into the hold, one
+   * after the other; each window lights over 6 % of the hold at its own
+   * moment (--t, from the centre outwards) while the count climbs over the
+   * same stretch; the lines turn white and the light is full at the end.
+   * The words take the space they need at the top and the palace scales
+   * to the rest (a size container: never wider than the window, never
+   * taller than the space left). The foot keeps the part of the screen a
+   * phone's browser bar may cover free (100lvh - 100svh), so the ground
+   * line lies on the visible lower edge.
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .ps {
+        height: calc(100lvh + 100svh);
+        padding-block: 0;
+        view-timeline: --palace block;
+        view-timeline-inset: 0;
+      }
+
+      .ps-pin {
+        position: sticky;
+        top: 0;
+        gap: var(--space-md);
+        height: 100lvh;
+        padding-top: calc(
+          var(--h-header-height) + clamp(var(--space-sm), 5svh, 3.5rem)
+        );
+        padding-bottom: calc(100lvh - 100svh);
+      }
+
+      .ps-pin::before {
+        animation: ps-light linear both;
+        animation-timeline: --palace;
+        animation-range: entry 60% contain 92%;
+      }
+
+      .ps-title {
+        font-size: clamp(2.25rem, min(5.6vw, 9svh), 5.25rem);
+      }
+
+      .ps-art {
+        flex: 1 1 0;
+        min-height: 0;
+        container-type: size;
+      }
+
+      .ps-draw {
+        width: min(100cqw, 380.95cqh);
+      }
+
+      .ps-tally {
+        animation: ps-count linear both;
+        animation-timeline: --palace;
+        animation-range: contain 16% contain 88%;
+      }
+
+      .ps-lines {
+        animation: ps-full linear both;
+        animation-timeline: --palace;
+        animation-range: contain 88% contain 96%;
+      }
+
+      .ps-lines path {
+        stroke-dasharray: 1;
+        animation: ps-draw linear both;
+        animation-timeline: --palace;
+        animation-range: entry calc(72% + var(--i) * 1.4%) contain
+          calc(4% + var(--i) * 1.2%);
+      }
+
+      .ps-lit path,
+      .ps-glow path {
+        animation: ps-on linear both;
+        animation-timeline: --palace;
+        animation-range: contain calc(16% + var(--t) * 66%) contain
+          calc(22% + var(--t) * 66%);
+      }
+
+      /* The programme runs through the hold: one stretch per item (--k of
+         --n). Neighboring items cross-fade over the fifth of a stretch around
+         each border (each item's range reaches a fifth into the
+         neighboring ones), the first is already on screen as the stage arrives
+         and the last stays. Under them each bar fills along its own
+         stretch: transforms and opacity only (MOTION-3). */
+      .ps-program {
+        max-width: 36rem;
+      }
+
+      .ps-steps {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .ps-step {
+        grid-area: 1 / 1;
+        animation: ps-step linear both;
+        animation-timeline: --palace;
+        animation-range: contain calc((var(--k) - 0.2) * 100% / var(--n))
+          contain calc((var(--k) + 1.2) * 100% / var(--n));
+      }
+
+      .ps-step.is-first {
+        animation-name: ps-step-first;
+      }
+
+      .ps-step.is-last {
+        animation-name: ps-step-last;
+      }
+
+      .ps-step-title {
+        font-size: clamp(1.375rem, min(3.4vw, 6svh), 3rem);
+        letter-spacing: -0.03em;
+        line-height: 1.05;
+      }
+
+      .ps-bars {
+        display: flex;
+      }
+
+      .ps-bar::after {
+        animation: ps-fill linear both;
+        animation-timeline: --palace;
+        animation-range: contain calc(var(--k) * 100% / var(--n)) contain
+          calc((var(--k) + 1) * 100% / var(--n));
+      }
+    }
+  }
+
+  /* Short landscape screens (a phone turned sideways): heading and count
+     on the left, the programme on the right, so the palace keeps room. */
+  @media (prefers-reduced-motion: no-preference) and (orientation: landscape) and (max-height: 34rem) {
+    @supports (animation-timeline: view()) {
+      .ps-top {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-areas:
+          "head program"
+          "tally program";
+        row-gap: var(--space-2xs);
+      }
+
+      .ps-tally {
+        flex-direction: row;
+        align-items: baseline;
+        text-align: left;
+      }
+
+      .ps-label {
+        justify-items: start;
+      }
+
+      .ps-num {
+        font-size: clamp(1.75rem, 10svh, 2.75rem);
+      }
+
+      .ps-step-text {
+        font-size: var(--text-size-tiny);
+      }
+    }
+  }
+
+  /* One programme item over its stretch plus a fifth on each side: in
+     while the previous one goes, out while the next one comes. */
+  @keyframes ps-step {
+    0% {
+      opacity: 0;
+      translate: 0 0.6rem;
+    }
+
+    28.6%,
+    71.4% {
+      opacity: 1;
+      translate: 0 0;
+    }
+
+    100% {
+      opacity: 0;
+      translate: 0 -0.4rem;
+    }
+  }
+
+  @keyframes ps-step-first {
+    0%,
+    71.4% {
+      opacity: 1;
+      translate: 0 0;
+    }
+
+    100% {
+      opacity: 0;
+      translate: 0 -0.4rem;
+    }
+  }
+
+  @keyframes ps-step-last {
+    0% {
+      opacity: 0;
+      translate: 0 0.6rem;
+    }
+
+    28.6%,
+    100% {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+
+  @keyframes ps-fill {
+    from {
+      scale: 0 1;
+    }
+
+    to {
+      scale: 1 1;
+    }
+  }
+
+  @keyframes ps-count {
+    from {
+      --ps-n: 0;
+    }
+
+    to {
+      --ps-n: var(--ps-end);
+    }
+  }
+
+  @keyframes ps-draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes ps-on {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes ps-light {
+    from {
+      opacity: 0.25;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes ps-full {
+    from {
+      color: color-mix(in srgb, var(--color-ticket-ice) 62%, transparent);
+    }
+
+    to {
+      color: color-mix(in srgb, var(--color-white) 95%, transparent);
+    }
+  }
+</style>

@@ -1,0 +1,649 @@
+---
+// The homepage hero (DESIGN.md HOME-1, after the 2027 concept mockup).
+// Left, in the mockup's order: the edition, the headline with its last
+// words in ice, the site tagline, "Why Q?" and the ticket link, then
+// three facts (when, where, the discount on sale now and, when the
+// content gives one, the day it ends). Right, over the hero's full
+// height: the event pass hanging on its lanyard, a real 3D object
+// (HangingPass.astro), and under it "Put your name on it", a field whose
+// text is drawn onto the card (hanging-pass.client.ts; it shows only once
+// the 3D pass is there). Behind it all runs last edition's film, muted,
+// dimmed and turned to the page's blues, fading out towards the copy and
+// the foot (home.client.ts starts it after the page has loaded, never
+// with reduced motion or data saving, and stops it off screen).
+//
+// The pass is large and hangs low enough that its lanyard shows under
+// the header (HangingPass.astro, --hp-scale).
+//
+// Phones get their own order: at the top left the edition and the
+// headline, the pass hanging on the right beside them; then the tagline,
+// the two buttons and the three facts, as on wide screens. "Put your
+// name on it" is for wide screens only.
+//
+// Every text and link is plain HTML; the pass is decoration. The entrance
+// (home-stage.client.ts) only animates in what is already there.
+import type { HomeContent, TicketPhases } from "../../lib/content";
+import { TICKETS_HREF } from "../../lib/home-links";
+import HangingPass from "./HangingPass.astro";
+import Unbroken from "./Unbroken.astro";
+import "./home-theme.css";
+
+interface Props {
+  hero: HomeContent["hero"];
+  /** e.g. "Why Q?": the label of the audience section's anchor link. */
+  whyLabel: string;
+  edition: string;
+  dates: string;
+  city: string;
+  phases?: TicketPhases;
+}
+
+const { hero, whyLabel, edition, dates, city, phases } = Astro.props;
+
+// "10 Years of Q-Summit": the number set large, the rest beside it.
+const editionMatch = /^(\d+)\s+(.+)$/.exec(edition);
+const editionNumber = editionMatch?.[1];
+const editionRest = editionMatch?.[2] ?? edition;
+
+// The last two words of the headline carry the ice accent.
+const words = hero.headline.trim().split(/\s+/);
+const accentCount = words.length > 3 ? 2 : 1;
+const headLead = words.slice(0, -accentCount).join(" ");
+const headAccent = words.slice(-accentCount).join(" ");
+
+const active = phases?.items.find((item) => item.key === phases.activeKey);
+const offer =
+  active && phases
+    ? phases.discountLabel.replace("{discount}", String(active.discount))
+    : undefined;
+// "until 22.11.", as the team's post and mockup write it, in German time.
+const until =
+  active?.endsAt && !Number.isNaN(Date.parse(active.endsAt))
+    ? `until ${new Intl.DateTimeFormat("de-DE", {
+        day: "2-digit",
+        month: "2-digit",
+        timeZone: "Europe/Berlin",
+      }).format(new Date(active.endsAt))}`
+    : undefined;
+---
+
+<section class="hx" id="top" aria-labelledby="home-hero-title">
+  <video
+    class="hx-film"
+    muted
+    loop
+    playsinline
+    preload="none"
+    poster="/media/hero-poster.jpg"
+    aria-hidden="true"
+    tabindex="-1"
+    data-hero-film
+  >
+    <source src="/media/hero-480.mp4" type="video/mp4" />
+  </video>
+  <span class="hx-light" aria-hidden="true"></span>
+  <div class="h-shell hx-grid">
+    <p class="hx-edition" data-hero-in>
+      {editionNumber && <span class="hx-edition-num">{editionNumber}</span>}
+      <span><Unbroken text={editionRest} /></span>
+    </p>
+
+    <h1
+      class="hx-title"
+      id="home-hero-title"
+      data-hero-in
+      data-lp="hero.headline"
+    >
+      {headLead}{" "}<span class="h-accent">{headAccent}</span>
+    </h1>
+
+    <p class="hx-lead" data-hero-in data-lp="hero.tagline">{hero.tagline}</p>
+
+    <div class="hx-actions" data-hero-in>
+      <a class="h-btn" href="#why-attend">{whyLabel}</a>
+      <a class="h-btn hx-buy" href={TICKETS_HREF} data-lp="hero.cta.label">
+        {hero.cta.label}
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M4 12h15M13 6l6 6-6 6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"></path>
+        </svg>
+      </a>
+    </div>
+
+    <dl class="hx-facts" data-hero-in>
+      <div>
+        <dt>When</dt>
+        <dd>{dates}</dd>
+      </div>
+      <div>
+        <dt>Where</dt>
+        <dd>{city}</dd>
+      </div>
+      {
+        active && offer && (
+          <div>
+            <dt>{active.label}</dt>
+            <dd class="h-accent">
+              {offer}
+              {until && ` ${until}`}
+            </dd>
+          </div>
+        )
+      }
+    </dl>
+
+    <div class="hx-pass">
+      <HangingPass />
+    </div>
+
+    <div class="hx-name" hidden data-pass-name-field>
+      <label class="hx-name-label" for="pass-name">Put your name on it</label>
+      <input
+        class="hx-name-input"
+        id="pass-name"
+        type="text"
+        maxlength="28"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder="Your name"
+        data-pass-name
+      />
+    </div>
+  </div>
+</section>
+
+<style>
+  /* DESIGN.md HOME-1 */
+  .hx {
+    --hx-foot-mask: linear-gradient(
+      180deg,
+      var(--color-black) 64%,
+      color-mix(in srgb, var(--color-black) 86%, transparent) 72%,
+      color-mix(in srgb, var(--color-black) 50%, transparent) 82%,
+      color-mix(in srgb, var(--color-black) 16%, transparent) 91%,
+      transparent 99%
+    );
+
+    position: relative;
+    isolation: isolate;
+    padding-top: calc(
+      var(--h-header-height) + clamp(var(--space-md), 4.5vh, 3.5rem)
+    );
+    padding-bottom: clamp(var(--space-lg), 5vh, var(--space-xl));
+    overflow: clip;
+  }
+
+  /* The brightest zone of the ground: Q27 blue light behind the pass. */
+  /* The pass stands in a pool of light (brightest right behind the card,
+     falling off through the Q blues), so it comes forward; a faint ice
+     glow rises at the lower left, as in the mockup. The rest of the hero
+     stays deep navy. */
+  .hx-light {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(
+        circle at var(--hx-spot-x, 76%) var(--hx-spot-y, 52%),
+        color-mix(in srgb, var(--color-ticket-ice) 26%, var(--color-ticket-sky))
+          0%,
+        color-mix(in srgb, var(--color-ticket-sky) 62%, transparent) 14%,
+        color-mix(in srgb, var(--color-ticket-deep) 70%, transparent) 30%,
+        transparent var(--hx-spot-size, 52%)
+      ),
+      radial-gradient(
+        ellipse 45% 40% at 4% 92%,
+        color-mix(in srgb, var(--color-ticket-ice) 14%, transparent),
+        transparent
+      );
+    /* Everything here is gone by the hero's foot (an S-curve over its
+       lowest third), so the hero never ends in a cut. */
+    -webkit-mask-image: var(--hx-foot-mask);
+    mask-image: var(--hx-foot-mask);
+    pointer-events: none;
+  }
+
+  .hx-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.12fr) minmax(19rem, 0.88fr);
+    grid-template-areas:
+      "edition pass"
+      "title pass"
+      "lead pass"
+      "actions pass"
+      "facts name";
+    column-gap: clamp(var(--space-lg), 5vw, 4.5rem);
+    align-content: center;
+    min-height: min(
+      calc(
+        100svh - var(--h-header-height) -
+          clamp(var(--space-md), 4.5vh, 3.5rem) -
+          clamp(var(--space-lg), 5vh, var(--space-xl))
+      ),
+      58rem
+    );
+  }
+
+  .hx-edition {
+    grid-area: edition;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.2rem var(--space-xs);
+    margin: 0 0 var(--space-md);
+    color: var(--h-text-soft);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .hx-edition-num {
+    color: var(--color-white);
+    font-size: clamp(1.75rem, 2.4vw, 2.1rem);
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  .hx-title {
+    grid-area: title;
+    max-width: 14ch;
+    margin: 0;
+    font-size: clamp(3rem, 5.6vw, 5.75rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.045em;
+    line-height: 0.95;
+    text-wrap: balance;
+  }
+
+  .hx-lead {
+    grid-area: lead;
+    max-width: 30rem;
+    margin: var(--space-md) 0 0;
+    color: var(--h-text-soft);
+    font-size: clamp(1.0625rem, 1.3vw, 1.1875rem);
+    line-height: 1.6;
+    text-wrap: pretty;
+  }
+
+  .hx-actions {
+    grid-area: actions;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin-top: var(--space-lg);
+  }
+
+  .hx-buy {
+    min-height: 3.75rem;
+    padding-inline: var(--space-lg);
+  }
+
+  .hx-facts {
+    grid-area: facts;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, auto));
+    justify-content: start;
+    margin: var(--space-md) 0 0;
+    border-top: 1px solid;
+    border-image: var(--h-fade-x) 1;
+  }
+
+  .hx-facts div {
+    display: grid;
+    gap: 0.35rem;
+    padding: var(--space-sm) clamp(var(--space-sm), 2.2vw, 1.75rem) 0;
+  }
+
+  .hx-facts div:first-child {
+    padding-left: 0;
+  }
+
+  .hx-facts div + div {
+    border-left: 1px solid;
+    border-image: var(--h-fade-y) 1;
+  }
+
+  .hx-facts dt {
+    color: var(--h-text-faint);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .hx-facts dd {
+    margin: 0;
+    font-size: var(--text-size-regular);
+    font-weight: var(--font-weight-extrabold);
+  }
+
+  /* The pass column runs from the top of the page (the lanyard comes in
+     behind the header glass) down to the name field. */
+  /* Above the copy, so the card is never hidden behind a heading while it
+     lands; it takes no clicks outside its own frame. */
+  .hx-pass {
+    --hp-scale: 1.12;
+
+    grid-area: pass;
+    position: relative;
+    z-index: 2;
+    margin-top: calc(
+      -1 * (var(--h-header-height) + clamp(var(--space-md), 4.5vh, 3.5rem))
+    );
+    min-height: 32rem;
+  }
+
+  /* The name field sits under the pass, level with the facts. */
+  .hx-name {
+    grid-area: name;
+    position: relative;
+    z-index: 3;
+    display: grid;
+    gap: var(--space-2xs);
+    align-self: end;
+    justify-self: center;
+    width: min(100%, 20rem);
+  }
+
+  .hx-name[hidden] {
+    display: none;
+  }
+
+  .hx-name-label {
+    color: var(--h-text-faint);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  /* A small field of light liquid glass (a faint white body, a lit top
+     rim). "Your name" goes as soon as the field has focus, and the caret
+     is a blinking ice underscore where the browser can draw one (a bar
+     elsewhere). Focus brightens the rim instead of the site-wide ring
+     (global.css), so no white frame appears around it. */
+  .hx-name-input {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0 var(--space-sm);
+    border: 1px solid color-mix(in srgb, var(--color-white) 18%, transparent);
+    border-radius: var(--radius-ticket-panel);
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--color-white) 12%, transparent),
+        color-mix(in srgb, var(--color-white) 4%, transparent)
+      ),
+      color-mix(in srgb, var(--color-ticket-midnight) 55%, transparent);
+    box-shadow:
+      inset 0 1px 1px color-mix(in srgb, var(--color-white) 45%, transparent),
+      inset 0 -1px 1px color-mix(in srgb, var(--color-white) 10%, transparent);
+    color: var(--color-white);
+    caret-color: var(--color-ticket-ice);
+    caret-shape: underscore;
+    font: inherit;
+    font-size: var(--text-size-regular);
+    font-weight: var(--font-weight-semibold);
+    -webkit-backdrop-filter: blur(12px) saturate(60%) brightness(0.75);
+    backdrop-filter: blur(12px) saturate(60%) brightness(0.75);
+    transition: border-color var(--duration-hover) var(--ease-snappy);
+  }
+
+  .hx-name-input::placeholder {
+    color: var(--h-text-faint);
+  }
+
+  .hx-name-input:focus::placeholder {
+    color: transparent;
+  }
+
+  .hx-name-input:focus,
+  .hx-name-input:focus-visible {
+    border-color: color-mix(in srgb, var(--color-ticket-ice) 70%, transparent);
+    outline: none;
+    box-shadow:
+      inset 0 1px 1px color-mix(in srgb, var(--color-white) 55%, transparent),
+      inset 0 -1px 1px color-mix(in srgb, var(--color-white) 10%, transparent);
+  }
+
+  /* Last edition's film behind the hero, as in the mockup: a ghost of it
+     in the page's blues (luminosity over the navy, dimmed, more contrast),
+     fading out towards the copy on the left and towards the foot. */
+  .hx-film {
+    --hx-film-fade: linear-gradient(
+      180deg,
+      var(--color-black) 44%,
+      color-mix(in srgb, var(--color-black) 84%, transparent) 56%,
+      color-mix(in srgb, var(--color-black) 48%, transparent) 70%,
+      color-mix(in srgb, var(--color-black) 14%, transparent) 84%,
+      transparent 96%
+    );
+
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: -2;
+    width: 100%;
+    height: min(100%, 58rem);
+    object-fit: cover;
+    mix-blend-mode: luminosity;
+    opacity: 0.5;
+    filter: contrast(1.4) brightness(0.6);
+    pointer-events: none;
+    -webkit-mask-image:
+      var(--hx-film-fade),
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--color-black) 10%, transparent),
+        color-mix(in srgb, var(--color-black) 38%, transparent) 40%,
+        var(--color-black) 74%
+      );
+    -webkit-mask-composite: source-in;
+    mask-image:
+      var(--hx-film-fade),
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--color-black) 10%, transparent),
+        color-mix(in srgb, var(--color-black) 38%, transparent) 40%,
+        var(--color-black) 74%
+      );
+    mask-composite: intersect;
+  }
+
+  /* Tablets: the same two columns, a narrower pass. */
+  @media (max-width: 1023px) {
+    .hx-grid {
+      grid-template-columns: minmax(0, 1.1fr) minmax(15rem, 0.9fr);
+    }
+
+    .hx-pass {
+      --hp-scale: 1.08;
+    }
+
+    .hx-facts {
+      grid-template-columns: minmax(0, 1fr);
+      border-top: 0;
+    }
+
+    .hx-facts div,
+    .hx-facts div:first-child {
+      grid-template-columns: 7rem minmax(0, 1fr);
+      align-items: baseline;
+      padding: var(--space-2xs) 0;
+      border-top: 1px solid;
+      border-image: var(--h-fade-x) 1;
+    }
+
+    .hx-facts div + div {
+      border-left: 0;
+    }
+  }
+
+  /*
+   * Phones: edition and headline at the top left, the pass hanging on the
+   * right beside them (its lanyard showing under the header); then the
+   * tagline, the buttons and the facts. No name field on phones.
+   */
+  @media (max-width: 767px) {
+    .hx {
+      --hx-spot-x: 80%;
+      --hx-spot-y: 17%;
+      --hx-spot-size: 46%;
+
+      padding-top: calc(var(--h-header-height) + var(--space-sm));
+    }
+
+    .hx-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 48%);
+      grid-template-areas:
+        "edition pass"
+        "title pass"
+        "lead lead"
+        "actions actions"
+        "facts facts";
+      grid-template-rows: auto 1fr;
+      min-height: 0;
+      column-gap: var(--space-xs);
+    }
+
+    /* "10 Years of Q-Summit", as on wide screens, left-aligned. */
+    .hx-edition {
+      display: block;
+      margin: var(--space-lg) 0 0;
+      letter-spacing: 0.12em;
+      line-height: 1.6;
+    }
+
+    .hx-edition-num {
+      margin-right: 0.35em;
+      font-size: var(--text-size-large);
+    }
+
+    .hx-title {
+      align-self: start;
+      margin-top: var(--space-sm);
+      max-width: none;
+      font-size: clamp(1.75rem, 8.2vw, 2.5rem);
+    }
+
+    /* "Put your name on it" is for wide screens only. */
+    .hx-name {
+      display: none;
+    }
+
+    .hx-lead {
+      margin-top: var(--space-md);
+    }
+
+    .hx-actions {
+      margin-top: var(--space-md);
+    }
+
+    .hx-actions .h-btn {
+      flex: 0 0 auto;
+      padding-inline: 1.1rem;
+      letter-spacing: 0.07em;
+    }
+
+    .hx-buy {
+      flex: 1 1 auto;
+    }
+
+    .hx-pass {
+      --hp-scale: 1.05;
+
+      margin-top: calc(-1 * (var(--h-header-height) + var(--space-sm)));
+      min-height: 0;
+      height: clamp(27rem, 128vw, 34rem);
+    }
+
+    /* On a phone the film sits behind the whole hero, a little calmer. */
+    .hx-film {
+      height: 100%;
+      opacity: 0.4;
+    }
+
+    .hx-facts {
+      margin-top: var(--space-md);
+    }
+
+    .hx-facts div,
+    .hx-facts div:first-child {
+      grid-template-columns: 6.5rem minmax(0, 1fr);
+    }
+  }
+
+  /* Low landscape phones: no full-height hero, the pass beside the copy. */
+  @media (max-height: 520px) and (min-width: 568px) {
+    .hx {
+      padding-top: calc(var(--h-header-height) + var(--space-sm));
+    }
+
+    .hx-grid {
+      min-height: 0;
+    }
+
+    .hx-edition {
+      margin-bottom: var(--space-2xs);
+    }
+
+    .hx-title {
+      font-size: clamp(2rem, 10vh, 3rem);
+    }
+
+    .hx-lead {
+      margin-top: var(--space-xs);
+      font-size: var(--text-size-small);
+    }
+
+    .hx-actions {
+      margin-top: var(--space-sm);
+    }
+
+    .hx-pass {
+      min-height: 20rem;
+    }
+  }
+
+  /* Short phones (an iPhone SE): a smaller pass row and headline, so the
+     ticket link is on the first screen. */
+  @media (max-width: 767px) and (max-height: 700px) {
+    .hx-pass {
+      height: clamp(23rem, 112vw, 28rem);
+    }
+
+    .hx-title {
+      margin-top: var(--space-xs);
+      font-size: clamp(1.6rem, 7.8vw, 2.2rem);
+    }
+
+    .hx-lead {
+      font-size: var(--text-size-small);
+    }
+  }
+
+  /* Before the entrance runs (home-stage.client.ts), the hero copy waits
+     unseen; a failsafe shows it if the script never runs. */
+  :global(.h-js) [data-hero-in] {
+    opacity: 0;
+    animation: h-failsafe var(--duration-hover) steps(1, end)
+      calc(var(--duration-reveal) * 10) forwards;
+  }
+
+  :global(html[data-hero="in"]) [data-hero-in] {
+    opacity: 1;
+    animation: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(.h-js) [data-hero-in] {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

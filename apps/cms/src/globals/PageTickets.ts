@@ -464,6 +464,18 @@ export const PageTickets: GlobalConfig = pageGlobal({
                 },
               ],
             },
+            // Optional: drives the homepage countdown while this phase is
+            // the one on sale. The site still never switches phases itself.
+            {
+              name: "endsAt",
+              label: "Ends at",
+              type: "date",
+              admin: {
+                date: { pickerAppearance: "dayAndTime" },
+                description:
+                  "Optional. When this phase ends. While it is the phase on sale, the homepage shows its end date and counts down to it; leave it empty for no countdown. Nothing switches by itself when the time is reached.",
+              },
+            },
           ],
         },
         {

@@ -221,7 +221,7 @@ export interface HomeContent {
     intro: string;
     cta: PageLink;
     /**
-     * Badge on past speakers, e.g. "Past Speaker". The name is historical:
+     * Badge on past speakers, e.g. "Previous Speaker". The name is historical:
      * they are not Q alumni (those are former team members).
      */
     alumniLabel?: string;
@@ -247,6 +247,16 @@ export interface HomeContent {
   };
   /** LinkedIn and Instagram section; without it the section is not shown. */
   social?: HomeSocial;
+  /**
+   * The aftermovie block (the film itself is the site's stream on R2);
+   * without it the block is not shown.
+   */
+  aftermovie?: {
+    /** e.g. "Aftermovie Q-Summit 2026". */
+    eyebrow: string;
+    /** e.g. "Feel the energy." */
+    heading: string;
+  };
   faqSection: {
     heading: string;
     intro: string;
@@ -309,6 +319,12 @@ export interface TicketPhase {
   label: string;
   /** Whole-number discount in percent off the regular price, e.g. 30. */
   discount: number;
+  /**
+   * Optional end of the phase (ISO date-time). While the phase is on sale
+   * the homepage shows the date and counts down to it; nothing switches
+   * when it is reached.
+   */
+  endsAt?: string;
 }
 
 /**
@@ -724,6 +740,10 @@ interface CmsPageHomeDoc {
     }[];
     cta: CmsPageLink;
   };
+  aftermovie?: {
+    eyebrow?: string | null;
+    heading?: string | null;
+  } | null;
   social?: {
     eyebrow?: string | null;
     heading?: string | null;
@@ -799,6 +819,7 @@ async function cmsGetHome(): Promise<HomeContent> {
     });
   }
   const social = doc.social;
+  const aftermovie = doc.aftermovie;
   const lineup = doc.previousSpeakers.lineup;
   const highlights = fromTextRows(doc.previousSpeakers.highlights);
   const standIns = fromTextRows(doc.previousSpeakers.standIns);
@@ -872,6 +893,14 @@ async function cmsGetHome(): Promise<HomeContent> {
             linkedinLabel: social.linkedinLabel ?? "",
             instagramLabel: social.instagramLabel ?? "",
             posts,
+          },
+        }
+      : {}),
+    ...(aftermovie?.heading?.trim()
+      ? {
+          aftermovie: {
+            eyebrow: aftermovie.eyebrow ?? "",
+            heading: aftermovie.heading,
           },
         }
       : {}),
@@ -970,7 +999,14 @@ interface CmsTicketsDoc {
   /** Optional group; the timeline shows once it has items. */
   phases?: {
     label?: string | null;
-    items?: { key: string; label: string; discount: number }[] | null;
+    items?:
+      | {
+          key: string;
+          label: string;
+          discount: number;
+          endsAt?: string | null;
+        }[]
+      | null;
     activeKey?: string | null;
     currentLabel?: string | null;
     upcomingLabel?: string | null;
@@ -1077,6 +1113,7 @@ async function cmsGetTicketCategories(): Promise<TicketCategoriesContent> {
               key: p.key,
               label: p.label,
               discount: p.discount,
+              ...(p.endsAt ? { endsAt: p.endsAt } : {}),
             })),
             activeKey: doc.phases.activeKey ?? "",
             currentLabel: doc.phases.currentLabel ?? "",
@@ -1851,6 +1888,9 @@ export function assertTicketPage(t: TicketCategoriesContent): void {
         fail(
           `phase "${item.label}" needs a whole-number discount from 1 to 99.`,
         );
+      }
+      if (item.endsAt !== undefined && Number.isNaN(Date.parse(item.endsAt))) {
+        fail(`phase "${item.label}" has an end that is not a date.`);
       }
     }
     if (!phaseKeys.has(p.activeKey)) {

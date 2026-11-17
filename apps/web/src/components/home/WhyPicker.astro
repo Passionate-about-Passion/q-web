@@ -1,0 +1,406 @@
+---
+// "Why Q?": the audience picker (DESIGN.md HOME-1, after the 2027 concept
+// mockup). Left, a big "Why Q?" with its line at the top and, at the
+// foot, the intro and the four audiences as large rows; right, one white
+// card for the audience picked: its photo, its line, what Q-Summit offers
+// it and a link to its own page. Both halves are as tall as each other,
+// so the section reads as one block. A tab list:
+// rows pick (on a fine pointer also on hover), arrow keys move between
+// them, the card's link opens the audience page. Without JavaScript all
+// four cards are shown, each with its link. The anchor stays #why-attend:
+// /whyq redirects there (astro.config.mjs), and shared links use it.
+import type { WhyCard } from "../../lib/content";
+import { photoSrc } from "../../lib/media-filename";
+import "./home-theme.css";
+
+interface Props {
+  /** e.g. "Why Q?", set large. */
+  eyebrow?: string;
+  heading: string;
+  intro: string;
+  cards: WhyCard[];
+}
+
+const { eyebrow, heading, intro, cards } = Astro.props;
+const list = cards.filter((card) => card.title);
+---
+
+<section
+  class="h-section wp"
+  id="why-attend"
+  aria-labelledby="home-why-title"
+  data-why
+>
+  <div class="h-shell wp-grid">
+    <div class="wp-left">
+      <h2 class="wp-title" id="home-why-title" data-h-reveal>
+        <span class="h-accent" data-lp="whyAttend.eyebrow"
+          >{eyebrow ?? heading}</span
+        >
+        {
+          eyebrow && (
+            <span class="wp-heading" data-lp="whyAttend.heading">
+              {heading}
+            </span>
+          )
+        }
+      </h2>
+      <div class="wp-pick">
+        <p class="wp-intro" data-lp="whyAttend.intro" data-h-reveal>{intro}</p>
+        <div class="wp-tabs" role="tablist" aria-label={heading} data-why-tabs>
+          {
+            list.map((card, i) => (
+              <button
+                type="button"
+                class="wp-row"
+                role="tab"
+                id={`why-tab-${i}`}
+                aria-controls={`why-panel-${i}`}
+                aria-selected={i === 0 ? "true" : "false"}
+                tabindex={i === 0 ? 0 : -1}
+                data-why-tab={i}
+                data-h-reveal
+                style={`--h-i: ${i}`}
+              >
+                <span class="wp-label">{card.title}</span>
+                <svg
+                  class="wp-arrow"
+                  width="26"
+                  height="26"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M7 17L17 7M9 7h8v8"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="wp-right">
+      <div class="wp-panels">
+        {
+          list.map((card, i) => (
+            <article
+              class="wp-card"
+              role="tabpanel"
+              id={`why-panel-${i}`}
+              aria-labelledby={`why-tab-${i}`}
+              data-why-panel={i}
+              data-selected={i === 0 ? "" : undefined}
+            >
+              {card.imageFile && (
+                <img
+                  class="wp-photo"
+                  src={photoSrc(card.imageFile)}
+                  alt={card.imageAlt ?? ""}
+                  width="800"
+                  height="500"
+                  loading="lazy"
+                  decoding="async"
+                />
+              )}
+              <div class="wp-body">
+                {card.eyebrow && <p class="wp-kicker">{card.eyebrow}</p>}
+                <h3 class="wp-card-title">{card.title}</h3>
+                <p class="wp-text">{card.description}</p>
+                {card.href && (
+                  <a class="h-btn wp-link" href={card.href}>
+                    {card.linkLabel ?? "Learn more"}
+                    <span class="u-visually-hidden">: {card.title}</span>
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M4 12h15M13 6l6 6-6 6"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.4"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </a>
+                )}
+              </div>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* DESIGN.md HOME-1 */
+  /* Two halves of one height: the title at the top of the left half, the
+     picker at its foot, level with the foot of the card. */
+  .wp-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(var(--space-lg), 6vw, 5rem);
+    align-items: stretch;
+  }
+
+  .wp-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: var(--space-lg);
+  }
+
+  .wp-intro {
+    margin: 0 0 var(--space-md);
+    color: var(--h-text-faint);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    max-width: 28rem;
+    line-height: 1.6;
+  }
+
+  .wp-tabs {
+    border-bottom: 1px solid;
+    border-image: var(--h-fade-x) 1;
+  }
+
+  .wp-row {
+    display: flex;
+    align-items: center;
+    gap: clamp(var(--space-sm), 2.4vw, 1.75rem);
+    width: 100%;
+    min-height: 3.5rem;
+    padding: clamp(var(--space-sm), 2.2vw, 1.6rem) var(--space-sm);
+    border: 0;
+    border-top: 1px solid;
+    border-image: var(--h-fade-x) 1;
+    border-radius: var(--radius-ticket-button);
+    background: transparent;
+    color: var(--color-white);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition:
+      background-color var(--duration-hover) var(--ease-snappy),
+      color var(--duration-hover) var(--ease-snappy);
+  }
+
+  .wp-row + .wp-row {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  .wp-label {
+    flex: 1;
+    font-size: clamp(1.5rem, 2.8vw, 2.5rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    transition: transform var(--duration-open) var(--ease-snappy);
+  }
+
+  .wp-arrow {
+    flex: none;
+    opacity: 0.45;
+    transition:
+      opacity var(--duration-hover) var(--ease-snappy),
+      transform var(--duration-hover) var(--ease-snappy);
+  }
+
+  .wp-row[aria-selected="true"] {
+    background: color-mix(in srgb, var(--color-ticket-ice) 9%, transparent);
+    color: var(--color-ticket-ice);
+  }
+
+  .wp-row[aria-selected="true"] .wp-label {
+    transform: translateX(0.5rem);
+  }
+
+  .wp-row[aria-selected="true"] .wp-arrow {
+    opacity: 1;
+    transform: translate(3px, -3px);
+  }
+
+  @media (hover: hover) {
+    .wp-row:hover {
+      background: color-mix(in srgb, var(--color-ticket-ice) 6%, transparent);
+    }
+  }
+
+  .wp-row:focus-visible {
+    outline: 2px solid var(--color-ticket-ice);
+    outline-offset: -2px;
+  }
+
+  .wp-title {
+    display: grid;
+    gap: var(--space-xs);
+    margin: 0;
+  }
+
+  .wp-title .h-accent {
+    font-size: clamp(3.75rem, 8vw, 7.5rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.05em;
+    line-height: 0.88;
+  }
+
+  .wp-heading {
+    color: var(--h-text-soft);
+    font-size: clamp(1.125rem, 1.6vw, 1.375rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.01em;
+  }
+
+  .wp-panels {
+    display: grid;
+  }
+
+  /* One white card, the audience picked (all of them without JS). */
+  .wp-card {
+    grid-area: 1 / 1;
+    display: grid;
+    overflow: hidden;
+    border-radius: var(--radius-ticket-card);
+    background: var(--color-white);
+    box-shadow: 0 30px 60px -36px
+      color-mix(in srgb, var(--color-ticket-midnight) 95%, transparent);
+    color: var(--color-navy);
+  }
+
+  :global(.h-js) .wp-card:not([data-selected]) {
+    visibility: hidden;
+    opacity: 0;
+  }
+
+  :global(.h-js) .wp-card[data-selected] {
+    animation: wp-in var(--duration-open) var(--ease-emphasized) both;
+  }
+
+  @keyframes wp-in {
+    from {
+      opacity: 0;
+      transform: translateY(0.75rem);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .wp-photo {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+  }
+
+  .wp-body {
+    display: grid;
+    gap: var(--space-xs);
+    padding: clamp(var(--space-md), 3vw, 2.25rem);
+  }
+
+  .wp-kicker {
+    margin: 0;
+    color: var(--color-ticket-sky);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .wp-card-title {
+    margin: 0;
+    font-size: clamp(1.6rem, 2.4vw, 2.1rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+  }
+
+  .wp-text {
+    margin: 0;
+    color: color-mix(in srgb, var(--color-navy) 82%, transparent);
+    font-size: var(--text-size-regular);
+    line-height: 1.6;
+  }
+
+  .wp-link {
+    justify-self: start;
+    margin-top: var(--space-xs);
+  }
+
+  /* On the white card clear glass would vanish: the same glass, tinted
+     navy, so it reads as the page's button on a light ground. */
+  .wp-link.h-btn {
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-ticket-deep) 80%, var(--color-navy)),
+      var(--color-navy)
+    );
+  }
+
+  /* Narrow screens: title, intro, the list, then the card under it. */
+  @media (max-width: 860px) {
+    .wp-grid {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0;
+    }
+
+    .wp-left,
+    .wp-pick,
+    .wp-right {
+      display: contents;
+    }
+
+    .wp-title {
+      order: 1;
+      margin-bottom: var(--space-md);
+    }
+
+    .wp-intro {
+      order: 2;
+    }
+
+    .wp-tabs {
+      order: 3;
+    }
+
+    .wp-panels {
+      order: 4;
+      margin-top: var(--space-md);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wp-label,
+    .wp-arrow,
+    .wp-row {
+      transition: none;
+    }
+
+    .wp-row[aria-selected="true"] .wp-label,
+    .wp-row[aria-selected="true"] .wp-arrow {
+      transform: none;
+    }
+
+    :global(.h-js) .wp-card[data-selected] {
+      animation: none;
+    }
+  }
+</style>

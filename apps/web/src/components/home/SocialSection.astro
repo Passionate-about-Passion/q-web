@@ -1,17 +1,16 @@
 ---
-// LinkedIn and Instagram on the home page (DESIGN.md HOME-1): one pane of
-// glass with the copy in the middle, the LinkedIn mark at the left and the
+// LinkedIn and Instagram on the home page (DESIGN.md HOME-1), right after
+// the sale phases, in the navy page: one pane of dark liquid glass with the copy in the middle, the LinkedIn mark at the left and the
 // Instagram mark at the right, each a link to the profile from Site
 // Settings, and a projection screen for posts below.
 //
 // The marks are glass objects like the glass Q of the page ground: each
-// brand glyph rendered in 3D as thick clear glass from its official
-// outline, with the Q's material and light (small WebPs with alpha under
-// public/home/), each on a square of deep blue light so the clear glass
-// reads. They stand upright; hover lifts one, a press pushes it in.
+// brand glyph rendered in 3D as thick glass from its official outline,
+// with the Q's material and light (small WebPs with alpha under
+// public/home/), frosted to a milky core so the glyph keeps its contrast
+// on the square of deep blue light it stands on. They stand upright; hover lifts one, a press pushes it in.
 //
-// The screen is where posts will be shown, under a cone of light: four
-// frames laid out like the grid of an Instagram profile, portrait tiles
+// Below is the post grid: four frames laid out like the grid of an Instagram profile, portrait tiles
 // with square corners and one even, narrow gap between them, and no frame
 // or housing around the grid. The
 // frames show the newest four posts, the newest at the far left
@@ -25,6 +24,7 @@ import type { HomeSocial } from "../../lib/content";
 import { photoSrc } from "../../lib/media-filename";
 import { HOME_POST_FRAMES, latestPosts } from "../../lib/social-posts";
 import "./home-theme.css";
+import Unbroken from "./Unbroken.astro";
 
 interface Props {
   social: HomeSocial;
@@ -58,7 +58,11 @@ const frames = Array.from(
 );
 ---
 
-<section class="h-section h-social" aria-labelledby="home-social-title">
+<section
+  class="h-section h-social"
+  id="social"
+  aria-labelledby="home-social-title"
+>
   <div class="h-shell">
     <div class="h-social-pane h-glass">
       <div class="h-social-top">
@@ -98,7 +102,7 @@ const frames = Array.from(
             data-lp="social.heading"
             data-h-reveal
           >
-            {social.heading}
+            <Unbroken text={social.heading} />
           </h2>
           <p class="h-intro" data-lp="social.intro" data-h-reveal>
             {social.intro}
@@ -107,7 +111,6 @@ const frames = Array.from(
       </div>
 
       <div class="h-screen" aria-hidden={posts.length === 0}>
-        <span class="h-screen-beam" aria-hidden="true"></span>
         <ul class="h-screen-surface">
           {
             frames.map((post) => (
@@ -142,8 +145,13 @@ const frames = Array.from(
 
 <style>
   /* DESIGN.md HOME-1 */
+  /* Compact: the marks, the copy and the four posts fit one screen. */
+  .h-social {
+    padding-block: clamp(var(--space-lg), 5vh, 4rem);
+  }
+
   .h-social-pane {
-    padding: clamp(var(--space-md), 4vw, var(--space-xl));
+    padding: clamp(var(--space-md), 2.5vw, 2.25rem);
   }
 
   /* LinkedIn, copy, Instagram: the copy is last in source order (the two
@@ -175,13 +183,22 @@ const frames = Array.from(
     margin-inline: auto;
   }
 
+  .h-social-copy .h-title {
+    margin-top: var(--space-xs);
+    font-size: clamp(2rem, 3.8vw, 3.25rem);
+  }
+
+  .h-social-copy .h-intro {
+    margin-top: var(--space-xs);
+  }
+
   /* A mark: the glass object and its label, one link. */
   .h-social-mark {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--space-sm);
-    color: var(--color-navy);
+    gap: var(--space-xs);
+    color: var(--color-white);
     text-decoration: none;
     -webkit-tap-highlight-color: transparent;
   }
@@ -197,7 +214,7 @@ const frames = Array.from(
     position: relative;
     display: grid;
     place-items: center;
-    width: clamp(6.5rem, 12vw, 9rem);
+    width: clamp(4.25rem, 6.5vw, 5.5rem);
     aspect-ratio: 1;
     border-radius: var(--radius-ticket-tile);
     background:
@@ -242,7 +259,7 @@ const frames = Array.from(
   }
 
   .h-social-mark:focus-visible {
-    outline: 2px solid var(--color-navy);
+    outline: 2px solid var(--color-ticket-ice);
     outline-offset: 6px;
     border-radius: var(--radius-ticket-panel);
   }
@@ -253,33 +270,13 @@ const frames = Array.from(
     transition-duration: var(--duration-glass-press);
   }
 
-  /*
-   * The post grid, lit from above its middle. The frames are the tiles of
-   * a profile grid.
-   */
+  /* The post grid: the frames are the tiles of a profile grid. No cone of
+     light above it: a flat grid reads cleaner. */
   .h-screen {
     --h-post-gap: 0.25rem;
 
     position: relative;
-    margin-top: clamp(var(--space-lg), 5vw, var(--space-xl));
-    padding-top: var(--space-md);
-  }
-
-  /* The cone of light falling onto the screen. */
-  .h-screen-beam {
-    position: absolute;
-    top: calc(-1 * var(--space-lg));
-    left: 0;
-    right: 0;
-    height: calc(var(--space-lg) + var(--space-md) + 40%);
-    background: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--color-white) 70%, transparent),
-      color-mix(in srgb, var(--color-white) 14%, transparent) 60%,
-      transparent
-    );
-    clip-path: polygon(47% 0, 53% 0, 100% 100%, 0 100%);
-    pointer-events: none;
+    margin-top: var(--space-md);
   }
 
   .h-screen-surface {
@@ -300,9 +297,9 @@ const frames = Array.from(
   .h-screen-frame {
     /* The portrait format of a profile grid. */
     aspect-ratio: 4 / 5;
-    background:
-      radial-gradient(120% 90% at 50% 0%, var(--color-white), transparent 80%),
-      color-mix(in srgb, var(--color-white) 78%, var(--color-ticket-ice));
+    background: color-mix(in srgb, var(--color-white) 6%, transparent);
+    box-shadow: inset 0 0 0 1px
+      color-mix(in srgb, var(--color-white) 10%, transparent);
   }
 
   .h-screen-frame a,

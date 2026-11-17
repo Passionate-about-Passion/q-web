@@ -8,12 +8,9 @@
  * Ticks are aligned to the wall clock second and stop while the tab is
  * hidden or the display is off screen.
  *
- * On load the display starts up: the figures run through random numbers
- * while the display sharpens out of its blur (the hero's entrance), and the
- * units settle on the real time from left to right. It runs once, takes
- * about a second, shows only random figures (never a wrong time that could
- * be read as one for longer than a frame) and is skipped for reduced
- * motion.
+ * The display appears with the hero's entrance. Afterwards a figure that
+ * changes rolls in from below (a short transform and opacity animation,
+ * skipped for reduced motion); the figures that stay the same do not move.
  */
 import {
   COUNTDOWN_UNITS,
@@ -23,9 +20,8 @@ import {
   type CountdownUnit,
 } from "../../lib/countdown";
 
-/** Start-up timing: how long the figures run before the last unit settles. */
-const BOOT_SETTLE_MS = 1100;
-const BOOT_FRAME_MS = 60;
+/** How long a changing figure takes to roll in. */
+const ROLL_MS = 360;
 
 function initCountdown(root: HTMLElement): void {
   const target = Number(root.dataset.target);
@@ -49,16 +45,17 @@ function initCountdown(root: HTMLElement): void {
   let onScreen = true;
   let spokenMinute = -1;
   let finished = false;
-  let lastDigits = -1;
-  let booting = false;
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+  // The first paint sets the figures without rolling them.
+  let painted = false;
 
-  /** Shows `text` in a unit: each figure takes the outline of its digit. */
+  /** Shows `text` in a unit, one figure per digit; changed ones roll in. */
   function show(box: HTMLElement, text: string): void {
-    let figures = [...box.querySelectorAll<SVGElement>("[data-digit]")];
+    let figures = [...box.querySelectorAll<HTMLElement>("[data-digit]")];
     // The day count loses (or, after a clock change, gains) a digit.
     while (figures.length > text.length) figures.shift()!.remove();
     while (figures.length < text.length && figures[0]) {
-      const copy = figures[0].cloneNode(true) as SVGElement;
+      const copy = figures[0].cloneNode(true) as HTMLElement;
       box.prepend(copy);
       figures = [copy, ...figures];
     }
@@ -66,9 +63,16 @@ function initCountdown(root: HTMLElement): void {
       const digit = text[i]!;
       if (figure.dataset.value === digit) return;
       figure.dataset.value = digit;
-      figure
-        .querySelector("rect")
-        ?.setAttribute("mask", `url(#hcd-figure-${digit})`);
+      figure.textContent = digit;
+      if (painted && !reduced.matches && "animate" in figure) {
+        figure.animate(
+          [
+            { transform: "translateY(60%)", opacity: 0 },
+            { transform: "none", opacity: 1 },
+          ],
+          { duration: ROLL_MS, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+        );
+      }
     });
   }
 
@@ -84,20 +88,14 @@ function initCountdown(root: HTMLElement): void {
       return;
     }
 
-    let digits = 0;
     for (const unit of COUNTDOWN_UNITS) {
       const state = units.get(unit)!;
       const text = unitText(unit, left);
-      digits += text.length;
       if (text === state.text) continue;
       show(state.box, text);
       state.text = text;
     }
-    // The figure size follows the number of figures in the display.
-    if (digits !== lastDigits) {
-      lastDigits = digits;
-      row!.style.setProperty("--digits", String(digits));
-    }
+    painted = true;
 
     // Screen readers get one sentence, refreshed once a minute, not a
     // stream of changing figures (no live region: read on demand).
@@ -117,64 +115,8 @@ function initCountdown(root: HTMLElement): void {
   }
 
   function tick(): void {
-    // The power-on sequence owns the display until it hands over.
-    if (booting) return;
     paint();
     schedule();
-  }
-
-  /**
-   * The start-up sequence. The display is sized for the real number first,
-   * so nothing shifts; every frame then shows random figures, until a
-   * unit's turn to settle, when it shows the real value. At the end the
-   * normal tick takes over.
-   */
-  function boot(): void {
-    const first = remainingUntil(target, Date.now());
-    const reduced = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-    if (first.done || reduced) {
-      tick();
-      return;
-    }
-
-    booting = true;
-    root.setAttribute("data-state", "booting");
-    const lengths = COUNTDOWN_UNITS.map((unit) => unitText(unit, first).length);
-    lastDigits = lengths.reduce((sum, n) => sum + n, 0);
-    row!.style.setProperty("--digits", String(lastDigits));
-
-    const start = performance.now();
-    const end = (): void => {
-      booting = false;
-      // Whatever a unit shows now is not its state: repaint all of them.
-      for (const state of units.values()) state.text = "";
-      tick();
-    };
-    const frame = (): void => {
-      const t = performance.now() - start;
-      if (t >= BOOT_SETTLE_MS || document.hidden) {
-        end();
-        return;
-      }
-      const left = remainingUntil(target, Date.now());
-      COUNTDOWN_UNITS.forEach((unit, i) => {
-        const { box } = units.get(unit)!;
-        const settleAt = (BOOT_SETTLE_MS * (i + 1)) / COUNTDOWN_UNITS.length;
-        if (t >= settleAt) {
-          show(box, unitText(unit, left).padStart(lengths[i]!, "0"));
-        } else {
-          let random = "";
-          for (let n = 0; n < lengths[i]!; n++) {
-            random += String(Math.floor(Math.random() * 10));
-          }
-          show(box, random);
-        }
-      });
-      window.setTimeout(frame, BOOT_FRAME_MS);
-    };
-    frame();
   }
 
   document.addEventListener("visibilitychange", () => {
@@ -192,7 +134,7 @@ function initCountdown(root: HTMLElement): void {
     }).observe(root);
   }
 
-  boot();
+  tick();
 }
 
 document

@@ -4,7 +4,9 @@
 //                previous / next, dots and a "1 / 5" count
 //   900-1399px   three cards over two, centered, rows aligned by subgrid
 //   1400px+      all five in one row
-// Every card is a light field (ticket-theme.css .t-field) with a frosted
+// Every card is printed like the front of the homepage's hanging pass
+// (ticket-theme.css .t-field: navy, a beam of Q27 blue light, film grain,
+// an ice rim), in white and ice type, with a dark glass
 // panel under the highlights. Buy links all go to the one shop URL from
 // the CMS; "All benefits" is a real in-page link to that ticket's panel,
 // which tickets.client.ts upgrades to select the matching tab.
@@ -14,7 +16,6 @@ import { EVENTS } from "../../lib/analytics/events";
 import IconCheck from "../icons/IconCheck.astro";
 import IconArrowRight from "../icons/IconArrowRight.astro";
 import IconChevron from "../icons/IconChevron.astro";
-import TicketQBubble from "./TicketQBubble.astro";
 import { euro, savings } from "./ticket-model";
 
 interface Props {
@@ -59,9 +60,7 @@ const LIGHT = [
                   aria-labelledby={`ticket-${ticket.key}`}
                   style={`--t-x1: ${x1}; --t-y1: ${y1}; --t-x2: ${x2}; --t-y2: ${y2}`}
                 >
-                  <span class="t-liquid" aria-hidden="true">
-                    <TicketQBubble class="is-card" />
-                  </span>
+                  <span class="t-liquid" aria-hidden="true" />
                   <header class="t-card-head">
                     <h2 id={`ticket-${ticket.key}`} class="t-card-name">
                       {ticket.name}
@@ -189,47 +188,38 @@ const LIGHT = [
     row-gap: var(--space-md);
     height: 100%;
     padding: clamp(1.25rem, 3.4vw, 1.75rem);
-    border: 1px solid color-mix(in srgb, var(--color-white) 70%, transparent);
+    /* The pass front's ice rim (home HangingPass card art), a lit top
+       edge and a deep drop shadow on the navy ground. */
+    border: 1px solid
+      color-mix(in srgb, var(--color-ticket-ice) 55%, transparent);
     border-radius: var(--radius-ticket-card);
     box-shadow:
-      inset 0 1px 0 color-mix(in srgb, var(--color-white) 90%, transparent),
-      inset 0 -1px 0
-        color-mix(in srgb, var(--color-ticket-sky) 18%, transparent),
-      0 2px 6px color-mix(in srgb, var(--color-navy) 8%, transparent),
-      0 24px 48px -24px color-mix(in srgb, var(--color-navy) 38%, transparent);
-    color: var(--color-navy);
+      inset 0 0 0 1px
+        color-mix(in srgb, var(--color-ticket-ice) 22%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--color-white) 35%, transparent),
+      0 2px 6px
+        color-mix(in srgb, var(--color-ticket-midnight) 40%, transparent),
+      0 24px 48px -24px var(--color-ticket-midnight);
+    color: var(--color-white);
   }
 
   .t-card-name {
     margin: 0;
-    color: var(--color-navy);
+    color: var(--color-white);
     font-size: clamp(1.5rem, 2.2vw, 1.75rem);
     font-weight: var(--font-weight-extrabold);
     letter-spacing: -0.025em;
     line-height: 1.1;
   }
 
-  /* The line ends before the glass Q floating in the card's upper right
-     corner (ticket-theme.css .t-qb.is-card: 34% of the card wide, plus
-     its drift), so the text wraps beside the Q and never runs across it. */
   .t-card-desc {
     /* At least two lines high, so a short description and a long one
        take the same room and the cards keep the same size. */
     min-height: calc(2 * 1.45em);
     margin: 0.35rem 0 0;
-    padding-inline-end: 36%;
-    color: color-mix(in srgb, var(--color-navy) 78%, transparent);
+    color: color-mix(in srgb, var(--color-white) 78%, transparent);
     font-size: var(--text-size-small);
     line-height: 1.45;
-  }
-
-  /* Three cards over two: the cards are narrow here and the longest
-     description takes three lines beside the Q, so every card reserves
-     three, or the two rows of cards would differ in height. */
-  @media (min-width: 900px) and (max-width: 1199px) {
-    .t-card-desc {
-      min-height: calc(3 * 1.45em);
-    }
   }
 
   .t-card-price {
@@ -249,7 +239,7 @@ const LIGHT = [
   }
 
   .t-was s {
-    color: color-mix(in srgb, var(--color-navy) 70%, transparent);
+    color: color-mix(in srgb, var(--color-white) 62%, transparent);
     font-weight: var(--font-weight-medium);
     text-decoration-thickness: 1.5px;
   }
@@ -257,12 +247,11 @@ const LIGHT = [
   .t-save {
     padding: 0.15rem 0.55rem;
     border-radius: var(--radius-ticket-pill);
-    /* Small glass chip: .t-glass rim, a denser fill, no drop shadow. */
-    background: color-mix(in srgb, var(--color-white) 62%, transparent);
-    box-shadow:
-      inset 0 1px 1px color-mix(in srgb, var(--color-white) 90%, transparent),
-      inset 0 -4px 8px -4px
-        color-mix(in srgb, var(--color-ticket-cyan) 55%, transparent);
+    /* Small ice chip with navy type (the homepage's "On sale now" pill),
+       a lit top edge, no drop shadow. */
+    background: var(--color-ticket-ice);
+    box-shadow: inset 0 1px 1px
+      color-mix(in srgb, var(--color-white) 80%, transparent);
     color: var(--color-navy);
     font-size: var(--text-size-tiny);
     font-weight: var(--font-weight-extrabold);
@@ -291,14 +280,13 @@ const LIGHT = [
   }
 
   .t-slide[data-ticket-still] .t-card::before,
-  .t-slide[data-ticket-still] .t-card::after,
-  .t-slide[data-ticket-still] :global(.t-qb) {
+  .t-slide[data-ticket-still] .t-card::after {
     animation: none;
   }
 
   .t-now {
     margin: 0;
-    color: var(--color-navy);
+    color: var(--color-white);
     font-size: clamp(2.6rem, 5vw, 3.25rem);
     font-weight: var(--font-weight-extrabold);
     letter-spacing: -0.045em;
@@ -315,12 +303,14 @@ const LIGHT = [
     margin: 0;
     padding: var(--space-sm);
     border-radius: var(--radius-ticket-panel);
-    /* Liquid glass (ticket-theme .t-glass), a little more opaque here so
-       the highlights read on a calm surface over the moving blobs. */
+    /* Dark glass (ticket-theme .t-glass, the homepage's .h-glass), a
+       little denser here so the highlights read on a calm surface over
+       the beam of light. */
     background: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--color-white) 70%, transparent),
-      color-mix(in srgb, var(--color-white) 48%, transparent)
+      165deg,
+      color-mix(in srgb, var(--color-ticket-sky) 16%, transparent),
+      color-mix(in srgb, var(--color-navy) 46%, transparent) 55%,
+      color-mix(in srgb, var(--color-ticket-midnight) 52%, transparent)
     );
     list-style: none;
   }
@@ -330,7 +320,7 @@ const LIGHT = [
     grid-template-columns: auto 1fr;
     gap: 0.6rem;
     align-items: start;
-    color: var(--color-navy);
+    color: color-mix(in srgb, var(--color-white) 88%, transparent);
     font-size: var(--text-size-small);
     line-height: 1.4;
   }
@@ -342,13 +332,13 @@ const LIGHT = [
     height: 1.25rem;
     margin-top: 0.02rem;
     border-radius: var(--radius-circle);
-    background: var(--color-navy);
-    color: var(--color-white);
+    background: var(--color-ticket-ice);
+    color: var(--color-navy);
   }
 
   .t-card-note {
     margin: 0;
-    color: var(--color-navy);
+    color: color-mix(in srgb, var(--color-white) 78%, transparent);
     font-size: var(--text-size-small);
     font-weight: var(--font-weight-semibold);
     line-height: 1.35;
@@ -361,7 +351,7 @@ const LIGHT = [
     height: 0.45rem;
     margin-inline-end: var(--space-2xs);
     border-radius: var(--radius-circle);
-    background: var(--color-ticket-sky);
+    background: var(--color-ticket-ice);
     vertical-align: 0.1em;
   }
 
@@ -459,17 +449,16 @@ const LIGHT = [
     border-radius: var(--radius-circle);
     background: linear-gradient(
       180deg,
-      color-mix(in srgb, var(--color-white) 60%, transparent),
-      color-mix(in srgb, var(--color-white) 22%, transparent)
+      color-mix(in srgb, var(--color-white) 18%, transparent),
+      color-mix(in srgb, var(--color-white) 6%, transparent)
     );
     box-shadow:
-      inset 0 1px 1px var(--color-white),
-      inset 0 0 0 1px color-mix(in srgb, var(--color-white) 60%, transparent),
-      inset 0 -10px 14px -10px
-        color-mix(in srgb, var(--color-ticket-cyan) 80%, transparent),
-      0 8px 18px -10px color-mix(in srgb, var(--color-navy) 40%, transparent);
-    -webkit-backdrop-filter: blur(12px) saturate(150%);
-    backdrop-filter: blur(12px) saturate(150%);
+      inset 0 1px 1px color-mix(in srgb, var(--color-white) 75%, transparent),
+      inset 0 0 0 1px color-mix(in srgb, var(--color-white) 22%, transparent),
+      0 8px 18px -10px var(--color-ticket-midnight);
+    color: var(--color-white);
+    -webkit-backdrop-filter: blur(12px) saturate(150%) brightness(0.8);
+    backdrop-filter: blur(12px) saturate(150%) brightness(0.8);
   }
 
   .t-arrow.is-prev :global(svg) {
@@ -514,7 +503,7 @@ const LIGHT = [
     height: 0.5rem;
     margin: -0.25rem 0 0 -0.25rem;
     border-radius: var(--radius-circle);
-    background: color-mix(in srgb, var(--color-navy) 28%, transparent);
+    background: color-mix(in srgb, var(--color-white) 34%, transparent);
   }
 
   /*
@@ -554,8 +543,8 @@ const LIGHT = [
       ),
       linear-gradient(
         160deg,
-        var(--color-ticket-sky) 0%,
-        var(--color-navy) 70%,
+        var(--color-white) 0%,
+        var(--color-ticket-ice) 60%,
         var(--color-ticket-cyan) 100%
       );
     -webkit-mask: url("/icon-512.png") center / contain no-repeat;
@@ -575,7 +564,7 @@ const LIGHT = [
   .t-count {
     min-width: 3.25rem;
     margin: 0;
-    color: color-mix(in srgb, var(--color-navy) 80%, transparent);
+    color: color-mix(in srgb, var(--color-white) 78%, transparent);
     font-size: var(--text-size-small);
     font-weight: var(--font-weight-semibold);
     font-variant-numeric: tabular-nums;

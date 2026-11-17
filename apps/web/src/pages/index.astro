@@ -1,21 +1,27 @@
 ---
-// Homepage for the 10th edition (DESIGN.md HOME-1): video hero with the
-// anniversary message, a countdown and Buy Now, then key figures,
-// partner rows, the four audience tiles, speaker highlights and the
-// LinkedIn / Instagram section, on a ground of light with clear glass
-// panes and glass Q objects.
+// Homepage for the 10th edition (DESIGN.md HOME-1), after the team's
+// "Q-Summit 2027 · Website concept" mockup: a navy page with its own
+// header and fullscreen menu, a short loading intro, the hero with the
+// hanging 3D pass (ADR-0008) and the countdown, key figures, the audience
+// picker, the aftermovie, partners, Mannheim Palace drawn and lit, the
+// speaker rail, the discount phases, the LinkedIn / Instagram section,
+// then the site footer.
 // All content loads at build time from the content layer
 // (src/lib/content.ts). The page is complete without JavaScript; scripts
 // only add the video stream, the countdown and the motion
 // (components/home/home.client.ts).
 import Base from "../layouts/Base.astro";
-import Hero from "../components/home/Hero.astro";
+import HomeIntro from "../components/home/HomeIntro.astro";
+import HomeHeader from "../components/home/HomeHeader.astro";
+import HomeHero from "../components/home/HomeHero.astro";
 import StatsBand from "../components/home/StatsBand.astro";
+import WhyPicker from "../components/home/WhyPicker.astro";
+import Aftermovie from "../components/home/Aftermovie.astro";
 import PartnerLogos from "../components/home/PartnerLogos.astro";
+import PalaceStage from "../components/home/PalaceStage.astro";
 import SpeakerGrid from "../components/home/SpeakerGrid.astro";
-import WhyCards from "../components/home/WhyCards.astro";
+import SalePhases from "../components/home/SalePhases.astro";
 import SocialSection from "../components/home/SocialSection.astro";
-import HomeGround from "../components/home/HomeGround.astro";
 import JsonLd from "../components/seo/JsonLd.astro";
 import logoManifest from "../components/partner/logo-manifest.json";
 import {
@@ -45,7 +51,47 @@ const [pageContent, allSpeakers, allPartners, { siteTitle, footer }] =
     getPartners(),
     getSiteSettings(),
   ]);
-const { home, contact } = pageContent;
+const { home, contact, ticketCategories } = pageContent;
+const phases = ticketCategories.phases;
+
+// Edition, dates and city as the content states them: the hero badge reads
+// "10 Years of Q-Summit · April 1-2, 2027 · Mannheim" (edition, dates, city).
+const badgeParts = (home.hero.badge ?? "")
+  .split("·")
+  .map((part) => part.trim())
+  .filter(Boolean);
+const eventYear = Number(home.event.startDate.slice(0, 4));
+const edition = badgeParts[0] ?? `Q-Summit ${eventYear}`;
+const dates =
+  badgeParts[1] ??
+  new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).formatRange(new Date(home.event.startDate), new Date(home.event.endDate));
+const city = badgeParts[2] ?? "Mannheim";
+
+// The palace stage ("What's inside", after the team's mockup): its heading
+// counts the days the event dates span ("Two days"), and its count climbs
+// to the participants figure of the key figures (1,500 if none is set).
+const DAY_WORDS = ["One day", "Two days", "Three days", "Four days"];
+const eventDays =
+  Math.round(
+    (Date.parse(home.event.endDate) - Date.parse(home.event.startDate)) /
+      86_400_000,
+  ) + 1;
+const palaceHeading = DAY_WORDS[eventDays - 1] ?? "Two days";
+const participants = Number(
+  home.stats.items
+    .find((item) => /participant/i.test(item.label))
+    ?.value?.replace(/[^0-9]/g, "") || 1500,
+);
+const activePhase = phases?.items.find((item) => item.key === phases.activeKey);
+const offer =
+  activePhase && phases
+    ? phases.discountLabel.replace("{discount}", String(activePhase.discount))
+    : undefined;
 
 // The partner band stores each logo as the partner name shown on the live
 // site's slider; match those (case/punctuation-insensitive) against the real
@@ -138,6 +184,7 @@ const standIns =
 const lineup = booked.length > 0 ? booked : standIns;
 const lineupLabel =
   booked.length > 0 ? lineupConfig?.label : home.previousSpeakers.standInLabel;
+const lineupBooked = booked.length > 0;
 
 // Profile links are the ones Site Settings already holds.
 const socialHref = (platform: string) =>
@@ -238,7 +285,6 @@ const eventLd = {
 <Base
   title={home.title}
   description={home.metaDescription}
-  preloadImage="/media/hero-poster.jpg"
   livePreviewGlobal="page-home"
 >
   <Fragment slot="jsonld">
@@ -246,33 +292,45 @@ const eventLd = {
     <JsonLd data={websiteLd} />
     <JsonLd data={eventLd} />
   </Fragment>
-  <Hero
-    headline={home.hero.headline}
-    announcement={home.hero.announcementLines}
-    cta={home.hero.cta}
-    badge={home.hero.badge}
-    leadLines={home.hero.leadLines}
-    countdown={home.countdown}
-    startDate={home.event.startDate}
-  />
-  <div class="home-page">
-    <HomeGround />
-    <StatsBand
-      tagline={home.hero.tagline}
-      heading={home.stats.heading}
-      stats={home.stats.items}
+  <Fragment slot="header">
+    <HomeIntro edition={edition} dates={dates} city={city} year={eventYear} />
+    <HomeHeader edition={edition} dates={dates} city={city} offer={offer} />
+  </Fragment>
+  <div class="h-home">
+    <HomeHero
+      hero={home.hero}
+      whyLabel={home.whyAttend.eyebrow ?? "Why Q?"}
+      edition={edition}
+      dates={dates}
+      city={city}
+      phases={phases}
     />
-    <PartnerLogos
-      eyebrow={home.partnerBand.eyebrow}
-      heading={home.partnerBand.heading}
-      groups={partnerLogoGroups}
-      cta={home.partnerBand.cta}
-    />
-    <WhyCards
+    <StatsBand heading={home.stats.heading} stats={home.stats.items} />
+    <WhyPicker
       eyebrow={home.whyAttend.eyebrow}
       heading={home.whyAttend.heading}
       intro={home.whyAttend.intro}
       cards={home.whyAttend.cards}
+    />
+    {
+      home.aftermovie && (
+        <Aftermovie
+          eyebrow={home.aftermovie.eyebrow}
+          heading={home.aftermovie.heading}
+          youtubeHref={socialHref("youtube")}
+        />
+      )
+    }
+    <PartnerLogos
+      heading={home.partnerBand.heading}
+      groups={partnerLogoGroups}
+      cta={home.partnerBand.cta}
+    />
+    <PalaceStage
+      eyebrow="What's inside"
+      heading={palaceHeading}
+      accent="inside a palace"
+      total={participants}
     />
     <SpeakerGrid
       eyebrow={home.previousSpeakers.eyebrow}
@@ -282,11 +340,13 @@ const eventLd = {
       alumniLabel={home.previousSpeakers.alumniLabel}
       lineup={lineup}
       lineupLabel={lineupLabel}
+      lineupBooked={lineupBooked}
       lineupSlots={Math.max(lineupConfig?.slots ?? 0, standIns.length)}
       placeholders={standIns.length === 0 && lineupConfig?.showPlaceholders}
       placeholderName={lineupConfig?.placeholderName}
       placeholderRole={lineupConfig?.placeholderRole}
     />
+    {phases && phases.items.length > 0 && <SalePhases phases={phases} />}
     {
       home.social && (
         <SocialSection

@@ -118,7 +118,7 @@ function scrollQuizIntoView(target: Element) {
 function keepStudyContextVisible(anchor: HTMLElement) {
   const behavior: ScrollBehavior = prefersReducedMotion() ? "auto" : "smooth";
   requestAnimationFrame(() => {
-    const header = document.querySelector<HTMLElement>(".site-header");
+    const header = document.getElementById("site-header");
     const headerHeight = header?.getBoundingClientRect().height ?? 0;
     const margin = 16;
     const rect = anchor.getBoundingClientRect();

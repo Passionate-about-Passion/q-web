@@ -7,7 +7,6 @@ export default {
   component: StatsBand,
   variants: {
     default: {
-      tagline: "A sample tagline that heads the sample figures",
       heading: "Q-Summit in numbers",
       stats: [
         { value: "3000", label: "Attendees" },

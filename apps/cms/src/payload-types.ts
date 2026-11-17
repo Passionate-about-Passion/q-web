@@ -985,7 +985,7 @@ export interface PageHome {
     heading: string;
     intro: string;
     /**
-     * Badge on past speakers, e.g. "Q-Summit Alumni", so nobody reads them as booked for the next edition. Leave empty for no badge.
+     * Badge on past speakers, e.g. "Previous Speaker", so nobody reads them as booked for the next edition. Do not call them alumni: Q alumni are former team members. Leave empty for no badge.
      */
     alumniLabel?: string | null;
     /**
@@ -1036,7 +1036,7 @@ export interface PageHome {
         }[]
       | null;
     /**
-     * Badge on a stand-in card, e.g. "Q-Summit 2026". It must say where the person spoke, so nobody reads them as booked for the next edition.
+     * Badge on a stand-in card, e.g. "Previous Speaker". It must make clear the person is an earlier speaker, so nobody reads them as booked for the next edition.
      */
     standInLabel?: string | null;
     cta: {
@@ -1114,7 +1114,7 @@ export interface PageHome {
      */
     instagramLabel?: string | null;
     /**
-     * Up to four posts, shown as image tiles that open the post. Without posts the section shows empty frames.
+     * Add every new post as the last row. The page shows the newest four as image tiles that open the post: the last row at the far left, each older one a place further right. An older post drops out by itself, so nothing has to be moved or deleted (rows that no longer show may be removed). Without posts the section shows empty frames.
      */
     posts?:
       | {
@@ -1134,6 +1134,16 @@ export interface PageHome {
           id?: string | null;
         }[]
       | null;
+  };
+  aftermovie?: {
+    /**
+     * Small label at the top of the film, e.g. "Aftermovie Q-Summit 2026".
+     */
+    eyebrow?: string | null;
+    /**
+     * Big line over the film, e.g. "Feel the energy." Filling it switches the block on.
+     */
+    heading?: string | null;
   };
   faqSection: {
     heading: string;
@@ -1452,7 +1462,7 @@ export interface PageWhyq {
   heading: string;
   intro: string;
   /**
-   * One section per audience (attendees, startups, investors, partners, founders), in display order.
+   * One section per audience. Each shows on its own page under Why Q?: attendees on /whyq/students/, startups on /whyq/startups/, partners on /whyq/corporates/, investors on /whyq/investors/. A section with another anchor id (founders) is kept but not shown on the site.
    */
   audiences: {
     /**
@@ -1830,6 +1840,10 @@ export interface PageTicket {
            * Percent off the regular price, e.g. 30.
            */
           discount: number;
+          /**
+           * Optional. When this phase ends. While it is the phase on sale, the homepage shows its end date and counts down to it; leave it empty for no countdown. Nothing switches by itself when the time is reached.
+           */
+          endsAt?: string | null;
           id?: string | null;
         }[]
       | null;
@@ -2460,6 +2474,12 @@ export interface PageHomeSelect<T extends boolean = true> {
               id?: T;
             };
       };
+  aftermovie?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+      };
   faqSection?:
     | T
     | {
@@ -2980,6 +3000,7 @@ export interface PageTicketsSelect<T extends boolean = true> {
               key?: T;
               label?: T;
               discount?: T;
+              endsAt?: T;
               id?: T;
             };
         activeKey?: T;

@@ -438,7 +438,7 @@ describe("/whyq/ has no overview page", () => {
       /"\/whyq":\s*\{\s*status:\s*302,\s*destination:\s*"\/#why-attend"/,
     );
     // The target of that redirect exists on the homepage.
-    expect(readText("../src/components/home/WhyCards.astro")).toContain(
+    expect(readText("../src/components/home/WhyPicker.astro")).toContain(
       'id="why-attend"',
     );
   });
