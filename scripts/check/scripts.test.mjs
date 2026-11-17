@@ -562,6 +562,23 @@ describe("CLI fail-closed smoke", () => {
     );
   });
 
+  // Lightning CSS (Vite 8) folds animation + animation-timeline into one
+  // shorthand that browsers reject, so scroll-driven animations died on the
+  // live site only. The build gate must flag exactly those shorthands.
+  it("build-web flags timeline animation shorthands, not plain ones", async () => {
+    const { timelineShorthands } = await import("./build-web.mjs");
+    const css =
+      ".a{animation:linear both ps-light --palace;animation-range:entry 60%}" +
+      ".b{animation:linear forwards timeline-progress view()}" +
+      ".c{animation:fade .3s ease-out both}" +
+      ".d{animation-name:x;animation-timeline:--p}" +
+      ".e{--h-ease:1;animation:pulse 2s var(--ease-out) infinite}";
+    assert.deepEqual(timelineShorthands(css), [
+      "animation:linear both ps-light --palace",
+      "animation:linear forwards timeline-progress view()",
+    ]);
+  });
+
   // The gate is only as good as its tag list. It shipped missing [partner] and
   // [whyq], so it reported "0 content warnings" over a build that had just
   // dropped nine partner logos. Derive the truth from the source instead of

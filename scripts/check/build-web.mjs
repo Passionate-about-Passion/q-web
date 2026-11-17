@@ -19,8 +19,18 @@
  * Deliberately a warning gate on the FIXTURE build only. Production runs in
  * CMS mode, where the same conditions must keep degrading gracefully rather
  * than failing: an editor removing a partner must never break the deploy.
+ *
+ * It also reads the built CSS for scroll-driven animations the minifier has
+ * broken. Vite 8 minifies with Lightning CSS, which folds
+ * `animation: x linear both; animation-timeline: --t` into one shorthand,
+ * `animation: linear both x --t`. Browsers do not accept a timeline inside
+ * the shorthand, so they drop the whole declaration and the animation never
+ * runs, on the live site only (dev serves the CSS unminified). Write such
+ * animations as longhands (animation-name, -timing-function, -fill-mode,
+ * -timeline), which Lightning CSS leaves alone.
  */
 import { spawn } from "node:child_process";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -43,6 +53,34 @@ import { REPO_ROOT } from "../lib/paths.mjs";
  * the gate the same way.
  */
 export const WARNING_TAG = /\[(index|images|partner|whyq|content(?::cms)?)\]/;
+
+/**
+ * `animation` shorthands in built CSS that carry a timeline (a dashed name
+ * such as `--palace`, `view()` or `scroll()`): invalid in browsers, so
+ * the animation silently does not run.
+ */
+export function timelineShorthands(css) {
+  const found = [];
+  for (const match of css.matchAll(/(?:^|[;{\s])animation:([^;}]*)/g)) {
+    const value = match[1];
+    if (/(?:^|[\s,])--[\w-]+|\b(?:view|scroll)\(/.test(value))
+      found.push(`animation:${value.trim()}`);
+  }
+  return found;
+}
+
+function brokenTimelineAnimations() {
+  const dir = path.join(REPO_ROOT, "apps", "web", "dist", "_astro");
+  const found = [];
+  for (const name of readdirSync(dir)) {
+    if (!name.endsWith(".css")) continue;
+    for (const hit of timelineShorthands(
+      readFileSync(path.join(dir, name), "utf-8"),
+    ))
+      found.push(`${name}: ${hit}`);
+  }
+  return found;
+}
 
 function runFixtureBuildGate() {
   const child = spawn("pnpm", ["--filter", "web", "run", "build:fixture"], {
@@ -99,7 +137,21 @@ function runFixtureBuildGate() {
       process.exit(1);
     }
 
-    console.log("check-build-web: fixture build clean (0 content warnings).");
+    const broken = brokenTimelineAnimations();
+    if (broken.length > 0) {
+      console.error(
+        `\ncheck-build-web: ${broken.length} scroll-driven animation(s) were folded into an invalid\n` +
+          "animation shorthand by the CSS minifier; browsers drop them, so they never run on\n" +
+          "the live site. Write them as longhands (animation-name, animation-timing-function,\n" +
+          "animation-fill-mode, animation-timeline).\n",
+      );
+      for (const hit of broken) console.error(`  ${hit}`);
+      process.exit(1);
+    }
+
+    console.log(
+      "check-build-web: fixture build clean (0 content warnings, no broken timeline animations).",
+    );
   });
 }
 

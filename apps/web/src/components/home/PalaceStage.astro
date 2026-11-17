@@ -481,6 +481,9 @@ const steps = [
    */
   @media (prefers-reduced-motion: no-preference) {
     @supports (animation-timeline: view()) {
+      /* Longhands, never the animation shorthand: the minifier folds a
+         shorthand and animation-timeline into one declaration browsers
+         reject (scripts/check/build-web.mjs). */
       .ps {
         height: calc(100lvh + 100svh);
         padding-block: 0;
@@ -500,7 +503,9 @@ const steps = [
       }
 
       .ps-pin::before {
-        animation: ps-light linear both;
+        animation-name: ps-light;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
         animation-timeline: --palace;
         animation-range: entry 60% contain 92%;
       }
@@ -520,20 +525,26 @@ const steps = [
       }
 
       .ps-tally {
-        animation: ps-count linear both;
+        animation-name: ps-count;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
         animation-timeline: --palace;
         animation-range: contain 16% contain 88%;
       }
 
       .ps-lines {
-        animation: ps-full linear both;
+        animation-name: ps-full;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
         animation-timeline: --palace;
         animation-range: contain 88% contain 96%;
       }
 
       .ps-lines path {
         stroke-dasharray: 1;
-        animation: ps-draw linear both;
+        animation-name: ps-draw;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
         animation-timeline: --palace;
         animation-range: entry calc(72% + var(--i) * 1.4%) contain
           calc(4% + var(--i) * 1.2%);
@@ -541,7 +552,9 @@ const steps = [
 
       .ps-lit path,
       .ps-glow path {
-        animation: ps-on linear both;
+        animation-name: ps-on;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
         animation-timeline: --palace;
         animation-range: contain calc(16% + var(--t) * 66%) contain
           calc(22% + var(--t) * 66%);
@@ -563,7 +576,9 @@ const steps = [
 
       .ps-step {
         grid-area: 1 / 1;
-        animation: ps-step linear both;
+        animation-name: ps-step;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
         animation-timeline: --palace;
         animation-range: contain calc((var(--k) - 0.2) * 100% / var(--n))
           contain calc((var(--k) + 1.2) * 100% / var(--n));
@@ -588,7 +603,9 @@ const steps = [
       }
 
       .ps-bar::after {
-        animation: ps-fill linear both;
+        animation-name: ps-fill;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
         animation-timeline: --palace;
         animation-range: contain calc(var(--k) * 100% / var(--n)) contain
           calc((var(--k) + 1) * 100% / var(--n));
