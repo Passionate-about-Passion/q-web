@@ -245,13 +245,18 @@ const list = cards.filter((card) => card.title);
     outline-offset: -2px;
   }
 
+  /* "Why Q?" sets its line tight (0.88), so the tail of the Q and the
+     descender of the y reach below its box; the padding (in the big
+     type's own em, so it grows with it at every width) keeps them clear
+     of the line under it, and the gap adds the breathing room. */
   .wp-title {
     display: grid;
-    gap: var(--space-xs);
+    gap: clamp(var(--space-xs), 1.4vw, var(--space-md));
     margin: 0;
   }
 
   .wp-title .h-accent {
+    padding-bottom: 0.16em;
     font-size: clamp(3.75rem, 8vw, 7.5rem);
     font-weight: var(--font-weight-extrabold);
     letter-spacing: -0.05em;

@@ -1,7 +1,8 @@
 ---
 // Compare tickets (DESIGN.md TICKETS-1): two pickers, two columns, one row
-// per benefit, laid out like a product spec sheet in the Q27 CI: navy ink,
-// ice glass and hairline rows, with the same buy buttons as the cards.
+// per benefit, laid out like a product spec sheet in the Q27 CI: a sheet of
+// white liquid glass, navy ink and hairline rows, with the same ice buy
+// buttons as the ticket card.
 //
 // The static HTML is the first ticket against Start-Up (the 2027 PDF's
 // default pair), complete without JavaScript; the pickers stay disabled
@@ -140,7 +141,7 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
                   {ticket.description}
                 </p>
                 <a
-                  class="t-btn is-block"
+                  class="t-btn h-ice is-block"
                   href={offer.purchaseHref}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -229,10 +230,11 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
 <style>
   /*
    * DESIGN.md TICKETS-1: the compare view, in the 2027 homepage's colors
-   * (HOME-1): a sheet of the homepage's dark translucent glass on the
-   * navy ground, white type with ice accents, hairline rows instead of
-   * boxes; glass kept quieter than the cards so the comparison reads at a
-   * glance.
+   * (HOME-1): a sheet of radiant white on the navy ground (plain white,
+   * its depth only at the edges, a lit rim and a cool shadow), navy type
+   * with Q27
+   * blue accents, hairline rows instead of boxes, and the ice buy buttons
+   * of the ticket card.
    */
   .t-compare {
     padding-block: clamp(2.5rem, 6vw, 4.5rem) clamp(4rem, 9vw, 7rem);
@@ -243,23 +245,17 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
     border-radius: var(--radius-ticket-card);
     position: relative;
     isolation: isolate;
-    /* A large sheet of the homepage's dark glass (.h-glass): a navy body
-       lit with sky at the top, a fine ice rim, a lit top line, a cyan
-       glow inside the lower edge, a specular rim (::after) and a deep
-       shadow. The fill lives on ::before and has no backdrop blur (only
-       the soft page light lies behind the sheet, and a blur this large
-       was recomputed on every frame). The sheet itself must never get a
-       backdrop-filter: it would become a backdrop root, and the sticky
-       names inside it could then not blur the rows passing under them. */
-    box-shadow:
-      inset 0 0 0 1px
-        color-mix(in srgb, var(--color-ticket-ice) 16%, transparent),
-      inset 0 1px 0 color-mix(in srgb, var(--color-white) 26%, transparent),
-      inset 0 -40px 60px -50px
-        color-mix(in srgb, var(--color-ticket-cyan) 55%, transparent),
-      0 30px 60px -40px
-        color-mix(in srgb, var(--color-ticket-midnight) 90%, transparent);
-    color: var(--color-white);
+    /* A large sheet of the ticket page's radiant white (ticket-theme.css
+       --t-white-shadow): a plain white body for full contrast, a lit top
+       line, cool grey-white shading inside the edges, a specular rim
+       (::after) and a deep cool shadow. The fill and its shading live on
+       ::before (painted over the sheet's own box) and have no backdrop
+       blur (only the soft page light lies behind the sheet, and a blur
+       this large was recomputed on every frame). The sheet itself must
+       never get a backdrop-filter: it would become a backdrop root, and
+       the sticky names inside it could then not blur the rows passing
+       under them. */
+    color: var(--color-navy);
   }
 
   .t-sheet::before {
@@ -268,12 +264,8 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
     inset: 0;
     z-index: -1;
     border-radius: inherit;
-    background: linear-gradient(
-      165deg,
-      color-mix(in srgb, var(--color-ticket-sky) 16%, transparent) 0,
-      color-mix(in srgb, var(--color-navy) 22%, transparent) 55%,
-      color-mix(in srgb, var(--color-ticket-midnight) 30%, transparent) 100%
-    );
+    background: var(--color-white);
+    box-shadow: var(--t-white-shadow);
     pointer-events: none;
   }
 
@@ -287,7 +279,7 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
 
   .t-compare-title {
     margin: 0;
-    color: var(--color-white);
+    color: var(--color-navy);
     font-size: clamp(2rem, 4.6vw, 3.25rem);
     font-weight: var(--font-weight-extrabold);
     letter-spacing: -0.035em;
@@ -296,7 +288,7 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
 
   .t-compare-intro {
     margin: var(--space-xs) 0 0;
-    color: color-mix(in srgb, var(--color-white) 78%, transparent);
+    color: color-mix(in srgb, var(--color-navy) 76%, transparent);
     font-size: var(--text-size-medium);
   }
 
@@ -322,7 +314,7 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
   }
 
   .t-cmp-label {
-    color: color-mix(in srgb, var(--color-white) 62%, transparent);
+    color: color-mix(in srgb, var(--color-navy) 66%, transparent);
     font-size: var(--text-size-tiny);
     font-weight: var(--font-weight-semibold);
     letter-spacing: 0.08em;
@@ -351,11 +343,11 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
     border-radius: inherit;
     background: linear-gradient(
       150deg,
-      color-mix(in srgb, var(--color-white) 45%, transparent) 0%,
-      color-mix(in srgb, var(--color-white) 12%, transparent) 22%,
+      var(--color-white) 0%,
+      color-mix(in srgb, var(--color-white) 45%, transparent) 22%,
       transparent 45% 70%,
-      color-mix(in srgb, var(--color-ticket-cyan) 30%, transparent) 88%,
-      color-mix(in srgb, var(--color-white) 40%, transparent) 100%
+      color-mix(in srgb, var(--color-ticket-sky) 35%, transparent) 88%,
+      color-mix(in srgb, var(--color-white) 80%, transparent) 100%
     );
     pointer-events: none;
     -webkit-mask:
@@ -381,23 +373,25 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
     position: relative;
     isolation: isolate;
     border-radius: var(--radius-ticket-button);
-    /* Clear glass like the homepage's name field (HomeHero.astro): a
-       faint white fill over a dimmed blur of the navy, a white hairline
-       rim, a lit top edge and a soft lift; white type. Pressing gives a
-       little and lights up from the touch point (MOTION-6). */
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--color-white) 12%, transparent) 0%,
-        color-mix(in srgb, var(--color-white) 4%, transparent) 100%
-      ),
-      color-mix(in srgb, var(--color-ticket-midnight) 55%, transparent);
+    /* White glass like the homepage's name field (HomeHero.astro, .h-field
+       .h-frost) on the white sheet: a body a step whiter than the sheet,
+       an icy hairline rim, a lit top edge and a soft lift; navy type.
+       Pressing gives a little and lights up from the touch point
+       (MOTION-6). */
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-white) 96%, transparent) 0%,
+      color-mix(in srgb, var(--color-white) 78%, var(--color-ticket-ice)) 100%
+    );
     box-shadow:
-      inset 0 1px 1px color-mix(in srgb, var(--color-white) 45%, transparent),
-      inset 0 0 0 1px color-mix(in srgb, var(--color-white) 18%, transparent),
-      inset 0 -1px 1px color-mix(in srgb, var(--color-white) 10%, transparent),
-      0 10px 24px -14px var(--color-ticket-midnight);
-    color: var(--color-white);
+      inset 0 1px 1px var(--color-white),
+      inset 0 0 0 1px
+        color-mix(in srgb, var(--color-ticket-sky) 30%, transparent),
+      inset 0 -6px 10px -8px
+        color-mix(in srgb, var(--color-ticket-sky) 40%, transparent),
+      0 10px 24px -16px
+        color-mix(in srgb, var(--color-ticket-midnight) 70%, transparent);
+    color: var(--color-navy);
     -webkit-backdrop-filter: blur(8px) saturate(160%);
     backdrop-filter: blur(8px) saturate(160%);
     font: inherit;
@@ -432,10 +426,9 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
   .t-select-field:active,
   .t-select.is-open .t-select-field {
     box-shadow:
-      inset 0 2px 5px
-        color-mix(in srgb, var(--color-ticket-midnight) 60%, transparent),
+      inset 0 2px 5px color-mix(in srgb, var(--color-navy) 16%, transparent),
       inset 0 0 0 1px
-        color-mix(in srgb, var(--color-ticket-ice) 55%, transparent);
+        color-mix(in srgb, var(--color-ticket-sky) 60%, transparent);
   }
 
   .t-select-chevron {
@@ -443,7 +436,7 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
     top: 50%;
     right: 0.9rem;
     display: inline-flex;
-    color: color-mix(in srgb, var(--color-white) 78%, transparent);
+    color: color-mix(in srgb, var(--color-navy) 70%, transparent);
     pointer-events: none;
     transform: translateY(-50%);
     transition: transform var(--duration-glass-unfold) var(--ease-emphasized);
@@ -454,9 +447,9 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
   }
 
   /*
-   * The open list is glass and nothing else: one flat frosted tone of the
-   * homepage's navy, dense and strongly blurred so nothing behind it shows
-   * through, a lit rim and a faint lower edge. Always below the field.
+   * The open list is glass and nothing else: one flat frosted white, dense
+   * and strongly blurred so nothing behind it shows through, a lit rim and
+   * a faint icy lower edge, navy type. Always below the field.
    *
    * It unfolds out of the field (MOTION-6): it starts as a field-height
    * strip tucked under the field, clipped to that strip, and opens down
@@ -476,17 +469,13 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
     margin: 0;
     padding: 0.35rem;
     border-radius: var(--radius-ticket-panel);
-    background: color-mix(
-      in srgb,
-      color-mix(in srgb, var(--color-navy) 45%, var(--color-ticket-midnight))
-        92%,
-      transparent
-    );
+    background: color-mix(in srgb, var(--color-white) 94%, transparent);
     box-shadow:
-      inset 0 1px 1px color-mix(in srgb, var(--color-white) 30%, transparent),
-      inset 0 0 0 1px color-mix(in srgb, var(--color-white) 16%, transparent),
+      inset 0 1px 1px var(--color-white),
+      inset 0 0 0 1px
+        color-mix(in srgb, var(--color-ticket-sky) 28%, transparent),
       inset 0 -10px 16px -14px
-        color-mix(in srgb, var(--color-ticket-cyan) 45%, transparent),
+        color-mix(in srgb, var(--color-ticket-sky) 45%, transparent),
       0 26px 50px -22px var(--color-ticket-midnight);
     list-style: none;
     clip-path: inset(0 0 calc(100% - 3rem) 0 round var(--radius-ticket-panel));
@@ -546,7 +535,7 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
     min-height: 2.75rem;
     padding: var(--space-2xs) var(--space-xs);
     border-radius: var(--radius-ticket-button);
-    color: var(--color-white);
+    color: var(--color-navy);
     font-size: var(--text-size-regular);
     font-weight: var(--font-weight-semibold);
     cursor: pointer;
@@ -556,17 +545,23 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
   .t-select-check {
     display: inline-flex;
     margin-inline-start: auto;
-    color: var(--color-ticket-ice);
+    color: var(--color-ticket-q27);
     opacity: 0;
   }
 
   /* The picked ticket: a raised glass chip and a check, never a color. */
   .t-select-option[aria-selected="true"] {
-    background-color: color-mix(in srgb, var(--color-white) 14%, transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--color-ticket-ice) 55%,
+      transparent
+    );
     box-shadow:
-      inset 0 1px 1px color-mix(in srgb, var(--color-white) 45%, transparent),
-      inset 0 0 0 1px color-mix(in srgb, var(--color-white) 14%, transparent),
-      0 4px 10px -6px var(--color-ticket-midnight);
+      inset 0 1px 1px var(--color-white),
+      inset 0 0 0 1px
+        color-mix(in srgb, var(--color-ticket-sky) 30%, transparent),
+      0 4px 10px -6px
+        color-mix(in srgb, var(--color-ticket-midnight) 50%, transparent);
     font-weight: var(--font-weight-extrabold);
   }
 
@@ -577,29 +572,32 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
   /* The keyboard's current option (aria-activedescendant): a quieter chip
      plus the focus ring while the list has keyboard focus. */
   .t-select-option.is-active:not([aria-selected="true"]) {
-    background-color: color-mix(in srgb, var(--color-white) 8%, transparent);
-    box-shadow: inset 0 1px 1px
-      color-mix(in srgb, var(--color-white) 25%, transparent);
+    background-color: color-mix(in srgb, var(--color-navy) 6%, transparent);
+    box-shadow: inset 0 1px 1px var(--color-white);
   }
 
   .t-select-list:focus-visible .t-select-option.is-active {
-    outline: 2px solid var(--color-ticket-ice);
+    outline: 2px solid var(--color-ticket-sky);
     outline-offset: -2px;
   }
 
   @media (hover: hover) {
     .t-select-option:not([aria-disabled="true"]):hover {
-      background-color: color-mix(in srgb, var(--color-white) 8%, transparent);
+      background-color: color-mix(in srgb, var(--color-navy) 6%, transparent);
     }
 
     .t-select-option[aria-selected="true"]:hover {
-      background-color: color-mix(in srgb, var(--color-white) 14%, transparent);
+      background-color: color-mix(
+        in srgb,
+        var(--color-ticket-ice) 70%,
+        transparent
+      );
     }
   }
 
   /* The ticket already shown in the other column. */
   .t-select-option[aria-disabled="true"] {
-    color: color-mix(in srgb, var(--color-white) 35%, transparent);
+    color: color-mix(in srgb, var(--color-navy) 38%, transparent);
     cursor: not-allowed;
   }
 
@@ -639,7 +637,7 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
   }
 
   .t-cmp-price [data-f="price"] {
-    color: var(--color-white);
+    color: var(--color-navy);
     font-size: clamp(2rem, 4vw, 2.6rem);
     font-weight: var(--font-weight-extrabold);
     letter-spacing: -0.04em;
@@ -648,7 +646,7 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
   }
 
   .t-cmp-price s {
-    color: color-mix(in srgb, var(--color-white) 62%, transparent);
+    color: color-mix(in srgb, var(--color-navy) 58%, transparent);
     font-size: var(--text-size-regular);
     font-weight: var(--font-weight-medium);
   }
@@ -656,7 +654,7 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
   .t-cmp-desc {
     min-height: 2.9em;
     margin: 0 0 0.35rem;
-    color: color-mix(in srgb, var(--color-white) 62%, transparent);
+    color: color-mix(in srgb, var(--color-navy) 70%, transparent);
     font-size: var(--text-size-small);
     line-height: 1.45;
   }
@@ -674,23 +672,29 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
     margin-inline: calc(-1 * clamp(var(--space-2xs), 1.5vw, var(--space-sm)));
     padding-inline: clamp(var(--space-2xs), 1.5vw, var(--space-sm));
     border-radius: var(--radius-ticket-panel);
-    /* Clear glass, like the homepage's buttons: a faint white body over a
-       dimmed blur of the navy. Rows pass under this bar, so its blur is
-       strong enough that their text never reads as a second line next to
-       the names. The lit top edge, the rim (::after) and a soft shadow
-       carry the glass. */
+    /* Half-clear white glass, like the site header's bar in white: a thin
+       white body with a breath of ice, so the rows passing under it show
+       through as a soft blur (strong enough that their text never reads as
+       a second line next to the names), a lit top edge, a lit lower edge
+       like the header's, the rim (::after) and a soft shadow. */
     background: linear-gradient(
       180deg,
-      color-mix(in srgb, var(--color-white) 14%, transparent),
-      color-mix(in srgb, var(--color-white) 5%, transparent)
+      color-mix(in srgb, var(--color-white) 58%, transparent),
+      color-mix(
+        in srgb,
+        color-mix(in srgb, var(--color-white) 80%, var(--color-ticket-ice)) 44%,
+        transparent
+      )
     );
     box-shadow:
-      inset 0 1px 1px color-mix(in srgb, var(--color-white) 55%, transparent),
-      inset 0 -8px 12px -12px
-        color-mix(in srgb, var(--color-ticket-cyan) 60%, transparent),
-      0 10px 22px -16px var(--color-ticket-midnight);
-    -webkit-backdrop-filter: blur(12px) saturate(140%) brightness(0.7);
-    backdrop-filter: blur(12px) saturate(140%) brightness(0.7);
+      inset 0 1px 1px var(--color-white),
+      inset 0 0 0 1px
+        color-mix(in srgb, var(--color-ticket-sky) 18%, transparent),
+      inset 0 -1px 0 color-mix(in srgb, var(--color-white) 80%, transparent),
+      0 10px 22px -16px
+        color-mix(in srgb, var(--color-ticket-midnight) 45%, transparent);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    backdrop-filter: blur(16px) saturate(150%);
   }
 
   .t-cmp-names::after {
@@ -722,13 +726,13 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
     (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
   ) {
     .t-cmp-names {
-      background: color-mix(in srgb, var(--color-navy) 94%, transparent);
+      background: color-mix(in srgb, var(--color-white) 96%, transparent);
     }
   }
 
   .t-cmp-name-cell {
     padding-block: 0.7rem;
-    color: var(--color-white);
+    color: var(--color-navy);
     font-size: var(--text-size-regular);
     font-weight: var(--font-weight-extrabold);
     line-height: 1.25;
@@ -743,8 +747,8 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
     margin: 0;
     padding-bottom: var(--space-2xs);
     border-bottom: 1px solid
-      color-mix(in srgb, var(--color-white) 24%, transparent);
-    color: var(--color-ticket-ice);
+      color-mix(in srgb, var(--color-navy) 20%, transparent);
+    color: var(--color-ticket-q27);
     font-size: var(--text-size-large);
     font-weight: var(--font-weight-extrabold);
     letter-spacing: -0.015em;
@@ -761,42 +765,42 @@ const payload = JSON.stringify(clientData(page)).replace(/</g, "\\u003c");
     min-height: 3.25rem;
     padding-block: 0.7rem;
     border-bottom: 1px solid
-      color-mix(in srgb, var(--color-white) 14%, transparent);
+      color-mix(in srgb, var(--color-navy) 10%, transparent);
   }
 
   .t-cmp-row-label {
-    color: color-mix(in srgb, var(--color-white) 78%, transparent);
+    color: color-mix(in srgb, var(--color-navy) 82%, transparent);
     font-size: var(--text-size-regular);
     line-height: 1.4;
   }
 
-  /* Included: an ice disc with a navy glyph and white words; not
+  /* Included: a navy disc with a white glyph and navy words; not
      included: a faint outline ring and quieter words (never color alone,
      the words carry the status). */
   .t-cmp-cell :global(.t-status) {
-    color: var(--color-white);
-  }
-
-  .t-cmp-cell :global(.t-status-icon) {
-    background: var(--color-ticket-ice);
     color: var(--color-navy);
   }
 
+  .t-cmp-cell :global(.t-status-icon) {
+    background: var(--color-navy);
+    color: var(--color-white);
+  }
+
   .t-cmp-cell :global(.t-status[data-positive="false"]) {
-    color: color-mix(in srgb, var(--color-white) 55%, transparent);
+    color: color-mix(in srgb, var(--color-navy) 58%, transparent);
     font-weight: var(--font-weight-medium);
   }
 
   .t-cmp-cell :global(.t-status[data-positive="false"] .t-status-icon) {
     background: transparent;
     box-shadow: inset 0 0 0 1px
-      color-mix(in srgb, var(--color-white) 30%, transparent);
-    color: color-mix(in srgb, var(--color-white) 55%, transparent);
+      color-mix(in srgb, var(--color-navy) 32%, transparent);
+    color: color-mix(in srgb, var(--color-navy) 58%, transparent);
   }
 
   .t-footnote {
     margin: var(--space-lg) 0 0;
-    color: color-mix(in srgb, var(--color-white) 62%, transparent);
+    color: color-mix(in srgb, var(--color-navy) 66%, transparent);
     font-size: var(--text-size-small);
     text-align: center;
   }

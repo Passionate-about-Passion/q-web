@@ -1,7 +1,7 @@
 // Behavior for the 2027 ticket page (DESIGN.md TICKETS-1). Everything here
-// is an enhancement of complete static HTML: without this script the cards
-// still swipe (native scroll-snap), every "What's included" panel is shown,
-// the compare view shows its default pair and every buy link works.
+// is an enhancement of complete static HTML: without this script every
+// ticket card of the picker is shown, the compare view shows its default
+// pair and every buy link works.
 import {
   euro,
   isPositive,
@@ -48,178 +48,8 @@ function initPress(root: HTMLElement): void {
 }
 
 /* ------------------------------------------------------------------ */
-/* Carousel: one card at rest on phones; grid (no carousel) when wide.  */
-/* ------------------------------------------------------------------ */
-
-/*
- * The count, the dots and the card always agree:
- *   - Arrows, dots and keys set a target. The display jumps to it at once
- *     and holds it while the smooth scroll travels there, so a scroll frame
- *     that still has the old card nearest can never pull it back.
- *   - A swipe moves the display only forward in the direction the track is
- *     moving, and only once the next card is clearly closer (hysteresis),
- *     so a finger hovering near the midpoint or a quick reversal cannot
- *     make it flicker 3-4-3.
- *   - When the track comes to rest (scrollend, or a short quiet period
- *     where scrollend is missing) the display is set to the card that is
- *     actually centered, whatever happened on the way.
- * Heavy work (inert, pausing the light of off-screen cards) runs only at
- * rest, never per scroll frame.
- */
-function initCarousel(root: HTMLElement): void {
-  const track = root.querySelector<HTMLElement>("[data-track]");
-  const controls = root.querySelector<HTMLElement>("[data-controls]");
-  if (!track || !controls) return;
-  const slides = [...track.querySelectorAll<HTMLElement>("[data-slide]")];
-  const dots = [...controls.querySelectorAll<HTMLButtonElement>("[data-dot]")];
-  const prev = controls.querySelector<HTMLButtonElement>("[data-prev]");
-  const next = controls.querySelector<HTMLButtonElement>("[data-next]");
-  const current = controls.querySelector<HTMLElement>("[data-current]");
-  controls.hidden = false;
-
-  // Shown index (count + dots) and the index the track has settled on.
-  let shown = 0;
-  let settled = 0;
-  // Set while an arrow, dot or key scroll is on its way.
-  let target: number | null = null;
-  let lastLeft = track.scrollLeft;
-  const isCarousel = () => track.scrollWidth > track.clientWidth + 1;
-
-  const show = (i: number) => {
-    if (i === shown && current?.textContent === String(i + 1)) return;
-    shown = i;
-    dots.forEach((dot, d) =>
-      d === i
-        ? dot.setAttribute("aria-current", "true")
-        : dot.removeAttribute("aria-current"),
-    );
-    if (current) current.textContent = String(i + 1);
-    if (prev) prev.disabled = i === 0;
-    if (next) next.disabled = i === slides.length - 1;
-  };
-
-  // At rest: only the centered card is reachable and lit. The others keep
-  // nothing focusable (buy links, All benefits) and hold their light still,
-  // which frees the GPU for the one card on screen.
-  const settle = (i: number) => {
-    settled = i;
-    const carousel = isCarousel();
-    slides.forEach((slide, s) => {
-      const off = carousel && s !== i;
-      slide.inert = off;
-      slide.toggleAttribute("data-ticket-still", off);
-    });
-    show(i);
-  };
-
-  const centerOf = (i: number) =>
-    slides[i].offsetLeft + slides[i].offsetWidth / 2;
-  const viewCenter = () => track.scrollLeft + track.clientWidth / 2;
-
-  const nearest = (): number => {
-    const center = viewCenter();
-    let best = 0;
-    let bestDistance = Infinity;
-    slides.forEach((_, i) => {
-      const distance = Math.abs(centerOf(i) - center);
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        best = i;
-      }
-    });
-    return best;
-  };
-
-  let frame = 0;
-  let quiet = 0;
-  const onRest = () => {
-    clearTimeout(quiet);
-    const i = nearest();
-    // A programmatic scroll is done once it reaches its card.
-    if (target !== null && i === target) target = null;
-    if (target === null) settle(i);
-  };
-
-  track.addEventListener(
-    "scroll",
-    () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        const left = track.scrollLeft;
-        const direction = Math.sign(left - lastLeft);
-        lastLeft = left;
-        if (target === null && direction !== 0) {
-          // The neighbor in the direction of travel takes over once its
-          // center is within 40% of a card width of the view's center.
-          const ahead = shown + direction;
-          if (ahead >= 0 && ahead < slides.length) {
-            const reach = slides[ahead].offsetWidth * 0.4;
-            if (Math.abs(centerOf(ahead) - viewCenter()) < reach) show(ahead);
-          }
-        }
-      });
-      // Fallback for browsers without scrollend.
-      clearTimeout(quiet);
-      quiet = window.setTimeout(onRest, 140);
-    },
-    { passive: true },
-  );
-  track.addEventListener("scrollend", onRest);
-
-  // A new touch takes over from any arrow or dot scroll still running.
-  track.addEventListener(
-    "pointerdown",
-    () => {
-      target = null;
-    },
-    { passive: true },
-  );
-
-  const go = (i: number) => {
-    const index = Math.max(0, Math.min(slides.length - 1, i));
-    const slide = slides[index];
-    const left = slide.offsetLeft - (track.clientWidth - slide.offsetWidth) / 2;
-    show(index);
-    if (Math.abs(track.scrollLeft - left) < 1) {
-      target = null;
-      settle(index);
-      return;
-    }
-    target = index;
-    // The card being scrolled to must not be inert when it arrives, and
-    // its light starts as it slides in.
-    slide.inert = false;
-    slide.removeAttribute("data-ticket-still");
-    track.scrollTo({
-      left,
-      behavior: reducedMotion() ? "auto" : "smooth",
-    });
-  };
-
-  // Arrows step from what is shown, so quick repeated taps queue up
-  // (2 -> 3 -> 4) instead of restarting from the card still sliding away.
-  prev?.addEventListener("click", () => go(shown - 1));
-  next?.addEventListener("click", () => go(shown + 1));
-  dots.forEach((dot, i) => dot.addEventListener("click", () => go(i)));
-
-  // Arrow keys move between tickets while focus is inside the carousel.
-  root.addEventListener("keydown", (e) => {
-    if (!isCarousel()) return;
-    if ((e.target as Element).closest("select, input, textarea")) return;
-    if (e.key === "ArrowRight") go(shown + 1);
-    else if (e.key === "ArrowLeft") go(shown - 1);
-    else return;
-    e.preventDefault();
-  });
-
-  // Crossing the 900px breakpoint switches carousel <-> grid; in the grid
-  // every card is reachable and lit.
-  new ResizeObserver(() => settle(target ?? settled)).observe(track);
-  settle(nearest());
-}
-
-/* ------------------------------------------------------------------ */
-/* What's included: tabs, plus "All benefits" links that pick a tab.   */
+/* The ticket picker: the list at the left is a vertical tab list, the  */
+/* card at the right the one panel shown.                               */
 /* ------------------------------------------------------------------ */
 
 function initTabs(section: HTMLElement): (key: string) => void {
@@ -228,18 +58,10 @@ function initTabs(section: HTMLElement): (key: string) => void {
   const tabs = [...list.querySelectorAll<HTMLButtonElement>("[data-tab]")];
   const panels = [...section.querySelectorAll<HTMLElement>("[data-panel]")];
   const lens = list.querySelector<HTMLElement>("[data-tab-lens]");
-  list.hidden = false;
   section.setAttribute("data-tabs-ready", "");
 
-  // Restart a CSS animation by toggling its class across a reflow.
-  const replay = (el: Element, cls: string) => {
-    el.classList.remove(cls);
-    void (el as HTMLElement).offsetWidth;
-    el.classList.add(cls);
-  };
-
-  // The glass lens sits under the picked tab. Its size snaps; its position
-  // glides (CSS transition on translate) and it stretches while moving.
+  // The glass lens sits under the picked row. Its size snaps; its position
+  // glides (CSS transition on translate).
   let current = "";
   const placeLens = (animate: boolean) => {
     const tab = tabs.find((t) => t.dataset.tab === current);
@@ -250,130 +72,47 @@ function initTabs(section: HTMLElement): (key: string) => void {
     list.style.setProperty("--lens-w", `${tab.offsetWidth}px`);
     list.style.setProperty("--lens-h", `${tab.offsetHeight}px`);
     list.setAttribute("data-lens-ready", "");
-    if (animate && !reducedMotion()) replay(lens, "is-moving");
   };
 
   /*
-   * The new ticket's panel unfolds out of the tab just picked (MOTION-6):
-   * the summary card and, a beat later, the benefit sheet start squeezed
-   * into the tab's box and spring open from it; a light runs across the
-   * summary; the summary's contents follow a few frames apart (they are
-   * invisible while squeezed, so no text is ever seen distorted) and its
-   * description writes itself in. Web Animations, so a quick next pick
-   * cancels whatever is still running and starts from the new tab.
+   * The card picked comes in (MOTION-6): it slides in a little from the
+   * list's side (from above where the list stands over it) and fades up,
+   * then its rows follow in a quick cascade (CSS). Web Animations with a
+   * backwards fill only, so a quick next pick cancels whatever is still
+   * running and nothing is left on a layer of its own. The cards share
+   * one cell, so the page never moves.
    */
   const root = document.documentElement;
-  const cssMs = (name: string, fallback: number) =>
-    tokenMs(name, fallback, root);
   const running: Animation[] = [];
+  const stacked = window.matchMedia("(max-width: 959px)");
 
-  const unfold = (tab: HTMLElement, panel: HTMLElement) => {
+  const enter = (panel: HTMLElement) => {
     running.splice(0).forEach((a) => a.cancel());
-    panels.forEach((p) => p.removeAttribute("data-unfold"));
     if (reducedMotion()) return;
-    panel.setAttribute("data-unfold", "");
-    const unfoldMs = cssMs("--duration-glass-unfold", 380);
-    const stagger = cssMs("--duration-glass-stagger", 28);
-    const ease = (name: string) =>
-      getComputedStyle(root).getPropertyValue(name).trim() || "ease-out";
-    const spring = ease("--ease-glass-spring");
-    const emphasized = ease("--ease-emphasized");
-    const t = tab.getBoundingClientRect();
-    const parts = [
-      panel.querySelector<HTMLElement>(".t-summary"),
-      panel.querySelector<HTMLElement>(".t-benefits"),
-    ];
-    parts.forEach((el, n) => {
-      if (!el) return;
-      const r = el.getBoundingClientRect();
-      // The card grows out of the tab; the sheet then unrolls in its own
-      // place from its top edge (it never travels over the card).
-      const from =
-        n === 0
-          ? `translate(${t.left + t.width / 2 - (r.left + r.width / 2)}px, ${
-              t.top + t.height / 2 - r.top
-            }px) scale(${Math.max(0.2, Math.min(1, t.width / r.width))}, ${Math.max(
-              0.05,
-              Math.min(1, t.height / r.height),
-            )})`
-          : "translateY(-0.5rem) scale(0.98, 0.08)";
-      running.push(
-        el.animate(
-          [
-            { transform: from, opacity: 0 },
-            { opacity: 1, offset: 0.2 },
-            { transform: "none", opacity: 1 },
-          ],
-          {
-            duration: unfoldMs,
-            delay: n * unfoldMs * 0.35,
-            easing: spring,
-            fill: "backwards",
-          },
-        ),
-      );
-      el.style.transformOrigin = "50% 0";
-    });
-
-    const summary = parts[0];
-    if (!summary) return;
-    // Contents come in once the card has mostly opened.
-    [...summary.children]
-      .filter((c) => !c.classList.contains("t-liquid"))
-      .forEach((child, i) =>
-        running.push(
-          child.animate(
-            [
-              { opacity: 0, transform: "translateY(0.4rem)" },
-              { opacity: 1, transform: "none" },
-            ],
-            {
-              duration: unfoldMs * 0.7,
-              delay: unfoldMs * 0.45 + i * stagger,
-              easing: emphasized,
-              fill: "backwards",
-            },
-          ),
-        ),
-      );
-    // The light runs in from the side of the tab.
-    const light = summary.querySelector<HTMLElement>("[data-unfold-light]");
-    if (light) {
-      const s = summary.getBoundingClientRect();
-      light.style.setProperty(
-        "--press-x",
-        `${Math.max(0, Math.min(100, ((t.left + t.width / 2 - s.left) / s.width) * 100))}%`,
-      );
-      light.style.setProperty("--press-y", "0%");
-      light.classList.remove("is-lit");
-      void light.offsetWidth;
-      light.classList.add("is-lit");
-    }
-    // The ticket's name and description stand there at once, as plain
-    // text (they are not typed in).
-    const name = summary.querySelector<HTMLElement>(".t-summary-name");
-    const nameText = names.get(panel.dataset.panel ?? "");
-    if (name && nameText) name.textContent = nameText;
-    const desc = summary.querySelector<HTMLElement>(".t-summary-desc");
-    const text = descriptions.get(panel.dataset.panel ?? "");
-    if (desc && text) desc.textContent = text;
+    const card = panel.querySelector<HTMLElement>(".t-detail");
+    if (!card) return;
+    const ease =
+      getComputedStyle(root).getPropertyValue("--ease-emphasized").trim() ||
+      "ease-out";
+    const from = stacked.matches
+      ? "translateY(-0.6rem)"
+      : "translateX(-1.25rem)";
+    running.push(
+      card.animate(
+        [
+          { transform: `${from} scale(0.985)`, opacity: 0 },
+          { transform: "none", opacity: 1 },
+        ],
+        {
+          duration: tokenMs("--duration-glass-unfold", 380, root),
+          easing: ease,
+          fill: "backwards",
+        },
+      ),
+    );
   };
 
-  // Each summary's description as authored, read once before any typing.
-  const names = new Map(
-    panels.map((p) => [
-      p.dataset.panel ?? "",
-      p.querySelector(".t-summary-name")?.textContent?.trim() ?? "",
-    ]),
-  );
-  const descriptions = new Map(
-    panels.map((p) => [
-      p.dataset.panel ?? "",
-      p.querySelector(".t-summary-desc")?.textContent?.trim() ?? "",
-    ]),
-  );
-
-  const select = (key: string, focusTab = false) => {
+  const select = (key: string, focusTab = false, fromTap = false) => {
     const previous = current;
     current = key;
     tabs.forEach((tab) => {
@@ -386,28 +125,44 @@ function initTabs(section: HTMLElement): (key: string) => void {
       panel.hidden = panel.dataset.panel !== key;
     });
     placeLens(previous !== "" && previous !== key);
-    if (previous && previous !== key) {
-      const tab = tabs.find((t) => t.dataset.tab === key);
-      const panel = panels.find((p) => p.dataset.panel === key);
-      if (tab && panel) unfold(tab, panel);
+    const panel = panels.find((p) => p.dataset.panel === key);
+    if (!panel || !previous || previous === key) return;
+    enter(panel);
+    // Stacked (tablets, phones), the card sits under the list: a tap
+    // brings its top into view if it is below the fold.
+    if (fromTap && stacked.matches) {
+      const top = panel.getBoundingClientRect().top;
+      if (top > window.innerHeight * 0.72) {
+        panel.scrollIntoView({
+          behavior: reducedMotion() ? "auto" : "smooth",
+          block: "start",
+        });
+      }
     }
   };
 
-  // Tabs can wrap onto a second row; keep the lens under its tab.
+  // The rows can change height (fonts, a resize); keep the lens under its
+  // row.
   new ResizeObserver(() => placeLens(false)).observe(list);
 
+  // WAI-ARIA tabs, vertical: Up and Down move (Left and Right too), Home
+  // and End jump; the pick follows the focus.
   tabs.forEach((tab, i) => {
-    tab.addEventListener("click", () => select(tab.dataset.tab ?? ""));
+    tab.addEventListener("click", () =>
+      select(tab.dataset.tab ?? "", false, true),
+    );
     tab.addEventListener("keydown", (e) => {
       const last = tabs.length - 1;
       let to = -1;
-      if (e.key === "ArrowRight") to = i === last ? 0 : i + 1;
-      else if (e.key === "ArrowLeft") to = i === 0 ? last : i - 1;
+      if (e.key === "ArrowDown" || e.key === "ArrowRight")
+        to = i === last ? 0 : i + 1;
+      else if (e.key === "ArrowUp" || e.key === "ArrowLeft")
+        to = i === 0 ? last : i - 1;
       else if (e.key === "Home") to = 0;
       else if (e.key === "End") to = last;
       if (to < 0) return;
       e.preventDefault();
-      select(tabs[to].dataset.tab ?? "", true);
+      select(tabs[to]!.dataset.tab ?? "", true);
     });
   });
 
@@ -416,9 +171,9 @@ function initTabs(section: HTMLElement): (key: string) => void {
     tabs[0]?.dataset.tab;
   if (initial) select(initial);
 
-  // Show a ticket from elsewhere (card links, a #included-<key> URL):
-  // pick its tab, bring the section into view below the fixed header, and
-  // move focus to the tab so keyboard users land where they asked to go.
+  // Show a ticket from elsewhere (a #included-<key> URL): pick its row,
+  // bring the section into view below the fixed header, and move focus to
+  // the row so keyboard users land where they asked to go.
   return (key: string) => {
     if (!tabs.some((t) => t.dataset.tab === key)) return;
     select(key);
@@ -742,41 +497,24 @@ function initCompare(section: HTMLElement): void {
 }
 
 /* ------------------------------------------------------------------ */
-/* Ambient light: pause what is off screen.                             */
+/* Motion: pause what is off screen.                                    */
 /* ------------------------------------------------------------------ */
 
 function initAmbientPause(): void {
   if (!("IntersectionObserver" in window)) return;
-  const ground = document.querySelector<HTMLElement>("[data-ticket-ground]");
   const motion = [
     ...document.querySelectorAll<HTMLElement>("[data-ticket-motion]"),
   ];
-  const lit = [
-    ...document.querySelectorAll<HTMLElement>(
-      ".t-hero, .t-cards, [data-ticket-included], [data-ticket-compare]",
-    ),
-  ];
-  const visible = new Set<Element>();
 
   const io = new IntersectionObserver((entries) => {
     for (const entry of entries) {
-      if (entry.isIntersecting) visible.add(entry.target);
-      else visible.delete(entry.target);
-      if (motion.includes(entry.target as HTMLElement)) {
-        (entry.target as HTMLElement).toggleAttribute(
-          "data-ticket-still",
-          !entry.isIntersecting,
-        );
-      }
+      (entry.target as HTMLElement).toggleAttribute(
+        "data-ticket-still",
+        !entry.isIntersecting,
+      );
     }
-    // The fixed ground shows through every ticket section (the compare
-    // sheet is glass too), never behind the footer.
-    ground?.toggleAttribute(
-      "data-ticket-still",
-      !lit.some((el) => visible.has(el)),
-    );
   });
-  [...motion, ...lit].forEach((el) => io.observe(el));
+  motion.forEach((el) => io.observe(el));
 }
 
 /* ------------------------------------------------------------------ */
@@ -787,28 +525,11 @@ export function initTicketPage(): void {
   page.setAttribute("data-ticket-ready", "");
 
   initPress(document.body);
-  page
-    .querySelectorAll<HTMLElement>("[data-ticket-carousel]")
-    .forEach(initCarousel);
 
   const included = page.querySelector<HTMLElement>("[data-ticket-included]");
   const show = included ? initTabs(included) : () => {};
 
-  // "All benefits" on a card: select that ticket's tab instead of
-  // jumping to a panel that is hidden now that tabs are on.
-  page.addEventListener("click", (e) => {
-    const link = (e.target as Element).closest<HTMLAnchorElement>(
-      "[data-show-ticket]",
-    );
-    if (!link || e.defaultPrevented || e.button !== 0) return;
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    e.preventDefault();
-    const key = link.dataset.showTicket ?? "";
-    show(key);
-    history.replaceState(null, "", `#included-${key}`);
-  });
-
-  // Arriving with #included-<key> in the URL opens that ticket's tab.
+  // Arriving with #included-<key> in the URL opens that ticket's card.
   const fromHash = location.hash.match(/^#included-([\w-]+)$/)?.[1];
   if (fromHash) show(fromHash);
 

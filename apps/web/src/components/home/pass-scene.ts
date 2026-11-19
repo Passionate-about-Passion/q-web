@@ -14,9 +14,11 @@
  * exactly inextensible from the top down and the card is placed exactly at
  * the band's end, so band and pass can never come apart, not even under a
  * hard pull. The card, the clip and the band can all be grabbed. The band
- * slides through the clip's crimp: lifting the pass takes band into the
- * crimp (so it never goes slack and folds), pulling it down draws more
- * band out (more of the woven "Q-SUMMIT" shows), and let go, the band
+ * is fixed in the clip's crimp and runs over the point it hangs from,
+ * above the window: lifting the pass takes band up over that point (so it
+ * never goes slack and folds), pulling it down lets more band come down
+ * from above (the woven "Q-SUMMIT" keeps its place on the band's lower
+ * end and its size; new band shows at the top), and let go, the band
  * springs back and the pass bounces up once before it settles. A held
  * pass stays exactly where the band can reach, so the band is always
  * taut under the hand and never fights it. Its turn about its own vertical
@@ -104,6 +106,8 @@ export const WIDE = 1.7;
 export const BELOW = 0.22;
 /** The band hangs from a point above the frame (behind the header). */
 const ANCHOR_Y = 2.35;
+/** The band's resting length, from that point to the clip's crimp. */
+const BAND_REST = ANCHOR_Y - HINGE_TO_CENTER;
 /** One woven "Q-SUMMIT" unit along the band, in world units. */
 const BAND_TILE = 0.95625;
 
@@ -122,7 +126,8 @@ const BEND_STIFFNESS = 0.35;
 /** The card swings on the hook, but no further than this from the line
  *  of the band's last stretch (the crimp holds the clip). */
 const MAX_HINGE = 0.9;
-/** How much band the crimp can take in (lift) or let out (pull). */
+/** How much band can go up over the hanging point (lift) or come down
+ *  from it (pull). */
 const SLIDE_IN = 0.5;
 const SLIDE_OUT = 0.6;
 /** Per step: how fast the band follows a hand, and slides back. */
@@ -245,6 +250,8 @@ export interface PassScene {
    * printed one; null goes back to the printed front.
    */
   setFront(drawn: HTMLCanvasElement | null): void;
+  /** A small sideways swing, as a hand brushing the card would give. */
+  nudge(): void;
   setVisible(visible: boolean): void;
   dispose(): void;
 }
@@ -252,7 +259,12 @@ export interface PassScene {
 export async function createPassScene(
   host: HTMLElement,
   textures: PassTextures,
-  options: { pixelRatio: number; onFrame?: () => void } = { pixelRatio: 1.5 },
+  options: {
+    pixelRatio: number;
+    onFrame?: () => void;
+    /** Called after every turn, whatever started it. */
+    onTurn?: (face: "front" | "back") => void;
+  } = { pixelRatio: 1.5 },
 ): Promise<PassScene> {
   const canvas = document.createElement("canvas");
   canvas.className = "hp-canvas";
@@ -417,7 +429,7 @@ export async function createPassScene(
   // ---- the chain
   const points: Point[] = [];
   /** The band's resting length, from the anchor to the crimp. */
-  const REST_LEN = ANCHOR_Y - HINGE_TO_CENTER;
+  const REST_LEN = BAND_REST;
   let bandLen = REST_LEN;
   let bandVel = 0;
   let segLen = REST_LEN / SEGMENTS;
@@ -480,7 +492,7 @@ export async function createPassScene(
       pt.p.y += vy - GRAVITY * STEP * STEP;
       pt.p.z += vz - pt.p.z * 0.02;
     }
-    // The band slides through the crimp. Held by the card, it takes the
+    // The band runs over its hanging point. Held by the card, it takes the
     // length that keeps it taut in a straight line from the anchor to the
     // card (the goal is kept where that length is possible, onMove), so
     // hand and band never pull against each other; a lift takes the slack
@@ -873,6 +885,7 @@ export async function createPassScene(
     // A small sideways nudge, as a hand turning it would give.
     center.p.x += 0.0012;
     wake();
+    options.onTurn?.(face);
     return face;
   }
 
@@ -909,6 +922,11 @@ export async function createPassScene(
         frontMat.emissiveMap = frontTex;
       }
       frontMat.needsUpdate = true;
+      wake();
+    },
+    nudge() {
+      if (grab.active) return;
+      center.p.x += 0.0018;
       wake();
     },
     drop() {
@@ -1160,6 +1178,7 @@ function buildBand() {
   }
 
   const ext: Vector3[] = [];
+  const along = new Float32Array(SAMPLES);
   function update(chain: Vector3[], lead: Vector3, bodyQ: Quaternion): void {
     // The curve runs through the chain and ends on its last point; one
     // more point beyond it (lead) gives the end the clip's direction.
@@ -1170,13 +1189,23 @@ function buildBand() {
       spline(ext, (i / (SAMPLES - 1)) * end, curve[i]!);
     // The crimp's width direction at the bottom.
     crimpSide.copy(X).applyQuaternion(bodyQ);
-    let length = 0;
+    // The print is measured from the clip upwards: the woven words stay
+    // where they are on the band's lower end, whatever its length, and
+    // band let out or taken in comes from (or goes to) the point it hangs
+    // from, above the window; nothing grows out of the clip and no letter
+    // is stretched (U follows the band's true length along the curve).
+    along[0] = 0;
+    for (let i = 1; i < SAMPLES; i++)
+      along[i] = along[i - 1]! + curve[i]!.distanceTo(curve[i - 1]!);
+    const total = along[SAMPLES - 1]!;
     for (let i = 0; i < SAMPLES; i++) {
       const c = curve[i]!;
       const prev = curve[Math.max(0, i - 1)]!;
       const next = curve[Math.min(SAMPLES - 1, i + 1)]!;
       t.copy(next).sub(prev).normalize();
-      if (i > 0) length += c.distanceTo(prev);
+      // At rest this is the length from the top, as the print was laid
+      // out; pulled or lifted, the lower end keeps its print.
+      const length = BAND_REST - (total - along[i]!);
       // Width direction: world X at the top, the crimp's at the bottom,
       // eased in over the lower part of the band so it twists naturally.
       const s = i / (SAMPLES - 1);

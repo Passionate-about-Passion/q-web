@@ -1,23 +1,24 @@
 ---
 // The discount phases (DESIGN.md HOME-1), after the team's "Early Bird is
-// live" post: four phases one after another on one fine line, the phase
-// on sale now marked with a milky white Q on a round disc of blue light
-// (the material of the LinkedIn and Instagram marks of the social
-// section), its discount large in
-// ice and a filled tag; the coming phases quieter, with an outlined tag;
-// phases already over fade further. The line is drawn bright up to the
-// phase on sale now. One line only, on a pane of translucent liquid glass
-// (the ticket page's timeline frame, in this page's dark glass).
+// live" post: the heading "… is live." beside the offer, told as one
+// sentence ("30% off every ticket until 22 November. The earlier you book,
+// the less you pay."), then the countdown with what comes after it ("then
+// 25% off"), so it is plain the price rises, and the ticket link; then
+// the four phases as four cards of liquid glass (ui/SaleCards.astro, the
+// same cards open the ticket page): the phase on sale in baby blue glass,
+// the whole card a link to the tickets; the coming phases as clear grey
+// glass, plain text; phases already over fade further. No line joins
+// them.
 //
 // Phases, discounts, the phase on sale now and the status words come
-// from the ticket page's content (one source, page-ticket-categories →
+// from the ticket page's content (one source, page-ticket-categories,
 // phases); nothing switches by date. When the phase on sale has an end
 // (its optional "Ends at"), the offer names the day and a countdown runs
 // to it (home.client.ts; it ticks only while in view and goes away at the
-// end). The button opens the ticket page. Phones get the phases as a
-// vertical list on the same line.
+// end). The button opens the ticket page.
 import type { TicketPhases } from "../../lib/content";
 import { TICKETS_HREF } from "../../lib/home-links";
+import SaleCards from "../ui/SaleCards.astro";
 import "./home-theme.css";
 
 interface Props {
@@ -30,21 +31,9 @@ const activeIndex = Math.max(
   phases.items.findIndex((item) => item.key === phases.activeKey),
 );
 const active = phases.items[activeIndex];
-const items = phases.items.map((item, i) => ({
-  ...item,
-  state: i < activeIndex ? "past" : i === activeIndex ? "current" : "next",
-  discountText: phases.discountLabel.replace(
-    "{discount}",
-    String(item.discount),
-  ),
-  status:
-    i < activeIndex
-      ? phases.pastLabel
-      : i === activeIndex
-        ? phases.currentLabel
-        : phases.upcomingLabel,
-}));
-const progress = items.length > 1 ? activeIndex / (items.length - 1) : 0;
+const offer = active
+  ? phases.discountLabel.replace("{discount}", String(active.discount))
+  : "";
 // The end of the phase on sale, if the content gives one, in German time.
 const endsAt =
   active?.endsAt && !Number.isNaN(Date.parse(active.endsAt))
@@ -56,6 +45,11 @@ const endDay = endsAt
       month: "long",
       timeZone: "Europe/Berlin",
     }).format(new Date(endsAt))
+  : undefined;
+// The phase after this one, if any: what the price becomes.
+const next = phases.items[activeIndex + 1];
+const nextOffer = next
+  ? phases.discountLabel.replace("{discount}", String(next.discount))
   : undefined;
 ---
 
@@ -76,20 +70,23 @@ const endDay = endsAt
             </h2>
           </div>
           <div class="sp-aside" data-h-reveal>
-            <p class="sp-offer">
-              <strong>{items[activeIndex]!.discountText}</strong>
-              <span>
-                {phases.currentLabel}
-                {endDay && ` until ${endDay}`}
-              </span>
-            </p>
+            <div class="sp-copy">
+              <p class="sp-offer">
+                <strong>{offer}</strong> every ticket
+                {endDay ? ` until ${endDay}.` : "."}
+              </p>
+              <p class="sp-why">The earlier you book, the less you pay.</p>
+            </div>
             {endsAt && (
               <p class="sp-clock" data-sp-clock={endsAt} hidden>
-                {active.label} ends in{" "}
+                <span class="sp-clock-label">{active.label} ends in</span>
                 <span class="sp-clock-time" aria-hidden="true" data-sp-time />
+                {nextOffer && (
+                  <span class="sp-clock-next">then only {nextOffer}</span>
+                )}
               </p>
             )}
-            <a class="h-btn sp-cta" href={TICKETS_HREF}>
+            <a class="h-btn h-ice sp-cta" href={TICKETS_HREF}>
               Get your {active.label} ticket
               <svg
                 width="18"
@@ -110,37 +107,12 @@ const endDay = endsAt
           </div>
         </div>
 
-        <div
-          class="sp-board"
-          data-h-reveal
-          style={`--sp-progress: ${progress}; --sp-count: ${items.length}`}
-        >
-          <div class="sp-track">
-            <span class="sp-line" aria-hidden="true">
-              <span class="sp-line-fill" />
-            </span>
-            <ol class="sp-list" aria-label={phases.label}>
-              {items.map((item) => (
-                <li
-                  class:list={["sp-phase", `is-${item.state}`]}
-                  aria-current={item.state === "current" ? "step" : undefined}
-                >
-                  <span class="sp-node" aria-hidden="true">
-                    {item.state === "current" && (
-                      <span class="sp-q-tile">
-                        <span class="sp-q-lift">
-                          <span class="sp-q" />
-                        </span>
-                      </span>
-                    )}
-                  </span>
-                  <span class="sp-name">{item.label}</span>
-                  <span class="sp-discount">{item.discountText}</span>
-                  <span class="sp-status">{item.status}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
+        <div class="sp-cards" data-h-reveal>
+          <SaleCards
+            phases={phases}
+            href={TICKETS_HREF}
+            actionLabel={`Get your ${active.label} ticket`}
+          />
         </div>
       </div>
     </section>
@@ -155,7 +127,7 @@ const endDay = endsAt
     align-items: flex-end;
     justify-content: space-between;
     gap: var(--space-lg);
-    margin-bottom: clamp(var(--space-xl), 7vw, 5.5rem);
+    margin-bottom: clamp(var(--space-xl), 6vw, 5rem);
   }
 
   .sp-title {
@@ -188,310 +160,71 @@ const endDay = endsAt
     display: grid;
     justify-items: start;
     gap: var(--space-md);
+    max-width: 26rem;
+  }
+
+  /* The offer as a sentence: the discount in ice and heavy, the rest
+     white; the reason under it, softer. */
+  .sp-copy {
+    display: grid;
+    gap: var(--space-xs);
   }
 
   .sp-offer {
-    display: grid;
-    gap: 0.2rem;
     margin: 0;
+    color: var(--color-white);
+    font-size: clamp(1.25rem, 1.7vw, 1.5rem);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    text-wrap: balance;
   }
 
   .sp-offer strong {
-    font-size: clamp(1.5rem, 2.2vw, 2rem);
+    color: var(--color-ticket-ice);
     font-weight: var(--font-weight-extrabold);
-    letter-spacing: -0.02em;
   }
 
-  .sp-clock {
+  .sp-why {
     margin: 0;
     color: var(--h-text-soft);
-    font-size: var(--text-size-small);
+    font-size: var(--text-size-medium);
+    line-height: 1.45;
+  }
+
+  /* The countdown: what is left of the phase, large, and what the price
+     becomes after it, so the rise is plain. A fine rule above sets it
+     apart from the sentence. */
+  .sp-clock {
+    display: grid;
+    gap: 0.2rem;
+    width: 100%;
+    margin: 0;
+    padding-top: var(--space-sm);
+    border-top: 1px solid
+      color-mix(in srgb, var(--color-white) 16%, transparent);
+  }
+
+  .sp-clock-label,
+  .sp-clock-next {
+    color: var(--h-text-soft);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
   }
 
   .sp-clock-time {
-    margin-left: var(--space-2xs);
     color: var(--color-white);
-    font-size: clamp(1.125rem, 1.6vw, 1.5rem);
+    font-size: clamp(1.5rem, 2.2vw, 2rem);
     font-weight: var(--font-weight-extrabold);
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.01em;
+    line-height: 1.15;
     white-space: nowrap;
   }
 
   .sp-clock[hidden] {
     display: none;
-  }
-
-  .sp-offer span {
-    color: var(--h-text-soft);
-    font-size: var(--text-size-tiny);
-    font-weight: var(--font-weight-extrabold);
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-  }
-
-  /* Translucent liquid glass: barely any fill, a lit rim brighter at the
-     top, a faint cyan line inside the lower edge, the section's light
-     showing through. No backdrop blur: behind it lies only that light. */
-  .sp-board {
-    --node: 3rem;
-
-    position: relative;
-    padding: clamp(var(--space-md), 4vw, var(--space-xl))
-      clamp(var(--space-sm), 3vw, 2.5rem);
-    border-radius: var(--radius-ticket-card);
-    background: linear-gradient(
-      165deg,
-      color-mix(in srgb, var(--color-ticket-sky) 20%, transparent),
-      color-mix(in srgb, var(--color-ticket-deep) 28%, transparent) 55%,
-      color-mix(in srgb, var(--color-ticket-midnight) 30%, transparent)
-    );
-    box-shadow:
-      inset 0 0 0 1px
-        color-mix(in srgb, var(--color-ticket-ice) 22%, transparent),
-      inset 0 1px 0 color-mix(in srgb, var(--color-white) 40%, transparent),
-      inset 0 -14px 22px -18px
-        color-mix(in srgb, var(--color-ticket-cyan) 70%, transparent),
-      0 24px 50px -30px var(--color-ticket-midnight);
-  }
-
-  .sp-track {
-    position: relative;
-  }
-
-  .sp-list {
-    position: relative;
-    display: grid;
-    grid-template-columns: repeat(var(--sp-count), minmax(0, 1fr));
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  /* The line through the node centres, bright up to the phase on sale. */
-  .sp-line {
-    position: absolute;
-    top: calc(var(--node) / 2 - 1px);
-    left: calc(50% / var(--sp-count));
-    right: calc(50% / var(--sp-count));
-    height: 2px;
-    border-radius: var(--radius-pill);
-    background: color-mix(in srgb, var(--color-ticket-ice) 45%, transparent);
-    box-shadow: 0 0 8px
-      color-mix(in srgb, var(--color-ticket-cyan) 25%, transparent);
-  }
-
-  .sp-line-fill {
-    position: absolute;
-    inset: 0;
-    background: var(--color-ticket-ice);
-    box-shadow: 0 0 10px
-      color-mix(in srgb, var(--color-ticket-cyan) 70%, transparent);
-    transform: scaleX(var(--sp-progress));
-    transform-origin: left;
-  }
-
-  .sp-phase {
-    display: grid;
-    justify-items: center;
-    gap: 0.6rem;
-    text-align: center;
-  }
-
-  .sp-node {
-    position: relative;
-    display: grid;
-    place-items: center;
-    width: var(--node);
-    height: var(--node);
-    margin-bottom: var(--space-sm);
-  }
-
-  .sp-node::before {
-    content: "";
-    width: 0.8rem;
-    height: 0.8rem;
-    border-radius: var(--radius-circle);
-    background: var(--color-home-ground);
-    box-shadow: inset 0 0 0 1.5px
-      color-mix(in srgb, var(--color-ticket-ice) 60%, transparent);
-  }
-
-  .is-past .sp-node::before {
-    background: color-mix(
-      in srgb,
-      var(--color-ticket-ice) 40%,
-      var(--color-home-ground)
-    );
-    box-shadow: none;
-  }
-
-  /* The phase on sale: a milky white Q, gently raised (lighter at its top,
-     a soft shadow under it), on a round disc of deep blue light with the
-     material of the LinkedIn and Instagram marks: a glow at its middle, a
-     hairline rim, a lit top edge and a soft drop shadow. */
-  .is-current .sp-node::before {
-    display: none;
-  }
-
-  .sp-q-tile {
-    position: relative;
-    display: grid;
-    place-items: center;
-    width: 130%;
-    aspect-ratio: 1;
-    border-radius: var(--radius-circle);
-    background:
-      radial-gradient(
-        70% 70% at 50% 46%,
-        color-mix(in srgb, var(--color-ticket-sky) 90%, transparent),
-        transparent 75%
-      ),
-      linear-gradient(
-        150deg,
-        var(--color-ticket-deep),
-        var(--color-navy) 55%,
-        var(--color-ticket-midnight)
-      );
-    box-shadow:
-      inset 0 0 0 1px color-mix(in srgb, var(--color-white) 30%, transparent),
-      inset 0 1px 1px color-mix(in srgb, var(--color-white) 60%, transparent),
-      0 12px 20px -14px color-mix(in srgb, var(--color-navy) 70%, transparent),
-      0 0 18px -8px
-        color-mix(in srgb, var(--color-ticket-cyan) 60%, transparent);
-  }
-
-  /* The shadow sits on a wrapper: the mask would cut a shadow on the Q. */
-  .sp-q-lift {
-    display: grid;
-    width: 56%;
-    filter: drop-shadow(
-        0 1.5px 1px
-          color-mix(in srgb, var(--color-ticket-midnight) 65%, transparent)
-      )
-      drop-shadow(
-        0 0 3px color-mix(in srgb, var(--color-white) 30%, transparent)
-      );
-  }
-
-  .sp-q {
-    width: 100%;
-    aspect-ratio: 1;
-    background: linear-gradient(
-      170deg,
-      var(--color-white) 0%,
-      color-mix(in srgb, var(--color-white) 88%, var(--color-ticket-ice)) 55%,
-      color-mix(in srgb, var(--color-ticket-ice) 70%, var(--color-white)) 100%
-    );
-    opacity: 0.94;
-    -webkit-mask: url(/icon-512.png) center / contain no-repeat;
-    mask: url(/icon-512.png) center / contain no-repeat;
-  }
-
-  .sp-name {
-    color: var(--h-text-soft);
-    font-size: var(--text-size-tiny);
-    font-weight: var(--font-weight-extrabold);
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-  }
-
-  .sp-discount {
-    font-size: clamp(2rem, 4vw, 3.5rem);
-    font-variant-numeric: tabular-nums;
-    font-weight: var(--font-weight-extrabold);
-    letter-spacing: -0.04em;
-    line-height: 1;
-    color: color-mix(in srgb, var(--color-white) 70%, transparent);
-  }
-
-  .sp-status {
-    padding: 0.35rem var(--space-xs);
-    border-radius: var(--radius-ticket-pill);
-    box-shadow: inset 0 0 0 1px
-      color-mix(in srgb, var(--color-white) 30%, transparent);
-    color: var(--h-text-soft);
-    font-size: var(--text-size-tiny);
-    font-weight: var(--font-weight-extrabold);
-    letter-spacing: 0.08em;
-  }
-
-  .is-current .sp-name {
-    color: var(--color-white);
-  }
-
-  .is-current .sp-discount {
-    color: var(--color-ticket-ice);
-  }
-
-  .is-current .sp-status {
-    background: var(--color-ticket-ice);
-    box-shadow: none;
-    color: var(--color-ticket-midnight);
-  }
-
-  .is-past .sp-discount,
-  .is-past .sp-name,
-  .is-past .sp-status {
-    opacity: 0.45;
-  }
-
-  /* Phones: the phases as a list down one line. */
-  @media (max-width: 679px) {
-    .sp-board {
-      --node: 2.5rem;
-    }
-
-    .sp-list {
-      grid-template-columns: minmax(0, 1fr);
-      gap: var(--space-md);
-    }
-
-    .sp-line {
-      top: calc(var(--node) / 2);
-      bottom: calc(var(--node) / 2);
-      left: calc(var(--node) / 2 - 1px);
-      right: auto;
-      width: 2px;
-      height: auto;
-    }
-
-    .sp-line-fill {
-      transform: scaleY(var(--sp-progress));
-      transform-origin: top;
-    }
-
-    .sp-phase {
-      grid-template-columns: var(--node) minmax(0, 1fr);
-      grid-template-areas:
-        "node name"
-        "node discount"
-        "node status";
-      justify-items: start;
-      align-items: center;
-      column-gap: var(--space-sm);
-      row-gap: 0.15rem;
-      text-align: left;
-    }
-
-    .sp-node {
-      grid-area: node;
-      margin: 0;
-    }
-
-    .sp-name {
-      grid-area: name;
-    }
-
-    .sp-discount {
-      grid-area: discount;
-      font-size: clamp(1.75rem, 9vw, 2.25rem);
-    }
-
-    .sp-status {
-      grid-area: status;
-      justify-self: start;
-      margin-top: 0.35rem;
-    }
   }
 </style>

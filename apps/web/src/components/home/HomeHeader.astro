@@ -2,18 +2,21 @@
 // The site header and its fullscreen menu (DESIGN.md COMP-6, HOME-1),
 // first built for the 2027 homepage after the concept mockup and now on
 // every page (Base.astro renders it when a page brings no header of its
-// own): a full-width bar of dark liquid glass with the white Q alone, the
-// Tickets button and, at the far right, the menu as three stripes as
-// tall as that button. On every page but the homepage a spacer of the
-// bar's height follows it, so the page starts under the bar (the homepage
-// hero runs under it on purpose).
+// own): a full-width bar of dark liquid glass with the white Q at the
+// left and, at the right, the Site Settings navigation as plain links
+// ("Why Q?" with a small panel of its four audience pages) and the
+// Tickets button in icy liquid glass. On every page but the homepage a
+// spacer of the bar's height follows it, so the page starts under the bar
+// (the homepage hero runs under it on purpose).
 //
-// The menu is a native popover (works without JavaScript; Escape closes
-// it): the items from Site Settings navigation in their order, an item
-// with children ("Why Q?" and its four audience pages) as a native
-// disclosure, and beside them the edition, dates, the ticket link and the
-// social profiles. home-menu.client.ts adds focus handling and the scroll
-// lock. Every ticket link goes to the ticket page, never to an anchor.
+// Phones (and a bar too narrow for every link, should the navigation
+// grow) show the menu as three stripes instead of the links. The menu is
+// a native popover (works without JavaScript; Escape closes it): the same
+// items in their order, an item with children as a native disclosure,
+// and beside them the edition, dates, the ticket link and the social
+// profiles. home-menu.client.ts adds focus handling, the scroll lock, the
+// audience panel's keys and the check that the links fit. Every ticket
+// link goes to the ticket page, never to an anchor.
 //
 // Edition, dates, city and the offer come from the content when the page
 // does not pass them (the hero badge "10 Years of Q-Summit · April 1-2,
@@ -76,16 +79,107 @@ const socialName = (platform: string, label: string) =>
   platform.startsWith("instagram") ? "Instagram" : label;
 // The Q alone: the site icon, drawn white through a mask.
 const markStyle = "--hh-logo: url(/icon-512.png); --hh-logo-ratio: 1 / 1";
+
+// The page the visitor is on is marked in the bar (an audience page marks
+// its parent, "Why Q?").
+const here = Astro.url.pathname.replace(/\/+$/, "") || "/";
+const isHere = (href: string) => {
+  const path = href.replace(/[?#].*$/, "").replace(/\/+$/, "") || "/";
+  return path !== "/" && (here === path || here.startsWith(`${path}/`));
+};
+// On the ticket page itself the header carries no ticket link (the page's
+// own buy buttons do the job); the bar closes up without a gap.
+const onTicketPage = isHere(TICKETS_HREF);
 ---
 
 <header class="hh" id="site-header" data-home-header>
   <div class="hh-bar">
     <span class="hh-rim" aria-hidden="true"></span>
-    <div class="h-shell hh-inner">
+    <div class="hh-inner" data-hh-inner>
       <a class="hh-brand" href="/" aria-label="Q-Summit home">
         <span class="hh-logo" style={markStyle} aria-hidden="true"></span>
       </a>
-      <a class="h-btn hh-tickets" href={TICKETS_HREF}>Tickets</a>
+      <nav class="hh-nav" aria-label="Main" data-hh-nav>
+        <ul class="hh-links">
+          {
+            nav.map((item, i) =>
+              item.children && item.children.length > 0 ? (
+                <li
+                  class:list={[
+                    "hh-item has-sub",
+                    {
+                      "is-here": item.children.some((child) =>
+                        isHere(child.href),
+                      ),
+                    },
+                  ]}
+                  data-hh-sub
+                >
+                  <button
+                    type="button"
+                    class="hh-link hh-sub-toggle"
+                    aria-expanded="false"
+                    aria-controls={`hh-sub-${i}`}
+                    data-hh-sub-toggle
+                  >
+                    {item.label}
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <path
+                        d="M6 9l6 6 6-6"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.6"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </button>
+                  <div class="hh-sub" id={`hh-sub-${i}`}>
+                    <ul class="hh-sub-list">
+                      {item.children.map((child) => (
+                        <li>
+                          <a
+                            class="hh-sub-link"
+                            href={child.href}
+                            aria-current={
+                              isHere(child.href) ? "page" : undefined
+                            }
+                          >
+                            {child.label}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </li>
+              ) : (
+                <li class="hh-item">
+                  <a
+                    class="hh-link"
+                    href={item.href}
+                    aria-current={isHere(item.href) ? "page" : undefined}
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              ),
+            )
+          }
+        </ul>
+      </nav>
+      {
+        !onTicketPage && (
+          <a class="h-btn h-ice hh-tickets" href={TICKETS_HREF}>
+            Tickets
+          </a>
+        )
+      }
       <button
         type="button"
         class="hh-menu"
@@ -118,7 +212,7 @@ const markStyle = "--hh-logo: url(/icon-512.png); --hh-logo-ratio: 1 / 1";
   aria-label="Menu"
   data-home-menu
 >
-  <div class="hm-top h-shell">
+  <div class="hm-top">
     <a class="hh-brand" href="/" aria-label="Q-Summit home">
       <span class="hh-logo" style={markStyle} aria-hidden="true"></span>
     </a>
@@ -173,9 +267,21 @@ const markStyle = "--hh-logo: url(/icon-512.png); --hh-logo-ratio: 1 / 1";
                       <li>
                         <a class="hm-child" href={child.href}>
                           {child.label}
-                          <span class="hm-arrow" aria-hidden="true">
-                            ↗
-                          </span>
+                          <svg
+                            class="hm-arrow"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                            focusable="false"
+                          >
+                            <path
+                              d="M7 17L17 7M9 7h8v8"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2.4"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
                         </a>
                       </li>
                     ))}
@@ -186,9 +292,21 @@ const markStyle = "--hh-logo: url(/icon-512.png); --hh-logo-ratio: 1 / 1";
               <li class="hm-item" style={`--hm-i: ${i}`}>
                 <a class="hm-link" href={item.href}>
                   <span class="hm-label">{item.label}</span>
-                  <span class="hm-arrow" aria-hidden="true">
-                    ↗
-                  </span>
+                  <svg
+                    class="hm-arrow"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <path
+                      d="M7 17L17 7M9 7h8v8"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.4"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
                 </a>
               </li>
             ),
@@ -204,18 +322,23 @@ const markStyle = "--hh-logo: url(/icon-512.png); --hh-logo-ratio: 1 / 1";
           {dates}<br /><span class="h-accent">{city}</span>
         </p>
       </div>
-      <a class="h-btn hm-cta" href={TICKETS_HREF}>
-        Tickets{offer ? ` · ${offer}` : ""}
-        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-          <path
-            d="M4 12h15M13 6l6 6-6 6"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.4"
-            stroke-linecap="round"
-            stroke-linejoin="round"></path>
-        </svg>
-      </a>
+      {
+        !onTicketPage && (
+          <a class="h-btn h-ice hm-cta" href={TICKETS_HREF}>
+            Tickets{offer ? ` · ${offer}` : ""}
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M4 12h15M13 6l6 6-6 6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </a>
+        )
+      }
       {
         socials.length > 0 && (
           <ul class="hm-socials">
@@ -305,12 +428,18 @@ const markStyle = "--hh-logo: url(/icon-512.png); --hh-logo-ratio: 1 / 1";
     );
   }
 
+  /* The bar's contents run across the whole window: the Q on the left
+     gutter, the links and the Tickets button on the right one, the same
+     gutter as the page's content (which only centers on monitors wider
+     than its grid, --container-wide). */
   .hh-inner {
     position: relative;
     display: flex;
     align-items: center;
     gap: clamp(var(--space-2xs), 2.4vw, var(--space-lg));
+    width: 100%;
     height: 100%;
+    padding-inline: var(--h-gutter);
   }
 
   .hh-brand {
@@ -330,8 +459,166 @@ const markStyle = "--hh-logo: url(/icon-512.png); --hh-logo-ratio: 1 / 1";
     mask: var(--hh-logo) center / contain no-repeat;
   }
 
+  /* ---- the links in the bar (wide screens) ----
+     Plain links in a soft white, the page the visitor is on in ice. The
+     sizes follow the bar's width, so all six fit beside the Tickets
+     button from a small tablet up (home-menu.client.ts checks it and
+     falls back to the menu should the navigation ever grow too long). */
+  .hh-nav {
+    display: none;
+  }
+
+  .hh-links {
+    display: flex;
+    align-items: center;
+    gap: clamp(0rem, 0.35vw, var(--space-2xs));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .hh-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .hh-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0 clamp(0.4rem, 0.85vw, 0.85rem);
+    border-radius: var(--radius-ticket-button);
+    color: color-mix(in srgb, var(--color-white) 82%, transparent);
+    font-size: clamp(0.8125rem, 0.62rem + 0.36vw, 0.9375rem);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+      color var(--duration-hover) var(--ease-snappy),
+      background-color var(--duration-hover) var(--ease-snappy);
+  }
+
+  .hh-link[aria-current="page"],
+  .is-here > .hh-sub-toggle {
+    color: var(--color-ticket-ice);
+  }
+
+  /* An item with sub-items ("Why Q?") is no link of its own, as in the
+     menu and the CMS: a button with a small chevron that opens its
+     pages (a hover, a tap on a tablet, a click, Enter or Space). */
+  .hh-sub-toggle {
+    gap: 0.3rem;
+    border: 0;
+    background: transparent;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .hh-sub-toggle svg {
+    flex: none;
+    opacity: 0.75;
+    transition: transform var(--duration-open) var(--ease-snappy);
+  }
+
+  .has-sub[data-open] .hh-sub-toggle svg {
+    transform: rotate(180deg);
+  }
+
+  @media (hover: hover) {
+    .hh-link:hover {
+      color: var(--color-white);
+      background: color-mix(in srgb, var(--color-white) 8%, transparent);
+    }
+  }
+
+  .hh-link:focus-visible,
+  .hh-sub-link:focus-visible {
+    outline: 2px solid var(--color-ticket-ice);
+    outline-offset: 2px;
+  }
+
+  /* The audience pages: a small panel of the bar's dark glass under
+     "Why Q?". It opens on hover (the panel's top padding bridges the gap,
+     so the pointer can move into it), on keyboard focus and with the
+     chevron; Escape, a click outside or leaving it closes it again. */
+  .hh-sub {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1;
+    padding-top: var(--space-2xs);
+    opacity: 0;
+    visibility: hidden;
+    translate: 0 -0.35rem;
+    transition:
+      opacity var(--duration-close) var(--ease-snappy),
+      translate var(--duration-close) var(--ease-snappy),
+      visibility var(--duration-close);
+  }
+
+  .has-sub[data-open] .hh-sub,
+  .hh:not([data-ready]) .has-sub:is(:hover, :focus-within) .hh-sub {
+    opacity: 1;
+    visibility: visible;
+    translate: 0 0;
+    transition:
+      opacity var(--duration-open) var(--ease-emphasized),
+      translate var(--duration-open) var(--ease-emphasized),
+      visibility var(--duration-open);
+  }
+
+  .hh-sub-list {
+    display: grid;
+    min-width: 15rem;
+    margin: 0;
+    padding: var(--space-2xs);
+    border-radius: var(--radius-ticket-panel);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-ticket-deep) 92%, transparent),
+      color-mix(in srgb, var(--color-ticket-midnight) 94%, transparent)
+    );
+    box-shadow:
+      inset 0 0 0 1px
+        color-mix(in srgb, var(--color-ticket-ice) 18%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--color-white) 26%, transparent),
+      0 22px 40px -22px var(--color-ticket-midnight);
+    list-style: none;
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    backdrop-filter: blur(16px) saturate(150%);
+  }
+
+  .hh-sub-link {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0 var(--space-sm);
+    border-radius: var(--radius-ticket-button);
+    color: color-mix(in srgb, var(--color-white) 86%, transparent);
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-semibold);
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+      color var(--duration-hover) var(--ease-snappy),
+      background-color var(--duration-hover) var(--ease-snappy);
+  }
+
+  .hh-sub-link[aria-current="page"] {
+    color: var(--color-ticket-ice);
+  }
+
+  @media (hover: hover) {
+    .hh-sub-link:hover {
+      color: var(--color-white);
+      background: color-mix(in srgb, var(--color-white) 8%, transparent);
+    }
+  }
+
   /* Only the stripes: a square as tall as the Tickets button, the
-     stripes filling most of it, so both read as one pair. */
+     stripes filling most of it, so both read as one pair. Phones only. */
   .hh-menu {
     display: inline-grid;
     place-items: center;
@@ -380,6 +667,30 @@ const markStyle = "--hh-logo: url(/icon-512.png); --hh-logo-ratio: 1 / 1";
     }
   }
 
+  /* Wide screens: the links in the bar, no menu. Should the links not
+     fit (home-menu.client.ts sets data-collapsed), the menu comes back and
+     the links wait unseen, so they can still be measured. */
+  @media (min-width: 48rem) {
+    .hh-nav {
+      display: block;
+      flex: none;
+    }
+
+    .hh-menu {
+      display: none;
+    }
+
+    .hh[data-collapsed] .hh-nav {
+      position: absolute;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .hh[data-collapsed] .hh-menu {
+      display: inline-grid;
+    }
+  }
+
   /* ---- the fullscreen menu ---- */
   .hm {
     position: fixed;
@@ -413,11 +724,15 @@ const markStyle = "--hh-logo: url(/icon-512.png); --hh-logo-ratio: 1 / 1";
     flex-direction: column;
   }
 
+  /* The sheet's top row mirrors the bar: the Q and the close button on
+     the same gutters. */
   .hm-top {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    width: 100%;
     min-height: var(--h-header-height, 4.5rem);
+    padding-inline: var(--h-gutter);
     border-bottom: 1px solid;
     border-image: var(--h-fade-x) 1;
   }
@@ -470,10 +785,12 @@ const markStyle = "--hh-logo: url(/icon-512.png); --hh-logo-ratio: 1 / 1";
     line-height: 1.05;
   }
 
+  /* An SVG arrow in the label's color (a text arrow turns into a colored
+     emoji on iPhones). */
   .hm-arrow {
     flex: none;
-    font-size: clamp(1.25rem, 2.4vw, 2rem);
-    font-weight: var(--font-weight-extrabold);
+    width: clamp(1.25rem, 2.4vw, 2rem);
+    height: clamp(1.25rem, 2.4vw, 2rem);
     opacity: 0.35;
     transition:
       opacity var(--duration-hover) var(--ease-snappy),
@@ -540,7 +857,8 @@ const markStyle = "--hh-logo: url(/icon-512.png); --hh-logo-ratio: 1 / 1";
   }
 
   .hm-child .hm-arrow {
-    font-size: var(--text-size-large);
+    width: 1.125rem;
+    height: 1.125rem;
   }
 
   .hm-side {

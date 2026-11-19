@@ -150,6 +150,11 @@
      use it: the home partner-logo marquee it is named for, and the speaker
      page's Previous Highlights rail. See DESIGN.md's Layout section. */
   --container-marquee: 120rem;
+  /* The page width of the 2027 pages (home, tickets; DESIGN.md HOME-1,
+     TICKETS-1): the content lines up with the full-width site header's
+     gutter on every laptop screen (up to about 1680px) and only caps,
+     centered, on wider monitors. */
+  --container-wide: 100rem;
 
   /* Vertical rhythm: one section scale for every page. */
   --section-padding: 6rem;

@@ -14,15 +14,18 @@ interface Props {
 const { heading, stats } = Astro.props;
 const fmt = new Intl.NumberFormat("en-US");
 
+// "1500" -> 1,500 and "+"; "30+" -> 30 and "+". Every figure of the band
+// carries the same ice plus (the team's figures are all "at least"), so a
+// figure written without one ("1500" participants) matches the others.
 const items = stats.map((stat) => {
-  // "1500" -> 1,500; "30+" -> 30 and "+".
   const match = /^([\d.,]+)(.*)$/.exec(stat.value.trim());
   const number = match ? Number(match[1]!.replace(/[.,]/g, "")) : NaN;
+  const finite = Number.isFinite(number);
   return {
     label: stat.label,
-    number: Number.isFinite(number) ? number : null,
-    text: Number.isFinite(number) ? fmt.format(number) : stat.value,
-    suffix: match ? match[2]!.trim() : "",
+    number: finite ? number : null,
+    text: finite ? fmt.format(number) : stat.value,
+    suffix: match ? match[2]!.trim() || (finite ? "+" : "") : "",
   };
 });
 ---
@@ -37,7 +40,9 @@ const items = stats.map((stat) => {
         <li class="hs-item" data-h-reveal style={`--h-i: ${i}`}>
           <span class="hs-figure">
             <span data-count-to={item.number ?? undefined}>{item.text}</span>
-            {item.suffix && <span class="h-accent">{item.suffix}</span>}
+            {item.suffix && (
+              <span class="h-accent hs-suffix">{item.suffix}</span>
+            )}
           </span>
           <span class="hs-label">{item.label}</span>
         </li>
@@ -60,6 +65,7 @@ const items = stats.map((stat) => {
     display: grid;
     align-content: start;
     gap: 0.85rem;
+    container-type: inline-size;
     padding: clamp(var(--space-lg), 5vw, 3.5rem)
       clamp(var(--space-sm), 2vw, 1.75rem);
     border-left: 1px solid;
@@ -71,13 +77,22 @@ const items = stats.map((stat) => {
     border-left: 0;
   }
 
+  /* Never wider than its column: "1,500+" is the longest figure, about
+     3.3 of its own em wide, so a figure is at most 29 % of the column
+     (the columns are equal, so all four stay the same size). */
   .hs-figure {
-    font-size: clamp(2.75rem, 6vw, 5.75rem);
+    font-size: min(clamp(2.75rem, 6vw, 5.75rem), 29cqi);
     font-variant-numeric: tabular-nums;
     font-weight: var(--font-weight-extrabold);
     letter-spacing: -0.045em;
     line-height: 1;
     white-space: nowrap;
+  }
+
+  /* The plus sits on the figure's baseline, tight to it, the same size on
+     every figure. */
+  .hs-suffix {
+    margin-left: 0.02em;
   }
 
   .hs-label {

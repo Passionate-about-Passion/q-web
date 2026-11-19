@@ -410,6 +410,7 @@ function tokenMap(dtcg) {
   map.set("spacing.container-medium", "--container-medium");
   map.set("spacing.container-small", "--container-small");
   map.set("spacing.container-marquee", "--container-marquee");
+  map.set("spacing.container-wide", "--container-wide");
   for (const name of Object.keys(dtcg.typography ?? {})) {
     if (name.startsWith("$")) continue;
     map.set(

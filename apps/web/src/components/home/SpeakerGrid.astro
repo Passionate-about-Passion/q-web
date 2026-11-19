@@ -8,17 +8,20 @@
 // names inside the page width are never shaded.
 //
 // A card: the portrait fills it, a navy shade at its foot carries the
-// tag, the name and the role, so nothing ever lies over a face:
+// name and the role (and a tag for a booked speaker), so nothing ever
+// lies over a face:
 //
 //   lineup   the next edition's published speakers, tagged with the
 //            edition's year (filled ice tag); shown first
-//   alumni   past speakers, tagged "Previous Speaker" (outlined tag), so
-//            nobody reads them as booked. The prop names are historical:
-//            they are not Q alumni (former team members)
+//   alumni   past speakers: name and role only, no tag on the picture
+//            (the team asked for the pictures without "Previous Speaker";
+//            the heading says these are highlights). The prop names are
+//            historical: they are not Q alumni (former team members)
 //
 // While the next edition has no published speaker, index.astro may pass
-// earlier speakers in their place with their own tag. Open slots render
-// only as marked placeholders in a local preview, never a name or face.
+// earlier speakers in their place; like the past speakers they carry no
+// tag. Open slots render only as marked placeholders in a local preview,
+// never a name or face.
 import { Picture } from "../../lib/astro-assets";
 import type { PageLink, Speaker } from "../../lib/content";
 import { photoSrc } from "../../lib/media-filename";
@@ -97,10 +100,12 @@ const cards: Card[] = lineupBooked
       ...lineupCards,
     ];
 
-// The loop: the cards three times over; the middle copy is the real one,
-// the others only fill the edges and are skipped by assistive tech and
-// the keyboard (aria-hidden, inert).
-const COPIES = [0, 1, 2] as const;
+// The loop: the cards five times over; the middle copy is the real one,
+// the others only give the ring room to run (fast swipes never reach an
+// end) and are skipped by assistive tech and the keyboard (aria-hidden,
+// inert).
+const COPIES = [0, 1, 2, 3, 4] as const;
+const MIDDLE = 2;
 
 // "Voices on stage": the last words in ice.
 const words = heading.trim().split(/\s+/);
@@ -148,7 +153,7 @@ const images = await Promise.all(
         <div class="sr-tools" data-h-reveal>
           {cta && (
             <a
-              class="h-btn"
+              class="h-btn h-frost"
               href={cta.href}
               data-lp="previousSpeakers.cta"
               data-lp-href="previousSpeakers.cta.href"
@@ -177,7 +182,7 @@ const images = await Promise.all(
       <div
         class="sr-carousel"
         data-speaker-carousel
-        data-autoplay="off"
+        data-copies={COPIES.length}
         data-h-reveal
       >
         <div
@@ -193,8 +198,8 @@ const images = await Promise.all(
               cards.map((card, i) => (
                 <li
                   class="sr-slot"
-                  aria-hidden={copy !== 1 ? "true" : undefined}
-                  inert={copy !== 1}
+                  aria-hidden={copy !== MIDDLE ? "true" : undefined}
+                  inert={copy !== MIDDLE}
                   data-speaker-card
                   data-copy={copy}
                 >
@@ -234,18 +239,10 @@ const images = await Promise.all(
                     </div>
                     <span class="sr-shade" aria-hidden="true" />
                     <div class="sr-caption">
-                      {card.badge && (
-                        <p
-                          class:list={[
-                            "sr-tag",
-                            card.kind === "speaker" &&
-                              card.booked &&
-                              "is-booked",
-                          ]}
-                        >
-                          {card.badge}
-                        </p>
-                      )}
+                      {card.badge &&
+                        (card.kind === "placeholder" || card.booked) && (
+                          <p class="sr-tag is-booked">{card.badge}</p>
+                        )}
                       <h3>
                         {card.kind === "speaker"
                           ? card.speaker.name
@@ -318,9 +315,13 @@ const images = await Promise.all(
     gap: var(--space-lg);
   }
 
+  /* Two lines of heavy type: the descender of the first ("p" in
+     "Speaker") must clear the ascenders of the second ("h", "l", "g"),
+     which a line height under 1 lets them touch. */
   .sr-title {
     margin-top: var(--space-xs);
     font-size: clamp(2.75rem, 7vw, 6.75rem);
+    line-height: 1.06;
   }
 
   .sr-tools {
@@ -333,8 +334,8 @@ const images = await Promise.all(
   /* The arrows sit on the rail, each in the gap where the clear cards
      meet the ones turning away at the window's edge, in the page's round
      clear glass (home-theme.css .h-glass-btn, no glow). They show once
-     the rail is ready (speaker-carousel.client.ts) and not on phones,
-     which swipe. */
+     the rail is ready (speaker-carousel.client.ts), on phones too (a
+     little smaller there), next to swiping. */
   .sr-arrow {
     position: absolute;
     top: 50%;
@@ -362,10 +363,7 @@ const images = await Promise.all(
    * as --per cards and their gaps fill the page width exactly.
    */
   .sr-carousel {
-    --peek: max(
-      clamp(1rem, 5vw, 2.5rem),
-      (100cqw - var(--container-large)) / 2
-    );
+    --peek: max(clamp(1rem, 5vw, 2.5rem), (100cqw - var(--container-wide)) / 2);
     --per: 4;
     --gap: var(--space-sm);
     --card-w: calc(
@@ -399,6 +397,12 @@ const images = await Promise.all(
   .sr-viewport:global(.is-dragging) {
     scroll-snap-type: none;
     cursor: grabbing;
+  }
+
+  /* While the ring runs by itself, the script settles it on a card
+     (CSS snapping would pull the slow run back every frame). */
+  .sr-viewport:global(.is-free) {
+    scroll-snap-type: none;
   }
 
   .sr-track {
@@ -472,31 +476,20 @@ const images = await Promise.all(
     );
   }
 
+  /* Only booked speakers of the next edition carry a tag (filled ice). */
   .sr-tag {
     justify-self: start;
     max-width: 100%;
     margin: 0 0 0.2rem;
     padding: 0.35rem 0.65rem;
     border-radius: var(--radius-ticket-pill);
-    background: color-mix(
-      in srgb,
-      var(--color-ticket-midnight) 55%,
-      transparent
-    );
-    box-shadow: inset 0 0 0 1px
-      color-mix(in srgb, var(--color-ticket-ice) 55%, transparent);
-    color: var(--color-ticket-ice);
+    background: var(--color-ticket-ice);
+    color: var(--color-ticket-midnight);
     font-size: var(--text-size-tiny);
     font-weight: var(--font-weight-extrabold);
     letter-spacing: 0.1em;
     line-height: 1.2;
     text-transform: uppercase;
-  }
-
-  .sr-tag.is-booked {
-    background: var(--color-ticket-ice);
-    box-shadow: none;
-    color: var(--color-ticket-midnight);
   }
 
   .sr-caption {
@@ -547,7 +540,7 @@ const images = await Promise.all(
     }
 
     .sr-arrow {
-      display: none;
+      width: 2.75rem;
     }
 
     /* Taller cards and a compact caption: the face keeps the upper two

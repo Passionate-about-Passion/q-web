@@ -1,0 +1,353 @@
+---
+// The discount phases as four cards of liquid glass (apps/web AGENTS.md
+// PRIM-3, DESIGN.md HOME-1 and TICKETS-1), one pattern for the homepage's
+// sale section and the ticket page's opener, so both always show the same
+// phases and the same one on sale.
+//
+//   on sale  baby blue glass (.h-ice), navy ink, a filled tag and an
+//            arrow: the whole card is one link to the tickets (`href`)
+//   coming   clear glass: hardly any body, only its rim and a faint frost,
+//            grey ink and an outlined tag ("Coming soon"), so it reads at
+//            once as a later stage, not as something to buy now; plain
+//            text, not a link
+//   past     the coming card, faded further, with the past tag
+//
+// No line joins them. Phases, discounts, the phase on sale and the tag
+// words all come from the content (the ticket page's `phases`); nothing
+// switches by date. No marks: each card reads top to bottom, the phase's
+// name (and the arrow) at the top, the discount in the middle, the tag at
+// the foot. Four in a row on wide screens, two by two on tablets, and on
+// phones one under another as compact rows.
+import type { TicketPhases } from "../../lib/content";
+import "../home/home-theme.css";
+
+interface Props {
+  phases: TicketPhases;
+  /** Where the card on sale leads (the ticket page, or its picker). */
+  href: string;
+  /** Read after the card on sale's own words, e.g. "Get your ticket". */
+  actionLabel: string;
+}
+
+const { phases, href, actionLabel } = Astro.props;
+const activeIndex = Math.max(
+  0,
+  phases.items.findIndex((item) => item.key === phases.activeKey),
+);
+const items = phases.items.map((item, i) => ({
+  ...item,
+  state: i < activeIndex ? "past" : i === activeIndex ? "current" : "next",
+  discountText: phases.discountLabel.replace(
+    "{discount}",
+    String(item.discount),
+  ),
+  status:
+    i < activeIndex
+      ? phases.pastLabel
+      : i === activeIndex
+        ? phases.currentLabel
+        : phases.upcomingLabel,
+}));
+---
+
+<ol class="sc" aria-label={phases.label} style={`--sc-count: ${items.length}`}>
+  {
+    items.map((item) =>
+      item.state === "current" ? (
+        <li class="sc-item" aria-current="step">
+          <a class="sc-card h-pane h-ice is-current" href={href}>
+            <svg
+              class="sc-go"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M7 17L17 7M9 7h8v8"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span class="sc-name">{item.label}</span>
+            <span class="sc-discount">{item.discountText}</span>
+            <span class="sc-status">{item.status}</span>
+            <span class="u-visually-hidden">. {actionLabel}</span>
+          </a>
+        </li>
+      ) : (
+        <li class="sc-item">
+          <div class:list={["sc-card h-pane h-frost", `is-${item.state}`]}>
+            <span class="sc-name">{item.label}</span>
+            <span class="sc-discount">{item.discountText}</span>
+            <span class="sc-status">{item.status}</span>
+          </div>
+        </li>
+      ),
+    )
+  }
+</ol>
+
+<style>
+  /* DESIGN.md HOME-1, TICKETS-1: tinted liquid glass (home-theme.css
+     .h-pane .h-ice / .h-frost), display type above the heading scale. */
+  .sc {
+    display: grid;
+    grid-template-columns: repeat(var(--sc-count), minmax(0, 1fr));
+    gap: clamp(var(--space-xs), 1.6vw, var(--space-md));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* The item carries the cards' drop shadows, so the card on sale lifts
+     off its shadow on hover (a shadow is never painted under its box, so
+     the translucent glass stays clear). */
+  .sc-item {
+    display: grid;
+    min-width: 0;
+    border-radius: var(--radius-ticket-card);
+  }
+
+  /* Only the card on sale has a body that casts a shadow. */
+  .sc-item[aria-current] {
+    box-shadow:
+      0 2px 4px -1px
+        color-mix(in srgb, var(--color-ticket-midnight) 50%, transparent),
+      0 22px 40px -22px var(--color-ticket-midnight);
+  }
+
+  /* Three bands: the name (with the arrow) at the top, the discount in the
+     middle of the space left, the tag at the foot. */
+  .sc-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    /* The top band is the arrow's height on every card, so all four
+       names stand on one line. */
+    grid-template-rows: 1.5rem 1fr auto;
+    grid-template-areas:
+      "name go"
+      "discount discount"
+      "status status";
+    row-gap: var(--space-sm);
+    min-height: clamp(10.5rem, 14vw, 12.5rem);
+    padding: clamp(1.25rem, 2vw, 1.75rem);
+    color: var(--hg-ink);
+    text-decoration: none;
+    -webkit-backdrop-filter: var(--hg-backdrop);
+    backdrop-filter: var(--hg-backdrop);
+  }
+
+  /*
+   * The glass of the ticket buttons (home-theme.css .h-btn .h-ice /
+   * .h-frost), set on a card: the same tints, slightly translucent, the
+   * same specular rim and a frost behind, and the button's relief scaled
+   * to the card's height: a lit top edge, the body light at the top and
+   * deeper towards the foot, a band of light caught inside the lower
+   * edge and a shaded line along it. The drop shadows sit on the item.
+   */
+  .sc-card.h-ice {
+    --hg-fill: linear-gradient(
+      180deg,
+      color-mix(
+          in srgb,
+          color-mix(in srgb, var(--color-ticket-ice) 80%, var(--color-white))
+            94%,
+          transparent
+        )
+        0%,
+      color-mix(in srgb, var(--color-ticket-ice) 90%, transparent) 46%,
+      color-mix(in srgb, var(--color-ticket-cyan) 80%, transparent) 100%
+    );
+    --hg-shadow:
+      inset 0 1.5px 1px var(--color-white),
+      inset 0 -1.5px 2px
+        color-mix(in srgb, var(--color-ticket-sky) 50%, transparent),
+      inset 0 -34px 44px -30px
+        color-mix(in srgb, var(--color-ticket-sky) 75%, transparent);
+  }
+
+  /* A coming phase is clear glass: hardly any body (a breath of white and
+     a light frost), only its specular rim and a lit top edge, so the
+     night shows through; its ink is a quiet grey. Next to the blue card
+     on sale it reads as later, not as an offer. */
+  .sc-card.h-frost {
+    --hg-ink-muted: color-mix(
+      in srgb,
+      var(--color-neutral-light) 80%,
+      var(--color-ticket-ice)
+    );
+    --hg-fill: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-white) 9%, transparent),
+      color-mix(in srgb, var(--color-white) 3%, transparent)
+    );
+    --hg-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--color-white) 26%, transparent),
+      inset 0 -1px 0 color-mix(in srgb, var(--color-white) 8%, transparent);
+    --hg-rim: linear-gradient(
+      140deg,
+      color-mix(in srgb, var(--color-white) 55%, transparent) 0%,
+      color-mix(in srgb, var(--color-white) 18%, transparent) 35%,
+      color-mix(in srgb, var(--color-white) 8%, transparent) 65%,
+      color-mix(in srgb, var(--color-white) 30%, transparent) 100%
+    );
+    --hg-backdrop: blur(6px) saturate(120%);
+  }
+
+  .sc-go {
+    grid-area: go;
+    align-self: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    color: var(--hg-ink);
+    transition: translate var(--duration-hover) var(--ease-snappy);
+  }
+
+  .sc-name {
+    grid-area: name;
+    align-self: center;
+    color: var(--hg-ink-soft);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.16em;
+    line-height: 1.3;
+    text-transform: uppercase;
+  }
+
+  .sc-discount {
+    grid-area: discount;
+    align-self: center;
+    font-size: clamp(2rem, 3.4vw, 3.25rem);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.04em;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .sc-status {
+    grid-area: status;
+    align-self: end;
+    justify-self: start;
+    padding: 0.4rem var(--space-xs);
+    border-radius: var(--radius-ticket-pill);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.06em;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .is-current .sc-status {
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-ticket-q27) 30%, var(--color-navy)),
+      var(--color-navy)
+    );
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--color-white) 28%, transparent),
+      0 4px 8px -4px color-mix(in srgb, var(--color-navy) 80%, transparent);
+    color: var(--color-ticket-ice);
+  }
+
+  /* Coming phases: grey, quiet ink; an outlined tag. A phase already over
+     fades further. */
+  .sc-card:not(.is-current) {
+    color: var(--hg-ink-muted);
+  }
+
+  .sc-card:not(.is-current) .sc-name {
+    color: var(--hg-ink-muted);
+  }
+
+  .sc-card:not(.is-current) .sc-status {
+    box-shadow: inset 0 0 0 1px var(--hg-ink-muted);
+    color: var(--hg-ink-muted);
+  }
+
+  .sc-card.is-past {
+    opacity: 0.62;
+  }
+
+  /* The card on sale answers like a button: its glass lightens on hover
+     (home-theme.css), it lifts a little and its arrow leans on. */
+  a.sc-card {
+    transition: translate var(--duration-glass-release) var(--ease-glass-spring);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  @media (hover: hover) {
+    a.sc-card:hover {
+      translate: 0 -3px;
+    }
+
+    a.sc-card:hover .sc-go {
+      translate: 2px -2px;
+    }
+  }
+
+  a.sc-card:active {
+    translate: 0 1px;
+    transition-duration: var(--duration-glass-press);
+  }
+
+  /* Tablets: two by two. */
+  @media (max-width: 899px) {
+    .sc {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  /* Phones: one under another, each a compact row (the name over its tag
+     at the left, the discount at the right), so all four fit without
+     small type. */
+  @media (max-width: 519px) {
+    .sc {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .sc-card {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-rows: auto auto;
+      grid-template-areas:
+        "name discount"
+        "status discount";
+      column-gap: var(--space-sm);
+      row-gap: var(--space-xs);
+      min-height: 0;
+      padding: var(--space-sm) clamp(var(--space-sm), 4vw, 1.25rem);
+    }
+
+    .sc-name {
+      align-self: end;
+    }
+
+    .sc-status {
+      align-self: start;
+    }
+
+    .sc-go {
+      display: none;
+    }
+
+    .sc-discount {
+      font-size: clamp(1.6rem, 8vw, 2.1rem);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    a.sc-card,
+    .sc-go {
+      transition: none;
+    }
+
+    a.sc-card:hover,
+    a.sc-card:active,
+    a.sc-card:hover .sc-go {
+      translate: none;
+    }
+  }
+</style>

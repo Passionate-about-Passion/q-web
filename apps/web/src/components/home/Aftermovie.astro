@@ -9,11 +9,11 @@
 // there is no sound control). Until the window comes near, only the
 // poster shows; then the film loads (at most 720p on phones) and plays
 // muted in a loop while it is in view, pausing off screen and in hidden
-// tabs. The round liquid glass button pauses and resumes it (WCAG 2.2.2)
-// and starts it where autoplay is blocked or the poster stays on purpose
-// (reduced motion, data saving, a slow connection): home.client.ts. A
-// click anywhere else on the film opens the YouTube channel, as does the
-// small "More on YouTube" link at the top right.
+// tabs (home.client.ts). It has no play or pause button (the team asked
+// for the film without one); with reduced motion, data saving or a slow
+// connection the poster stays. A click anywhere on the film opens the
+// YouTube channel, as does the small "More on YouTube" link at the top
+// right.
 //
 // The stage is pure CSS (scroll-driven animations on the section's view
 // timeline, MOTION-4): the section is as long as the mockup's (260 % of
@@ -120,8 +120,22 @@ const lineBCaps = lineB.toUpperCase();
               target="_blank"
               rel="noopener noreferrer"
             >
-              <span class="am-more-lead">More on </span>YouTube{" "}
-              <span aria-hidden="true">↗</span>
+              <span class="am-more-lead">More on </span>YouTube
+              <svg
+                class="am-more-arrow"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  d="M7 17L17 7M9 7h8v8"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
               <span class="u-visually-hidden"> (opens in a new tab)</span>
             </a>
           )
@@ -131,39 +145,6 @@ const lineBCaps = lineB.toUpperCase();
         <h2 class="am-title" id="home-film-title" data-lp="aftermovie.heading">
           {heading}
         </h2>
-        <button
-          type="button"
-          class="h-glass-btn am-control"
-          aria-label="Pause the film"
-          data-state="playing"
-          data-film-toggle
-          data-glass-press
-          hidden
-        >
-          <svg
-            class="am-icon is-pause"
-            width="30"
-            height="30"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              d="M8 5v14M16 5v14"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="3"
-              stroke-linecap="round"></path>
-          </svg>
-          <svg
-            class="am-icon is-play"
-            width="30"
-            height="30"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path d="M8 5.5v13l11-6.5z" fill="currentColor"></path>
-          </svg>
-        </button>
       </div>
     </div>
   </div>
@@ -251,10 +232,21 @@ const lineBCaps = lineB.toUpperCase();
 
   .am-more {
     position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
     color: var(--color-white);
     text-decoration: none;
     pointer-events: auto;
     transition: color var(--duration-hover) var(--ease-snappy);
+  }
+
+  /* An SVG arrow in the link's color, as tall as its capitals (a text
+     arrow turns into a colored emoji on iPhones). */
+  .am-more-arrow {
+    flex: none;
+    width: 1.15em;
+    height: 1.15em;
   }
 
   @media (hover: hover) {
@@ -295,24 +287,6 @@ const lineBCaps = lineB.toUpperCase();
     letter-spacing: -0.045em;
     line-height: 0.95;
     text-wrap: balance;
-  }
-
-  /* The play and pause button: the page's round clear glass
-     (home-theme.css .h-glass-btn), no glow. */
-  .am-control {
-    width: clamp(4rem, 7vw, 5.5rem);
-    pointer-events: auto;
-  }
-
-  .am-control[hidden] {
-    display: none;
-  }
-
-  /* The icon shows what a press does: pause while it plays, play while
-     it stands. */
-  .am-control[data-state="playing"] .am-icon.is-play,
-  .am-control[data-state="paused"] .am-icon.is-pause {
-    display: none;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -516,16 +490,6 @@ const lineBCaps = lineB.toUpperCase();
         animation-timeline: --am-film;
         animation-range: contain 72% contain 86%;
       }
-
-      /* The button comes in with the film's big line, as in the mockup
-         (hidden until then, so it is not reachable while unseen). */
-      .am-control {
-        animation-name: am-in-hidden;
-        animation-timing-function: linear;
-        animation-fill-mode: both;
-        animation-timeline: --am-film;
-        animation-range: contain 72% contain 86%;
-      }
     }
   }
 
@@ -642,20 +606,6 @@ const lineBCaps = lineB.toUpperCase();
 
     to {
       translate: calc(100cqw + 0.5em) 0;
-    }
-  }
-
-  @keyframes am-in-hidden {
-    from {
-      opacity: 0;
-      visibility: hidden;
-      translate: 0 1rem;
-    }
-
-    to {
-      opacity: 1;
-      visibility: visible;
-      translate: 0 0;
     }
   }
 

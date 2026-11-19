@@ -1,13 +1,21 @@
 ---
-// "What's included" (DESIGN.md TICKETS-1): one ticket at a time, picked
-// with tabs, as a compact summary (name, prices, buy) beside the grouped
-// benefit list. Every status comes from ticket-model, the same functions
-// the compare view uses.
+// Choosing a ticket (DESIGN.md TICKETS-1): the page's one ticket picker.
+// At the left, the five tickets as a vertical list (a tab list, like the
+// homepage's "Why Q?" rows): each row its name, who it is for, the regular
+// price struck through and the price on sale now, the row picked marked
+// in ice on a lens of glass with an arrow. At the right, exactly one
+// ticket card, the one picked: printed light (white with soft icy blue
+// light and the pass's fine grain under the type), its name, price, the
+// day the sale price ends, its requirement, the buy button in icy liquid
+// glass and every benefit with its status. Every price and status comes
+// from ticket-model, the same functions the compare view uses; every buy
+// button opens the one shop URL from the content.
 //
-// Progressive enhancement: the static HTML shows all five panels one under
-// another and hides the tab row, so without JavaScript every ticket's full
-// list is readable and the cards' "All benefits" links land on the right
-// panel. tickets.client.ts reveals the tabs and shows one panel at a time.
+// Progressive enhancement: the static HTML shows the list and all five
+// cards one under another, so without JavaScript every ticket is readable
+// and buyable. tickets.client.ts turns the list into tabs (click, arrow
+// keys, Home, End) and shows one card at a time; the cards then share one
+// cell, as tall as the tallest, so switching never moves the page.
 import "./ticket-theme.css";
 import type { TicketCategoriesContent } from "../../lib/content";
 import { EVENTS } from "../../lib/analytics/events";
@@ -25,16 +33,37 @@ import {
 interface Props {
   offer: TicketCategoriesContent["offer"];
   included: TicketCategoriesContent["included"];
+  phases?: TicketCategoriesContent["phases"];
   /** Screen-reader name of the sale price, from the active phase. */
   priceLabel?: string;
 }
 
-const { offer, included, priceLabel = "Early Bird price" } = Astro.props;
+const {
+  offer,
+  included,
+  phases,
+  priceLabel = "Early Bird price",
+} = Astro.props;
 const first = offer.tickets[0]?.key;
 // Running row index across groups, for the staggered entrance (--i).
 const rowStart = included.groups.map((_, gi) =>
   included.groups.slice(0, gi).reduce((n, g) => n + g.rows.length, 0),
 );
+// The phase on sale names the sale price column and, with its end in the
+// content, the day it ends ("Early Bird until 22.11.", German time).
+const active = phases?.items.find((item) => item.key === phases.activeKey);
+const saleName = active?.label ?? "Now";
+const until =
+  active?.endsAt && !Number.isNaN(Date.parse(active.endsAt))
+    ? new Intl.DateTimeFormat("de-DE", {
+        day: "2-digit",
+        month: "2-digit",
+        timeZone: "Europe/Berlin",
+      }).format(new Date(active.endsAt))
+    : undefined;
+const saleNote = active
+  ? `${active.label}${until ? ` until ${until}` : ""}`
+  : undefined;
 ---
 
 <section
@@ -57,147 +86,241 @@ const rowStart = included.groups.map((_, gi) =>
       </p>
     </div>
 
-    <div
-      class="t-tabs t-glass"
-      role="tablist"
-      aria-label={included.heading}
-      data-tablist
-      hidden
-    >
-      <span class="t-tab-lens" aria-hidden="true" data-tab-lens></span>
-      {
-        offer.tickets.map((ticket) => (
-          <button
-            type="button"
-            class="t-tab"
-            role="tab"
-            id={`tab-${ticket.key}`}
-            aria-controls={`included-${ticket.key}`}
-            aria-selected={ticket.key === first ? "true" : "false"}
-            tabindex={ticket.key === first ? 0 : -1}
-            data-tab={ticket.key}
-          >
-            {ticket.name}
-          </button>
-        ))
-      }
-    </div>
-
-    <div class="t-panels">
-      {
-        offer.tickets.map((ticket) => {
-          const saved = savings(ticket);
-          return (
-            <div
-              class="t-panel t-anchor"
-              id={`included-${ticket.key}`}
-              role="tabpanel"
-              aria-labelledby={`tab-${ticket.key}`}
-              tabindex="0"
-              data-panel={ticket.key}
-            >
-              <aside class="t-summary t-field" aria-label={ticket.name}>
-                <span class="t-liquid" aria-hidden="true" data-unfold-light>
-                  <span class="glass-light" />
+    <div class="t-pick">
+      <div class="t-choices">
+        <div class="t-choice-cols" aria-hidden="true">
+          <span>Ticket</span>
+          <span>Regular</span>
+          <span>{saleName}</span>
+        </div>
+        <div
+          class="t-choice-list"
+          role="tablist"
+          aria-orientation="vertical"
+          aria-label={included.heading}
+          data-tablist
+        >
+          <span class="t-tab-lens" aria-hidden="true" data-tab-lens></span>
+          {
+            offer.tickets.map((ticket) => (
+              <button
+                type="button"
+                class="t-choice"
+                role="tab"
+                id={`tab-${ticket.key}`}
+                aria-controls={`included-${ticket.key}`}
+                aria-selected={ticket.key === first ? "true" : "false"}
+                tabindex={ticket.key === first ? 0 : -1}
+                data-tab={ticket.key}
+              >
+                <span class="t-choice-text">
+                  <span class="t-choice-name">{ticket.name}</span>
+                  <span class="t-choice-desc">{ticket.description}</span>
                 </span>
-                <h3 class="t-summary-name">{ticket.name}</h3>
-                <p class="t-summary-desc">{ticket.description}</p>
-                <div class="t-summary-price">
-                  <p class="t-summary-was">
-                    <span class="u-visually-hidden">Regular price </span>
-                    <s>{euro(ticket.regularPrice)}</s>
-                    {saved > 0 && (
-                      <span>
-                        {offer.saveLabel} {euro(saved)}
-                      </span>
-                    )}
-                  </p>
-                  <p class="t-summary-now">
-                    <span class="u-visually-hidden">{priceLabel} </span>
-                    {euro(ticket.price)}
-                  </p>
-                </div>
-                <a
-                  class="t-btn is-block"
-                  href={offer.purchaseHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-ticket-buy
-                  data-ph-event={EVENTS.ticket_purchase_initiated}
-                  data-ph-prop-tier-name={ticket.name}
-                  data-ph-prop-tier-price={euro(ticket.price)}
+                <span class="t-choice-was">
+                  <span class="u-visually-hidden">Regular price </span>
+                  <s>{euro(ticket.regularPrice)}</s>
+                </span>
+                <span class="t-choice-now">
+                  <span class="u-visually-hidden">{priceLabel} </span>
+                  {euro(ticket.price)}
+                </span>
+                <svg
+                  class="t-choice-arrow"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  focusable="false"
                 >
-                  {fillLabel(included.ticketBuyLabel, { ticket: ticket.name })}
-                  <span class="t-btn-arrow" aria-hidden="true">
-                    <IconArrowRight />
-                  </span>
-                </a>
-              </aside>
+                  <path
+                    d="M9 5l7 7-7 7"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.4"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+            ))
+          }
+        </div>
+        {
+          offer.footnote && (
+            <p class="t-choice-foot" data-lp="offer.footnote">
+              {offer.footnote}
+            </p>
+          )
+        }
+      </div>
 
-              <div class="t-benefits">
-                {included.groups.map((group, gi) => (
-                  <section class="t-group">
-                    <h4 class="t-group-title">{group.heading}</h4>
-                    <ul class="t-rows" role="list">
-                      {group.rows.map((row, ri) => {
-                        const status = statusOf(group, row, ticket.key);
-                        return (
-                          <li
-                            class="t-row"
-                            data-tone={status}
-                            style={`--i: ${rowStart[gi] + ri}`}
-                          >
-                            <span class="t-row-label">{row.label}</span>
-                            <TicketStatus
-                              positive={isPositive(status)}
-                              label={statusLabel(status, included)}
-                            />
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </section>
-                ))}
+      <div class="t-panels" data-ticket-motion>
+        {
+          offer.tickets.map((ticket) => {
+            const saved = savings(ticket);
+            return (
+              <div
+                class="t-panel t-anchor"
+                id={`included-${ticket.key}`}
+                role="tabpanel"
+                aria-labelledby={`tab-${ticket.key}`}
+                tabindex="0"
+                data-panel={ticket.key}
+              >
+                <article class="t-detail t-light" aria-label={ticket.name}>
+                  <div class="t-detail-top">
+                    <div class="t-detail-id">
+                      <h3 class="t-detail-name">{ticket.name}</h3>
+                      <p class="t-detail-desc">{ticket.description}</p>
+                    </div>
+                    <div class="t-detail-price">
+                      <p class="t-detail-now">
+                        <span class="u-visually-hidden">{priceLabel} </span>
+                        {euro(ticket.price)}
+                      </p>
+                      <p class="t-detail-was">
+                        {saleNote && <span>{saleNote}</span>}
+                        <span>
+                          <span class="u-visually-hidden">Regular price </span>
+                          <s>{euro(ticket.regularPrice)}</s>
+                        </span>
+                        {saved > 0 && (
+                          <span class="t-detail-save">
+                            {offer.saveLabel} {euro(saved)}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <p
+                    class:list={["t-detail-note", { "is-empty": !ticket.note }]}
+                    aria-hidden={ticket.note ? undefined : "true"}
+                  >
+                    {ticket.note ?? " "}
+                  </p>
+                  <a
+                    class="t-btn h-ice is-block t-detail-buy"
+                    href={offer.purchaseHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-ticket-buy
+                    data-ph-event={EVENTS.ticket_purchase_initiated}
+                    data-ph-prop-tier-name={ticket.name}
+                    data-ph-prop-tier-price={euro(ticket.price)}
+                  >
+                    {fillLabel(included.ticketBuyLabel, {
+                      ticket: ticket.name,
+                    })}
+                    <span class="t-btn-arrow" aria-hidden="true">
+                      <IconArrowRight />
+                    </span>
+                  </a>
+
+                  <div class="t-benefits">
+                    {included.groups.map((group, gi) => (
+                      <section class="t-group">
+                        <h4 class="t-group-title">{group.heading}</h4>
+                        <ul class="t-rows" role="list">
+                          {group.rows.map((row, ri) => {
+                            const status = statusOf(group, row, ticket.key);
+                            return (
+                              <li
+                                class="t-row"
+                                data-tone={status}
+                                style={`--i: ${rowStart[gi] + ri}`}
+                              >
+                                <TicketStatus
+                                  positive={isPositive(status)}
+                                  label={statusLabel(status, included)}
+                                />
+                                <span class="t-row-label">{row.label}</span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </section>
+                    ))}
+                  </div>
+                </article>
               </div>
-            </div>
-          );
-        })
-      }
+            );
+          })
+        }
+      </div>
     </div>
   </div>
 </section>
 
 <style>
-  /* DESIGN.md TICKETS-1: tabs, ticket summary and grouped benefit list. */
+  /* DESIGN.md TICKETS-1: the picker list and the light ticket card. */
   .t-included {
     padding-block: clamp(var(--space-xl), 8vw, 6rem)
       clamp(var(--space-lg), 5vw, 3.5rem);
   }
 
   .t-included-head {
-    margin-bottom: var(--space-lg);
+    margin-bottom: clamp(var(--space-md), 3vw, var(--space-xl));
   }
 
-  /*
-   * Tabs: a liquid glass track (ticket-theme .t-glass) with one glass lens
-   * that glides to the picked ticket and briefly stretches as it moves,
-   * like a drop of liquid. Position and stretch are transform properties.
-   */
-  .t-tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    width: fit-content;
-    max-width: 100%;
-    margin-bottom: var(--space-md);
-    padding: 0.35rem;
-    border-radius: var(--radius-ticket-panel);
+  /* The list at the left, the card at the right (the card's column a
+     little wider); on narrow screens one under the other. */
+  .t-pick {
+    display: grid;
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+    gap: clamp(var(--space-md), 4vw, 4rem);
+    align-items: start;
   }
 
-  .t-tabs[hidden] {
-    display: none;
+  /* The list stays in view beside a long card. */
+  .t-choices {
+    position: sticky;
+    top: calc(var(--site-header-height, 4.5rem) + var(--space-md));
   }
 
+  /* One grid for the column labels and every row, so names, prices and
+     arrows line up down the list. */
+  .t-choice-cols,
+  .t-choice {
+    display: grid;
+    grid-template-columns:
+      minmax(0, 1fr) minmax(3.75rem, auto) minmax(5.5rem, auto)
+      1.25rem;
+    column-gap: clamp(var(--space-xs), 1.8vw, var(--space-md));
+    align-items: center;
+    padding-inline: clamp(var(--space-sm), 1.6vw, var(--space-md));
+  }
+
+  .t-choice-cols {
+    padding-bottom: var(--space-2xs);
+    color: color-mix(in srgb, var(--color-white) 62%, transparent);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .t-choice-cols > span:nth-child(2),
+  .t-choice-cols > span:nth-child(3) {
+    text-align: right;
+  }
+
+  .t-choice-list {
+    position: relative;
+    display: grid;
+    gap: 0.25rem;
+    border-top: 1px solid;
+    border-image: linear-gradient(
+        90deg,
+        transparent,
+        color-mix(in srgb, var(--color-white) 18%, transparent) 15%,
+        color-mix(in srgb, var(--color-white) 18%, transparent) 85%,
+        transparent
+      )
+      1;
+    padding-top: 0.35rem;
+  }
+
+  /* The lens: a light glass surface under the row picked, gliding to the
+     next one (tickets.client.ts places it; position by transform). */
   .t-tab-lens {
     position: absolute;
     top: 0;
@@ -205,19 +328,17 @@ const rowStart = included.groups.map((_, gi) =>
     z-index: 0;
     width: var(--lens-w, 0);
     height: var(--lens-h, 0);
-    border-radius: var(--radius-ticket-button);
-    /* The homepage's clear liquid glass (.h-btn): a faint white body, a
-       lit top edge and a hairline rim, no glow. */
+    border-radius: var(--radius-ticket-panel);
     background: linear-gradient(
       180deg,
-      color-mix(in srgb, var(--color-white) 18%, transparent),
-      color-mix(in srgb, var(--color-white) 8%, transparent)
+      color-mix(in srgb, var(--color-ticket-ice) 22%, transparent),
+      color-mix(in srgb, var(--color-ticket-ice) 9%, transparent)
     );
     box-shadow:
-      inset 0 1px 1px color-mix(in srgb, var(--color-white) 75%, transparent),
-      inset 0 -1px 1px color-mix(in srgb, var(--color-white) 20%, transparent),
-      0 0 0 1px color-mix(in srgb, var(--color-white) 22%, transparent),
-      0 8px 18px -10px var(--color-ticket-midnight);
+      inset 0 1px 1px color-mix(in srgb, var(--color-white) 55%, transparent),
+      inset 0 0 0 1px
+        color-mix(in srgb, var(--color-ticket-ice) 28%, transparent),
+      0 14px 28px -18px var(--color-ticket-midnight);
     opacity: 0;
     pointer-events: none;
     translate: var(--lens-x, 0) var(--lens-y, 0);
@@ -234,91 +355,316 @@ const rowStart = included.groups.map((_, gi) =>
     transition: none;
   }
 
-  @media (prefers-reduced-motion: no-preference) {
-    .t-tab-lens.is-moving {
-      animation: t-lens-stretch var(--duration-open) var(--ease-emphasized);
-    }
-  }
-
-  @keyframes t-lens-stretch {
-    40% {
-      scale: 1.12 0.86;
-    }
-  }
-
-  .t-tab {
+  .t-choice {
     position: relative;
     z-index: 1;
-    min-height: 2.75rem;
-    padding: var(--space-2xs) 1.1rem;
+    width: 100%;
+    min-height: 4.75rem;
+    padding-block: var(--space-xs);
     border: 0;
-    border-radius: var(--radius-ticket-button);
+    border-radius: var(--radius-ticket-panel);
     background: transparent;
-    color: color-mix(in srgb, var(--color-white) 70%, transparent);
+    color: var(--color-white);
     font: inherit;
-    font-size: var(--text-size-small);
-    font-weight: var(--font-weight-semibold);
+    text-align: left;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
+    transition: background-color var(--duration-ticket-color) var(--ease-snappy);
+  }
+
+  .t-choice-text {
+    display: grid;
+    gap: 0.2rem;
+    min-width: 0;
+  }
+
+  .t-choice-name {
+    font-size: clamp(1.25rem, 2vw, 1.6rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    transition: color var(--duration-ticket-color) var(--ease-snappy);
+  }
+
+  .t-choice-desc {
+    color: color-mix(in srgb, var(--color-white) 70%, transparent);
+    font-size: var(--text-size-small);
+    line-height: 1.35;
+  }
+
+  .t-choice-was {
+    color: color-mix(in srgb, var(--color-white) 58%, transparent);
+    font-size: var(--text-size-small);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--font-weight-medium);
+    text-align: right;
+  }
+
+  .t-choice-now {
+    font-size: clamp(1.4rem, 2.3vw, 1.9rem);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    text-align: right;
+    transition: color var(--duration-ticket-color) var(--ease-snappy);
+  }
+
+  .t-choice-arrow {
+    width: 1.25rem;
+    height: 1.25rem;
+    opacity: 0.4;
     transition:
-      color var(--duration-ticket-color) var(--ease-snappy),
-      transform var(--duration-ticket-press) var(--ease-snappy);
+      opacity var(--duration-ticket-color) var(--ease-snappy),
+      translate var(--duration-hover) var(--ease-snappy);
   }
 
   @media (hover: hover) {
-    .t-tab:hover {
-      color: var(--color-white);
+    .t-choice:hover {
+      background: color-mix(in srgb, var(--color-white) 6%, transparent);
+    }
+
+    .t-choice:hover .t-choice-arrow {
+      opacity: 0.8;
+      translate: 2px 0;
     }
   }
 
-  .t-tab:active {
-    transform: scale(0.97);
+  .t-choice:focus-visible {
+    outline: 2px solid var(--color-ticket-ice);
+    outline-offset: 2px;
   }
 
-  .t-tab[aria-selected="true"] {
-    color: var(--color-white);
-    font-weight: var(--font-weight-extrabold);
+  /* The row picked: name and price in ice, the arrow bright. */
+  .t-choice[aria-selected="true"] .t-choice-name,
+  .t-choice[aria-selected="true"] .t-choice-now {
+    color: var(--color-ticket-ice);
   }
 
-  /* Before the lens is placed, the picked tab still reads as picked. */
-  .t-tabs:not([data-lens-ready]) .t-tab[aria-selected="true"] {
-    background: color-mix(in srgb, var(--color-white) 16%, transparent);
+  .t-choice[aria-selected="true"] .t-choice-arrow {
+    opacity: 1;
   }
 
-  /* Panels */
+  /* Before the lens is placed (and without JavaScript), the picked row
+     still reads as picked. */
+  .t-choice-list:not([data-lens-ready]) .t-choice[aria-selected="true"] {
+    background: color-mix(in srgb, var(--color-ticket-ice) 12%, transparent);
+  }
+
+  .t-choice-foot {
+    margin: var(--space-sm) 0 0;
+    padding-inline: clamp(var(--space-sm), 1.6vw, var(--space-md));
+    color: color-mix(in srgb, var(--color-white) 62%, transparent);
+    font-size: var(--text-size-tiny);
+    line-height: 1.5;
+  }
+
+  /* The cards: one under another without the script; with it they share
+     one cell (as tall as the tallest) and only the picked one shows. */
   .t-panels {
     display: grid;
     gap: var(--space-xl);
   }
 
+  [data-tabs-ready] .t-panels > .t-panel {
+    grid-area: 1 / 1;
+  }
+
+  [data-tabs-ready] .t-panels > .t-panel[hidden] {
+    display: block;
+    visibility: hidden;
+  }
+
   .t-panel {
-    display: grid;
-    grid-template-columns: minmax(17rem, 21rem) minmax(0, 1fr);
-    gap: var(--space-md);
-    align-items: start;
     border-radius: var(--radius-ticket-card);
   }
 
-  .t-panel[hidden] {
-    display: none;
-  }
-
   .t-panel:focus-visible {
+    outline: 2px solid var(--color-ticket-ice);
     outline-offset: 6px;
   }
 
+  /* ---- the light ticket card ---- */
+  .t-detail {
+    display: grid;
+    gap: var(--space-sm);
+    padding: clamp(var(--space-md), 3vw, 2.5rem);
+    border-radius: var(--radius-ticket-card);
+  }
+
+  .t-detail-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-sm) var(--space-lg);
+  }
+
+  .t-detail-name {
+    margin: 0;
+    color: var(--color-navy);
+    font-size: clamp(1.9rem, 3.4vw, 2.75rem);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.04em;
+    line-height: 1.02;
+  }
+
+  .t-detail-desc {
+    /* Always two lines high, so every ticket's card is the same size. */
+    min-height: calc(2 * 1.45em);
+    margin: var(--space-2xs) 0 0;
+    color: color-mix(in srgb, var(--color-navy) 74%, transparent);
+    font-size: var(--text-size-small);
+    line-height: 1.45;
+  }
+
+  .t-detail-price {
+    display: grid;
+    justify-items: end;
+    gap: 0.35rem;
+    text-align: right;
+  }
+
+  .t-detail-now {
+    margin: 0;
+    color: var(--color-navy);
+    font-size: clamp(2.75rem, 5vw, 3.75rem);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: -0.05em;
+    line-height: 0.95;
+  }
+
+  .t-detail-was {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.25rem var(--space-xs);
+    margin: 0;
+    color: color-mix(in srgb, var(--color-navy) 72%, transparent);
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .t-detail-was s {
+    font-weight: var(--font-weight-medium);
+  }
+
+  .t-detail-save {
+    padding: 0.1rem 0.55rem;
+    border-radius: var(--radius-ticket-pill);
+    background: var(--color-navy);
+    color: var(--color-ticket-ice);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.04em;
+  }
+
+  .t-detail-note {
+    margin: 0;
+    color: var(--color-ticket-q27);
+    font-size: var(--text-size-small);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  /* A card without a requirement keeps its line, so every card is the
+     same size. */
+  .t-detail-note.is-empty {
+    visibility: hidden;
+  }
+
+  .t-detail-buy {
+    margin-top: var(--space-2xs);
+  }
+
+  /* The benefits: the groups flow down two balanced columns on a wide
+     card (a group never splits), hairline rows, each a status mark (a
+     navy check, a quiet dash) and its label; the status words are read
+     out (TicketStatus) but not printed, the marks differ in shape, never
+     by color alone. */
+  .t-benefits {
+    column-count: 2;
+    column-gap: clamp(var(--space-md), 3vw, var(--space-xl));
+    margin-top: var(--space-sm);
+    padding-top: var(--space-md);
+    border-top: 1px solid color-mix(in srgb, var(--color-navy) 12%, transparent);
+  }
+
+  .t-group {
+    break-inside: avoid;
+    padding-bottom: var(--space-md);
+  }
+
+  .t-group-title {
+    margin: 0 0 0.35rem;
+    color: var(--color-ticket-q27);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.12em;
+    line-height: 1.3;
+    text-transform: uppercase;
+  }
+
+  .t-rows {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .t-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-xs);
+    padding-block: 0.45rem;
+    border-top: 1px solid color-mix(in srgb, var(--color-navy) 8%, transparent);
+    color: var(--color-navy);
+    font-size: var(--text-size-small);
+    line-height: 1.4;
+  }
+
+  .t-row:first-child {
+    border-top: 0;
+  }
+
+  .t-row :global(.t-status) {
+    padding-top: 0.05rem;
+  }
+
+  .t-row :global([data-status-label]) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .t-row :global(.t-status-icon) {
+    width: 1.25rem;
+    height: 1.25rem;
+    background: var(--color-navy);
+    color: var(--color-white);
+  }
+
+  .t-row :global(.t-status[data-positive="false"] .t-status-icon) {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px
+      color-mix(in srgb, var(--color-navy) 30%, transparent);
+    color: color-mix(in srgb, var(--color-navy) 50%, transparent);
+  }
+
+  .t-row[data-tone="not-included"] .t-row-label,
+  .t-row[data-tone="not-required"] .t-row-label {
+    color: color-mix(in srgb, var(--color-navy) 52%, transparent);
+  }
+
   /*
-   * Switching tickets (DESIGN.md MOTION-6): the summary card and then the
-   * benefit sheet unfold out of the tab just picked (tickets.client.ts,
-   * Web Animations, interruptible), a light runs across the summary, the
-   * summary's contents follow a few frames apart and its description
-   * writes itself in; the rows then follow in a quick cascade (--i, set per
-   * row) while each status icon pops into place. While a panel unfolds
-   * (data-unfold) the cascade waits for the sheet. Transform and opacity
-   * only; the whole change stays under a second. Fill is backwards only:
-   * both animations end on the element's own style, and a fill that
-   * lasted forwards kept every row and icon on its own compositor layer
-   * (one offscreen pass per visible icon, on every frame) for good.
+   * Switching tickets (DESIGN.md MOTION-6): the card picked comes in from
+   * the list's side (tickets.client.ts, Web Animations, interruptible),
+   * then the rows follow in a quick cascade (--i) while each status mark
+   * pops into place. Transform and opacity only, under half a second; the
+   * fill is backwards only, so nothing is left on a layer of its own.
    */
   @media (prefers-reduced-motion: no-preference) {
     [data-tabs-ready] .t-panel:not([hidden]) .t-row {
@@ -333,23 +679,6 @@ const rowStart = included.groups.map((_, gi) =>
       animation-delay: calc(
         var(--i, 0) * var(--duration-ticket-stagger) +
           var(--duration-ticket-press)
-      );
-    }
-
-    [data-tabs-ready] .t-panel[data-unfold]:not([hidden]) .t-row {
-      animation-delay: calc(
-        var(--i, 0) * var(--duration-ticket-stagger) +
-          var(--duration-glass-stagger) * 6
-      );
-    }
-
-    [data-tabs-ready]
-      .t-panel[data-unfold]:not([hidden])
-      .t-row
-      :global(.t-status-icon) {
-      animation-delay: calc(
-        var(--i, 0) * var(--duration-ticket-stagger) +
-          var(--duration-ticket-press) + var(--duration-glass-stagger) * 6
       );
     }
   }
@@ -378,223 +707,59 @@ const rowStart = included.groups.map((_, gi) =>
     }
   }
 
-  .t-summary {
-    position: sticky;
-    top: 6rem;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-sm);
-    padding: var(--space-md);
-    border: 1px solid
-      color-mix(in srgb, var(--color-ticket-ice) 55%, transparent);
-    border-radius: var(--radius-ticket-card);
-    box-shadow: 0 24px 48px -26px var(--color-ticket-midnight);
-    color: var(--color-white);
-  }
-
-  .t-summary-name {
-    margin: 0;
-    color: var(--color-white);
-    font-size: clamp(1.6rem, 3vw, 2rem);
-    font-weight: var(--font-weight-extrabold);
-    letter-spacing: -0.03em;
-    line-height: 1.1;
-  }
-
-  .t-summary-desc {
-    /* Always two lines high: a short description takes one line, a long
-       one two, and the summary must be the same size for every ticket. */
-    min-height: calc(2 * 1.45em);
-    margin: -0.5rem 0 0;
-    line-height: 1.45;
-    color: color-mix(in srgb, var(--color-white) 78%, transparent);
-    font-size: var(--text-size-small);
-  }
-
-  /* The narrowest phones: the buy button is as high as its longest
-     label needs (two lines), so every ticket's summary keeps the same
-     size here too. */
-  @media (max-width: 359px) {
-    .t-summary :global(.t-btn) {
-      min-height: 3.5rem;
-    }
-  }
-
-  .t-summary-was {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2xs);
-    margin: 0;
-    font-size: var(--text-size-small);
-    font-weight: var(--font-weight-semibold);
-  }
-
-  .t-summary-was {
-    color: var(--color-ticket-ice);
-  }
-
-  .t-summary-was s {
-    color: color-mix(in srgb, var(--color-white) 62%, transparent);
-    font-weight: var(--font-weight-medium);
-  }
-
-  .t-summary-now {
-    margin: 0;
-    font-size: clamp(2.5rem, 5vw, 3rem);
-    font-weight: var(--font-weight-extrabold);
-    letter-spacing: -0.045em;
-    line-height: 1;
-  }
-
-  /* Benefit list: the homepage's dark translucent glass (.h-glass in
-     home/home-theme.css) with hairline rows (no live blur: only the soft
-     page light lies behind it). */
-  .t-benefits {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-md);
-    padding: clamp(var(--space-sm), 3vw, 1.75rem);
-    border: 0;
-    border-radius: var(--radius-ticket-card);
-    background: linear-gradient(
-      165deg,
-      color-mix(in srgb, var(--color-ticket-sky) 16%, transparent),
-      color-mix(in srgb, var(--color-navy) 22%, transparent) 55%,
-      color-mix(in srgb, var(--color-ticket-midnight) 30%, transparent)
-    );
-    box-shadow:
-      inset 0 0 0 1px
-        color-mix(in srgb, var(--color-ticket-ice) 16%, transparent),
-      inset 0 1px 0 color-mix(in srgb, var(--color-white) 26%, transparent),
-      inset 0 -10px 16px -14px
-        color-mix(in srgb, var(--color-ticket-cyan) 55%, transparent),
-      0 18px 40px -26px
-        color-mix(in srgb, var(--color-ticket-midnight) 90%, transparent);
-  }
-
-  .t-group-title {
-    margin: 0 0 0.35rem;
-    color: var(--color-ticket-ice);
-    font-size: var(--text-size-tiny);
-    font-weight: var(--font-weight-extrabold);
-    letter-spacing: 0.12em;
-    line-height: 1.3;
-    text-transform: uppercase;
-  }
-
-  .t-rows {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .t-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-sm);
-    min-height: 2.75rem;
-    padding-block: 0.55rem;
-    border-top: 1px solid
-      color-mix(in srgb, var(--color-white) 14%, transparent);
-    color: color-mix(in srgb, var(--color-white) 78%, transparent);
-    font-size: var(--text-size-small);
-    line-height: 1.4;
-  }
-
-  /* One status column: a fixed width, icon first, so every icon and
-     every word line up whatever the status says. */
-  .t-row :global(.t-status) {
-    flex: 0 0 auto;
-    width: 8.5rem;
-  }
-
-  /* Included: an ice disc with a navy glyph and white words; not
-     included: a faint white ring and quieter words. */
-  .t-row :global(.t-status) {
-    color: var(--color-white);
-  }
-
-  .t-row :global(.t-status-icon) {
-    background: var(--color-ticket-ice);
-    color: var(--color-navy);
-  }
-
-  .t-row :global(.t-status[data-positive="false"]) {
-    color: color-mix(in srgb, var(--color-white) 55%, transparent);
-    font-weight: var(--font-weight-medium);
-  }
-
-  .t-row :global(.t-status[data-positive="false"] .t-status-icon) {
-    background: transparent;
-    box-shadow: inset 0 0 0 1px
-      color-mix(in srgb, var(--color-white) 30%, transparent);
-    color: color-mix(in srgb, var(--color-white) 55%, transparent);
-  }
-
-  .t-row[data-tone="not-included"] .t-row-label {
-    color: color-mix(in srgb, var(--color-white) 55%, transparent);
-  }
-
-  /* Mobile: summary above the list, status under long labels if needed. */
-  @media (max-width: 899px) {
-    .t-panel {
+  /* Tablets and phones: the list over the card, the list no longer
+     sticky. */
+  @media (max-width: 959px) {
+    .t-pick {
       grid-template-columns: minmax(0, 1fr);
     }
 
-    /* relative, not static: the light field layers must stay clipped. */
-    .t-summary {
-      position: relative;
-      top: auto;
+    .t-choices {
+      position: static;
     }
   }
 
-  /*
-   * Phones: the five tickets as a calm, symmetric block, three over two,
-   * centered, every tab the same width (six columns, each tab spans two;
-   * the fourth and fifth start one column in). The lens is absolutely
-   * placed, so it takes no grid cell.
-   */
   @media (max-width: 599px) {
-    .t-tabs {
-      display: grid;
-      grid-template-columns: repeat(6, minmax(0, 1fr));
-      width: 100%;
+    .t-benefits {
+      column-count: 1;
     }
 
-    .t-tab {
-      grid-column: span 2;
-      padding-inline: 0.4rem;
+    .t-choice-cols,
+    .t-choice {
+      grid-template-columns: minmax(0, 1fr) auto auto 1rem;
+      column-gap: var(--space-xs);
+      padding-inline: var(--space-xs);
     }
 
-    .t-tab:nth-of-type(4):nth-last-of-type(2) {
-      grid-column: 2 / span 2;
+    .t-choice {
+      min-height: 4.25rem;
     }
 
-    .t-tab:nth-of-type(5):last-of-type {
-      grid-column: 4 / span 2;
-    }
-  }
-
-  @media (max-width: 479px) {
-    .t-row {
-      flex-wrap: wrap;
-      gap: 0.35rem var(--space-sm);
+    .t-choice-desc {
+      font-size: var(--text-size-tiny);
     }
 
-    .t-row-label {
-      flex: 1 1 12rem;
+    .t-detail-top {
+      align-items: flex-start;
+    }
+
+    .t-detail-price {
+      justify-items: start;
+      text-align: left;
+    }
+
+    .t-detail-was {
+      justify-content: flex-start;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .t-tab,
+    .t-choice,
+    .t-choice-name,
+    .t-choice-now,
+    .t-choice-arrow,
     .t-tab-lens {
       transition: none;
-    }
-
-    .t-tab:active {
-      transform: none;
     }
   }
 </style>

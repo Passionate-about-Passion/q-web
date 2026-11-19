@@ -353,7 +353,7 @@ export const PageHome: GlobalConfig = pageGlobal({
           type: "text",
           admin: {
             description:
-              'Badge on past speakers, e.g. "Previous Speaker", so nobody reads them as booked for the next edition. Do not call them alumni: Q alumni are former team members. Leave empty for no badge.',
+              "Kept, but not shown at the moment: the homepage shows past speakers with their name and role only, no badge on the picture. Do not call them alumni: Q alumni are former team members.",
           },
         },
         stringArrayField("highlights", {
@@ -458,7 +458,7 @@ export const PageHome: GlobalConfig = pageGlobal({
           type: "text",
           admin: {
             description:
-              'Badge on a stand-in card, e.g. "Previous Speaker". It must make clear the person is an earlier speaker, so nobody reads them as booked for the next edition.',
+              "Kept, but not shown at the moment: like past speakers, stand-ins show their name and role only, no badge on the picture.",
           },
         },
         pageLinkGroup("cta"),
