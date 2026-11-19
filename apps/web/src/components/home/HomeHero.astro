@@ -100,8 +100,12 @@ const until =
     <p class="hx-lead" data-hero-in data-lp="hero.tagline">{hero.tagline}</p>
 
     <div class="hx-actions" data-hero-in>
-      <a class="h-btn" href="#why-attend">{whyLabel}</a>
-      <a class="h-btn hx-buy" href={TICKETS_HREF} data-lp="hero.cta.label">
+      <a class="h-btn h-frost" href="#why-attend">{whyLabel}</a>
+      <a
+        class="h-btn h-ice hx-buy"
+        href={TICKETS_HREF}
+        data-lp="hero.cta.label"
+      >
         {hero.cta.label}
         <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
           <path
@@ -141,18 +145,43 @@ const until =
       <HangingPass />
     </div>
 
-    <div class="hx-name" hidden data-pass-name-field>
+    <div class="hx-name" data-pass-name-field data-waiting>
       <label class="hx-name-label" for="pass-name">Put your name on it</label>
       <input
-        class="hx-name-input"
+        class="h-field h-frost hx-name-input"
         id="pass-name"
         type="text"
         maxlength="28"
         autocomplete="off"
+        enterkeyhint="done"
         spellcheck="false"
         placeholder="Your name"
         data-pass-name
       />
+      <!-- The way from the pass to a ticket: it rises in once a name is on
+           the card (a short pause in typing, Enter or leaving the field)
+           or once the pass has been turned, and stays. Only a link: it
+           never opens anything by itself. -->
+      <div class="hx-claim" data-pass-claim>
+        <a
+          class="h-btn h-ice hx-claim-btn"
+          href={TICKETS_HREF}
+          tabindex="-1"
+          data-pass-claim-link
+        >
+          <span class="hx-claim-light" aria-hidden="true"></span>
+          Buy your ticket now
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M4 12h15M13 6l6 6-6 6"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"></path>
+          </svg>
+        </a>
+      </div>
     </div>
   </div>
 </section>
@@ -160,15 +189,6 @@ const until =
 <style>
   /* DESIGN.md HOME-1 */
   .hx {
-    --hx-foot-mask: linear-gradient(
-      180deg,
-      var(--color-black) 64%,
-      color-mix(in srgb, var(--color-black) 86%, transparent) 72%,
-      color-mix(in srgb, var(--color-black) 50%, transparent) 82%,
-      color-mix(in srgb, var(--color-black) 16%, transparent) 91%,
-      transparent 99%
-    );
-
     position: relative;
     isolation: isolate;
     padding-top: calc(
@@ -178,33 +198,12 @@ const until =
     overflow: clip;
   }
 
-  /* The brightest zone of the ground: Q27 blue light behind the pass. */
-  /* The pass stands in a pool of light (brightest right behind the card,
-     falling off through the Q blues), so it comes forward; a faint ice
-     glow rises at the lower left, as in the mockup. The rest of the hero
-     stays deep navy. */
+  /* The pass's pool of light (home-theme.css .hx-light): its look is
+     shared with the intro's panel, which hands the hero over. */
   .hx-light {
     position: absolute;
     inset: 0;
     z-index: -1;
-    background:
-      radial-gradient(
-        circle at var(--hx-spot-x, 76%) var(--hx-spot-y, 52%),
-        color-mix(in srgb, var(--color-ticket-ice) 26%, var(--color-ticket-sky))
-          0%,
-        color-mix(in srgb, var(--color-ticket-sky) 62%, transparent) 14%,
-        color-mix(in srgb, var(--color-ticket-deep) 70%, transparent) 30%,
-        transparent var(--hx-spot-size, 52%)
-      ),
-      radial-gradient(
-        ellipse 45% 40% at 4% 92%,
-        color-mix(in srgb, var(--color-ticket-ice) 14%, transparent),
-        transparent
-      );
-    /* Everything here is gone by the hero's foot (an S-curve over its
-       lowest third), so the hero never ends in a cut. */
-    -webkit-mask-image: var(--hx-foot-mask);
-    mask-image: var(--hx-foot-mask);
     pointer-events: none;
   }
 
@@ -351,8 +350,11 @@ const until =
     width: min(100%, 20rem);
   }
 
-  .hx-name[hidden] {
-    display: none;
+  /* Until the 3D pass is there (it alone can show a name), the field and
+     its ticket link keep their place unseen, so nothing in the hero moves
+     when they appear; without the live pass they never do. */
+  .hx-name[data-waiting] {
+    visibility: hidden;
   }
 
   .hx-name-label {
@@ -363,53 +365,95 @@ const until =
     text-transform: uppercase;
   }
 
-  /* A small field of light liquid glass (a faint white body, a lit top
-     rim). "Your name" goes as soon as the field has focus, and the caret
-     is a blinking ice underscore where the browser can draw one (a bar
-     elsewhere). Focus brightens the rim instead of the site-wide ring
-     (global.css), so no white frame appears around it. */
+  /* White liquid glass (home-theme.css .h-field .h-frost): "Your name"
+     goes as soon as the field has focus, the caret is a sky underscore
+     where the browser can draw one. */
   .hx-name-input {
-    width: 100%;
-    min-height: 2.75rem;
-    padding: 0 var(--space-sm);
-    border: 1px solid color-mix(in srgb, var(--color-white) 18%, transparent);
-    border-radius: var(--radius-ticket-panel);
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--color-white) 12%, transparent),
-        color-mix(in srgb, var(--color-white) 4%, transparent)
-      ),
-      color-mix(in srgb, var(--color-ticket-midnight) 55%, transparent);
-    box-shadow:
-      inset 0 1px 1px color-mix(in srgb, var(--color-white) 45%, transparent),
-      inset 0 -1px 1px color-mix(in srgb, var(--color-white) 10%, transparent);
-    color: var(--color-white);
-    caret-color: var(--color-ticket-ice);
     caret-shape: underscore;
-    font: inherit;
-    font-size: var(--text-size-regular);
-    font-weight: var(--font-weight-semibold);
-    -webkit-backdrop-filter: blur(12px) saturate(60%) brightness(0.75);
-    backdrop-filter: blur(12px) saturate(60%) brightness(0.75);
-    transition: border-color var(--duration-hover) var(--ease-snappy);
   }
 
-  .hx-name-input::placeholder {
-    color: var(--h-text-faint);
+  /* From the pass to a ticket: the link waits unseen in its own row (its
+     space is kept, see above) and rises in once a name is on the card or
+     the pass has been turned. */
+  .hx-claim {
+    display: grid;
+    margin-top: var(--space-xs);
   }
 
-  .hx-name-input:focus::placeholder {
-    color: transparent;
+  .hx-claim-btn.h-btn {
+    width: 100%;
+    min-height: 3rem;
   }
 
-  .hx-name-input:focus,
-  .hx-name-input:focus-visible {
-    border-color: color-mix(in srgb, var(--color-ticket-ice) 70%, transparent);
-    outline: none;
-    box-shadow:
-      inset 0 1px 1px color-mix(in srgb, var(--color-white) 55%, transparent),
-      inset 0 -1px 1px color-mix(in srgb, var(--color-white) 10%, transparent);
+  .hx-claim:not([data-shown]) {
+    visibility: hidden;
+    opacity: 0;
+    translate: 0 0.6rem;
+  }
+
+  .hx-claim[data-shown] {
+    animation: hx-claim-in calc(var(--duration-reveal) * 1.2)
+      var(--ease-emphasized) both;
+  }
+
+  /* It rises, and one band of light runs across the glass, once. */
+  .hx-claim-light {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: linear-gradient(
+      100deg,
+      transparent 30%,
+      color-mix(in srgb, var(--color-white) 70%, transparent) 50%,
+      transparent 70%
+    );
+    background-size: 250% 100%;
+    background-position: 120% 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .hx-claim[data-shown] .hx-claim-light {
+    animation: hx-claim-light calc(var(--duration-reveal) * 2.4)
+      var(--ease-emphasized) calc(var(--duration-reveal) * 0.6) both;
+  }
+
+  @keyframes hx-claim-in {
+    from {
+      visibility: hidden;
+      opacity: 0;
+      translate: 0 0.6rem;
+    }
+
+    to {
+      visibility: visible;
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+
+  @keyframes hx-claim-light {
+    0% {
+      background-position: 120% 0;
+      opacity: 1;
+    }
+
+    80% {
+      opacity: 1;
+    }
+
+    100% {
+      background-position: -20% 0;
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hx-claim[data-shown],
+    .hx-claim[data-shown] .hx-claim-light {
+      animation: none;
+    }
   }
 
   /* Last edition's film behind the hero, as in the mockup: a ghost of it

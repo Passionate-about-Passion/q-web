@@ -12,10 +12,16 @@
  *
  * "Put your name on it": once the 3D pass is there, the field under it
  * shows; what a visitor types is drawn onto the card's front
- * (pass-name.ts), the card turns back to its front if needed, and the
- * name is kept in this browser only (localStorage, never sent anywhere).
- * Without the 3D pass the field stays hidden, as the still cannot change,
- * and on phones it is not offered at all.
+ * (pass-name.ts) and kept in this browser only (localStorage, never sent
+ * anywhere). Typing, dragging and turning never set each other off: the
+ * field does not turn the pass (while the back faces the visitor, the
+ * hint under the card says the name is on the front), a drag never turns
+ * it and a turn never touches the field. Once a name is on the card (a
+ * short pause in typing, Enter or leaving the field) or the pass has been
+ * turned, "Buy your ticket now" rises in under the field and stays: a
+ * plain link to the ticket page, never opened by itself. Without the 3D
+ * pass the field stays unseen, as the still cannot change, and on phones
+ * it is not offered at all.
  */
 
 import type { PassScene as Scene } from "./pass-scene";
@@ -69,6 +75,13 @@ export function getPassController(): PassController | null {
   const live = !reduced && !conn?.saveData && webglWorks();
 
   let scene: Scene | null = null;
+  // A turn, however it came (a click on the card, a tap, the hint
+  // button): the hint reports the face, and the ticket link may rise.
+  let onTurn: ((face: "front" | "back") => void) | null = null;
+  const turned = (face: "front" | "back") => {
+    button?.setAttribute("aria-pressed", String(face === "back"));
+    onTurn?.(face);
+  };
   const ready: Promise<Scene | null> = live
     ? import("./pass-scene")
         .then(({ createPassScene }) => {
@@ -77,7 +90,10 @@ export function getPassController(): PassController | null {
             window.devicePixelRatio || 1,
             phone ? 1.75 : 2,
           );
-          return createPassScene(host, TEXTURES, { pixelRatio: ratio });
+          return createPassScene(host, TEXTURES, {
+            pixelRatio: ratio,
+            onTurn: turned,
+          });
         })
         .then((made) => {
           scene = made;
@@ -92,7 +108,7 @@ export function getPassController(): PassController | null {
     initName();
   }
 
-  // ---- the visitor's name on the card
+  // ---- the visitor's name on the card, and the way on to a ticket
   let named = false;
   function initName(): void {
     if (named || !scene) return;
@@ -102,6 +118,13 @@ export function getPassController(): PassController | null {
     const field = document.querySelector<HTMLElement>("[data-pass-name-field]");
     const input = field?.querySelector<HTMLInputElement>("[data-pass-name]");
     if (!field || !input) return;
+    const claim = field.querySelector<HTMLElement>("[data-pass-claim]");
+    const claimLink = claim?.querySelector<HTMLAnchorElement>(
+      "[data-pass-claim-link]",
+    );
+    const hintFine = button?.querySelector<HTMLElement>(".hp-hint-fine");
+    const hintTouch = button?.querySelector<HTMLElement>(".hp-hint-touch");
+    const hints = [hintFine?.textContent, hintTouch?.textContent];
     const pass = scene;
     const blank = new Image();
     blank.decoding = "async";
@@ -109,6 +132,28 @@ export function getPassController(): PassController | null {
     const family = getComputedStyle(document.body).fontFamily;
     const drawn = document.createElement("canvas");
     let pending = 0;
+    let settle = 0;
+
+    /** The ticket link rises in, once; it never opens anything itself. */
+    const showClaim = () => {
+      if (!claim || claim.hasAttribute("data-shown")) return;
+      claim.setAttribute("data-shown", "");
+      claimLink?.removeAttribute("tabindex");
+      pass.nudge();
+    };
+
+    /** While the back faces the visitor, the hint says where the name is. */
+    const syncHint = () => {
+      const back = pass.face() === "back" && input.value.trim() !== "";
+      if (hintFine)
+        hintFine.textContent = back
+          ? "Turn the pass to see your name"
+          : hints[0]!;
+      if (hintTouch)
+        hintTouch.textContent = back
+          ? "Turn the pass to see your name"
+          : hints[1]!;
+    };
 
     const paint = async (): Promise<void> => {
       const name = input.value.trim();
@@ -127,15 +172,7 @@ export function getPassController(): PassController | null {
       cancelAnimationFrame(pending);
       pending = requestAnimationFrame(() => void paint());
     };
-
-    input.addEventListener("input", () => {
-      if (pass.face() === "back") {
-        pass.turn();
-        button?.setAttribute("aria-pressed", "false");
-      }
-      schedule();
-    });
-    input.addEventListener("change", () => {
+    const keep = () => {
       try {
         const name = input.value.trim();
         if (name) localStorage.setItem(NAME_KEY, name);
@@ -143,7 +180,30 @@ export function getPassController(): PassController | null {
       } catch {
         /* no storage: the name simply is not kept */
       }
+    };
+
+    input.addEventListener("input", () => {
+      schedule();
+      syncHint();
+      // A short pause in typing counts as done.
+      window.clearTimeout(settle);
+      if (input.value.trim()) settle = window.setTimeout(showClaim, 900);
     });
+    input.addEventListener("change", () => {
+      keep();
+      if (input.value.trim()) showClaim();
+    });
+    // Enter means done: the field lets go (nothing is submitted, nothing
+    // opens), so the name is kept and the ticket link rises.
+    input.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" || event.isComposing) return;
+      event.preventDefault();
+      input.blur();
+    });
+    onTurn = () => {
+      syncHint();
+      showClaim();
+    };
     try {
       const saved = localStorage.getItem(NAME_KEY);
       if (saved) {
@@ -153,7 +213,7 @@ export function getPassController(): PassController | null {
     } catch {
       /* no storage */
     }
-    field.hidden = false;
+    field.removeAttribute("data-waiting");
   }
 
   // Pause off screen and in hidden tabs.
@@ -167,10 +227,9 @@ export function getPassController(): PassController | null {
   }
   document.addEventListener("visibilitychange", sync);
 
+  // The hint under the card turns it too (the scene reports the turn).
   button?.addEventListener("click", () => {
-    if (!scene) return;
-    const face = scene.turn();
-    button.setAttribute("aria-pressed", String(face === "back"));
+    scene?.turn();
   });
 
   async function enter(): Promise<void> {

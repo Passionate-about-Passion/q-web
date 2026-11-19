@@ -1,8 +1,11 @@
 ---
 // LinkedIn and Instagram on the home page (DESIGN.md HOME-1), right after
-// the sale phases, in the navy page: one pane of dark liquid glass with the copy in the middle, the LinkedIn mark at the left and the
-// Instagram mark at the right, each a link to the profile from Site
-// Settings, and a projection screen for posts below.
+// the sale phases, in the navy page: one pane of white liquid glass
+// (home-theme.css .h-pane .h-frost; slightly transparent, lit along its
+// top edge, with depth from its shadow) with the copy in the middle in the
+// Q blues, the LinkedIn mark at the left and the Instagram mark at the
+// right, each a link to the profile from Site Settings, and the posts
+// below. The posts' own images are never tinted.
 //
 // The marks are glass objects like the glass Q of the page ground: each
 // brand glyph rendered in 3D as thick glass from its official outline,
@@ -64,7 +67,7 @@ const frames = Array.from(
   aria-labelledby="home-social-title"
 >
   <div class="h-shell">
-    <div class="h-social-pane h-glass">
+    <div class="h-social-pane h-pane h-frost">
       <div class="h-social-top">
         {
           [linkedin, instagram].map(
@@ -154,6 +157,20 @@ const frames = Array.from(
     padding: clamp(var(--space-md), 2.5vw, 2.25rem);
   }
 
+  /* On the white glass every word is in the Q blues, dark enough for
+     small type (Q27 blue for the small caps, navy for the rest). */
+  .h-social-pane .h-eyebrow {
+    color: var(--color-ticket-q27);
+  }
+
+  .h-social-pane .h-title {
+    color: var(--color-navy);
+  }
+
+  .h-social-pane .h-intro {
+    color: color-mix(in srgb, var(--color-navy) 82%, transparent);
+  }
+
   /* LinkedIn, copy, Instagram: the copy is last in source order (the two
      marks are generated together) and placed in the middle column. */
   .h-social-top {
@@ -198,9 +215,16 @@ const frames = Array.from(
     flex-direction: column;
     align-items: center;
     gap: var(--space-xs);
-    color: var(--color-white);
+    color: var(--color-ticket-q27);
     text-decoration: none;
     -webkit-tap-highlight-color: transparent;
+    transition: color var(--duration-hover) var(--ease-snappy);
+  }
+
+  @media (hover: hover) {
+    .h-social-mark:hover {
+      color: var(--color-navy);
+    }
   }
 
   /*
@@ -259,7 +283,7 @@ const frames = Array.from(
   }
 
   .h-social-mark:focus-visible {
-    outline: 2px solid var(--color-ticket-ice);
+    outline: 2px solid var(--color-ticket-sky);
     outline-offset: 6px;
     border-radius: var(--radius-ticket-panel);
   }
@@ -297,9 +321,14 @@ const frames = Array.from(
   .h-screen-frame {
     /* The portrait format of a profile grid. */
     aspect-ratio: 4 / 5;
-    background: color-mix(in srgb, var(--color-white) 6%, transparent);
+    background: color-mix(in srgb, var(--color-navy) 6%, transparent);
     box-shadow: inset 0 0 0 1px
-      color-mix(in srgb, var(--color-white) 10%, transparent);
+      color-mix(in srgb, var(--color-navy) 10%, transparent);
+  }
+
+  .h-screen-frame a:focus-visible {
+    outline: 2px solid var(--color-ticket-sky);
+    outline-offset: 2px;
   }
 
   .h-screen-frame a,

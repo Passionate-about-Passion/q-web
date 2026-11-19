@@ -18,6 +18,9 @@ export interface PalaceWindow {
   d: string;
   /** When it lights, 0 (first) to 1 (last). */
   t: number;
+  /** The window's centre on the canvas (for the light around a pointer). */
+  cx: number;
+  cy: number;
 }
 
 export interface PalaceDrawing {
@@ -61,7 +64,10 @@ export function drawPalace(): PalaceDrawing {
     [70, 600, false],
     [1000, 1530, true],
   ] as const) {
-    lines.push(`M${x0} ${GROUND}V248H${x1}`);
+    // The wall at the wing's outer end (the inner end meets the pavilion).
+    const outer = right ? x1 : x0;
+    const inner = right ? x0 : x1;
+    lines.push(`M${outer} ${GROUND}V248H${inner}`);
     lines.push(
       right
         ? `M${x1} 248L${x1 - 24} 196H${x0}`
@@ -124,6 +130,8 @@ export function drawPalace(): PalaceDrawing {
     windows: boxes.map((box, i) => ({
       d: windowPath(box),
       t: Number(((raw[i]! - lo) / (hi - lo)).toFixed(3)),
+      cx: n(box.x + box.w / 2),
+      cy: n(box.y + box.h / 2),
     })),
   };
 }

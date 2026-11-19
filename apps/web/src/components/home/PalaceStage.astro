@@ -1,31 +1,44 @@
 ---
 // Mannheim Palace, right before the speakers (DESIGN.md HOME-1), after the
 // team's second 2027 mockup ("What's inside"): the palace as a line
-// drawing standing flush on the window's lower edge, whose lines draw
-// themselves as it comes in and whose windows then light one after the
-// other, from the centre outwards, while the stage is held in place for
-// one screen of scrolling. A count at the top right climbs with the
-// lights to the number of people; when every window is lit the lines turn
-// white and the light behind the building is at its brightest.
+// drawing standing flush on the stage's lower edge, held in place for one
+// screen of scrolling. Two layers that never depend on each other:
+//
+//   outline  every line of the building and every window frame, drawn in
+//            full from the first moment the palace is in view and never
+//            animated (no line draws itself, nothing waits on the light)
+//   light    the windows light one after the other, from the centre
+//            outwards, as the visitor scrolls on through the hold (not
+//            before: the palace is fully in view first); the count at the
+//            top right climbs with them to the number of people, and the
+//            light behind the building rises
+//
+// On a fine pointer, windows that are still dark light up softly around
+// the pointer and fade back once it moves on (palace.client.ts, its own
+// layer: the scroll's lights and progress are never touched by it).
 //
 // The programme on the left (keynotes, Qube pitches, workshops, campfire
-// sessions, evening events) runs through with the scroll, as in the
-// mockup: the hold is split into one stretch per item, each fades in and
-// out in its own, and the bar under it marks where the visitor is. A
-// click on a bar scrolls to that item's stretch (home.client.ts); the
-// bars are a pointer shortcut only, every item is in the page as text.
-// With reduced motion or without scroll-driven animations every item is
-// listed and there are no bars.
+// sessions, evening events) follows the scroll as in the mockup: the hold
+// is split into one stretch per item, and exactly one item shows at a
+// time; it changes in clear steps (the old item leaves before the new one
+// comes, never on top of each other), and the bar under it marks where
+// the visitor is (items passed filled, the one on screen bright). A click
+// on a bar jumps to that item; scrolling, a click and the keys never fight
+// over it (palace.client.ts). Every item is in the page as text. With
+// reduced motion or without scroll-driven animations every item is listed
+// and there are no bars.
 //
 // The whole building always fits: the drawing's full canvas (1600 x 420)
 // scales to the space under the words, never wider than the window and
-// never panned. Pure CSS for everything that follows the scroll
-// (scroll-driven animations on the section's view timeline, MOTION-4);
-// with reduced motion or without scroll-driven animations the palace
-// stands fully drawn and lit, the count shows its total, and the section
-// scrolls like any other (MOTION-2). The palace's light only rises from
-// the building (home-theme.css, --h-palace-light); nothing lies below the
-// ground line, so the speakers follow on the bare ground without a cut.
+// never panned, and its ground line lies on the lower edge of what is in
+// view (a phone's browser bar included). Pure CSS for everything that
+// follows the scroll continuously (scroll-driven animations on the
+// section's view timeline, MOTION-4); with reduced motion or without
+// scroll-driven animations the palace stands fully lit, the count shows
+// its total, and the section scrolls like any other (MOTION-2). The
+// palace's light only rises from the building (home-theme.css,
+// --h-palace-light); nothing lies below the ground line, so the speakers
+// follow on the bare ground without a cut.
 import "./home-theme.css";
 import { drawPalace, GROUND_SHARE, PALACE_VIEW_BOX } from "./palace-drawing";
 
@@ -69,7 +82,12 @@ const steps = [
 ];
 ---
 
-<section class="h-section ps" id="mannheim" aria-labelledby="home-palace-title">
+<section
+  class="h-section ps"
+  id="mannheim"
+  aria-labelledby="home-palace-title"
+  data-palace
+>
   <div class="ps-pin">
     <div class="h-shell ps-top">
       <div class="ps-head" data-h-reveal>
@@ -88,20 +106,13 @@ const steps = [
           >{fmt.format(total)} people, one palace</span
         >
       </p>
-      <div
-        class="ps-program"
-        style={`--n: ${steps.length}`}
-        data-palace-program
-      >
+      <div class="ps-program" style={`--n: ${steps.length}`}>
         <ol class="ps-steps">
           {
             steps.map((step, i) => (
               <li
-                class:list={[
-                  "ps-step",
-                  { "is-first": i === 0, "is-last": i === steps.length - 1 },
-                ]}
-                style={`--k: ${i}`}
+                class:list={["ps-step", { "is-first": i === 0 }]}
+                data-palace-step={i}
               >
                 <h3 class="ps-step-title">{step.title}</h3>
                 <p class="ps-step-text">{step.text}</p>
@@ -109,13 +120,15 @@ const steps = [
             ))
           }
         </ol>
-        <div class="ps-bars" aria-hidden="true">
+        <div class="ps-bars">
           {
             steps.map((step, i) => (
-              <span
+              <button
+                type="button"
                 class="ps-bar"
-                style={`--k: ${i}`}
-                title={step.title}
+                aria-label={step.title}
+                data-state={i === 0 ? "current" : "next"}
+                aria-current={i === 0 ? "step" : undefined}
                 data-palace-bar={i}
               />
             ))
@@ -124,14 +137,17 @@ const steps = [
       </div>
     </div>
     <div class="ps-art" aria-hidden="true">
-      <div class="ps-draw" style={`--ps-foot: ${foot}`}>
+      <div class="ps-draw" style={`--ps-foot: ${foot}`} data-palace-art>
         <svg
           class="ps-glow"
           viewBox={PALACE_VIEW_BOX}
           preserveAspectRatio="xMidYMid meet"
           focusable="false"
         >
-          {windows.map((w) => <path d={w.d} style={`--t: ${w.t}`} />)}
+          <g class="ps-glow-lit">
+            {windows.map((w) => <path d={w.d} style={`--t: ${w.t}`} />)}
+          </g>
+          <g class="ps-glow-near">{windows.map((w) => <path d={w.d} />)}</g>
         </svg>
         <svg
           class="ps-svg"
@@ -139,34 +155,32 @@ const steps = [
           preserveAspectRatio="xMidYMid meet"
           focusable="false"
         >
+          <linearGradient
+            id="ps-ground-fade"
+            gradientUnits="userSpaceOnUse"
+            x1="0"
+            y1="0"
+            x2="1600"
+            y2="0"
+          >
+            <stop class="ps-stop is-clear" offset="0"></stop>
+            <stop class="ps-stop" offset="0.1"></stop>
+            <stop class="ps-stop" offset="0.9"></stop>
+            <stop class="ps-stop is-clear" offset="1"></stop>
+          </linearGradient>
+          <!-- The outline: always drawn in full, never animated. -->
           <g class="ps-lines">
-            <linearGradient
-              id="ps-ground-fade"
-              gradientUnits="userSpaceOnUse"
-              x1="0"
-              y1="0"
-              x2="1600"
-              y2="0"
-            >
-              <stop class="ps-stop is-clear" offset="0"></stop>
-              <stop class="ps-stop" offset="0.1"></stop>
-              <stop class="ps-stop" offset="0.9"></stop>
-              <stop class="ps-stop is-clear" offset="1"></stop>
-            </linearGradient>
-            {
-              lines.map((d, i) => (
-                <path d={d} pathLength="1" style={`--i: ${i}`} />
-              ))
-            }
-            <path
-              class="ps-ground"
-              d={ground}
-              pathLength="1"
-              style={`--i: ${lines.length}`}></path>
+            {lines.map((d) => <path d={d} />)}
+            <path class="ps-ground" d={ground}></path>
           </g>
           <g class="ps-wins">{windows.map((w) => <path d={w.d} />)}</g>
+          <!-- The light: windows lit by the scroll, then those lit around
+               a pointer (palace.client.ts). -->
           <g class="ps-lit">
             {windows.map((w) => <path d={w.d} style={`--t: ${w.t}`} />)}
+          </g>
+          <g class="ps-near">
+            {windows.map((w) => <path d={w.d} data-c={`${w.cx},${w.cy}`} />)}
           </g>
         </svg>
       </div>
@@ -339,14 +353,19 @@ const steps = [
     gap: var(--space-2xs);
   }
 
-  /* Each bar is a 24px tall target around a 4px track; on the stage an
-     ice fill runs along it while its item is on screen and stays full
-     after (like story progress), so the bars move as one flowing line. */
+  /* Each bar is a 24px tall target around a 4px track. Its fill is a
+     state, never a scroll position, so no bar is ever left half full:
+     items passed are filled, the one on screen is filled bright, the
+     ones to come are empty; a change fills or empties a bar quickly. */
   .ps-bar {
     display: grid;
     align-items: center;
     inline-size: 2.75rem;
     block-size: 1.5rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: none;
     cursor: pointer;
   }
 
@@ -360,12 +379,37 @@ const steps = [
 
   .ps-bar::before {
     background: color-mix(in srgb, var(--color-white) 24%, transparent);
+    transition: background-color var(--duration-hover) var(--ease-snappy);
   }
 
   .ps-bar::after {
     background: var(--color-ticket-ice);
     transform-origin: left center;
     scale: 0 1;
+    transition:
+      scale var(--duration-reveal) var(--ease-emphasized),
+      opacity var(--duration-reveal) var(--ease-emphasized);
+  }
+
+  .ps-bar[data-state="done"]::after {
+    scale: 1 1;
+    opacity: 0.55;
+  }
+
+  .ps-bar[data-state="current"]::after {
+    scale: 1 1;
+    opacity: 1;
+  }
+
+  @media (hover: hover) {
+    .ps-bar:hover::before {
+      background: color-mix(in srgb, var(--color-white) 42%, transparent);
+    }
+  }
+
+  .ps-bar:focus-visible {
+    outline: 2px solid var(--color-ticket-ice);
+    outline-offset: 2px;
   }
 
   @media (min-width: 48rem) {
@@ -424,8 +468,10 @@ const steps = [
     opacity: 0.9;
   }
 
+  /* The outline: one fine line at every size (non-scaling), in full from
+     the start. Nothing here is ever animated or masked. */
   .ps-lines {
-    color: color-mix(in srgb, var(--color-white) 92%, transparent);
+    color: color-mix(in srgb, var(--color-white) 90%, transparent);
   }
 
   .ps-lines path {
@@ -443,7 +489,7 @@ const steps = [
   }
 
   .ps-stop {
-    stop-color: currentColor;
+    stop-color: color-mix(in srgb, var(--color-white) 90%, transparent);
   }
 
   .ps-stop.is-clear {
@@ -452,16 +498,44 @@ const steps = [
 
   .ps-wins path {
     fill: color-mix(in srgb, var(--color-ticket-ice) 5%, transparent);
-    stroke: color-mix(in srgb, var(--color-ticket-ice) 34%, transparent);
+    stroke: color-mix(in srgb, var(--color-ticket-ice) 40%, transparent);
     stroke-width: 1;
     vector-effect: non-scaling-stroke;
   }
 
-  .ps-lit path {
+  .ps-lit path,
+  .ps-near path {
     fill: color-mix(in srgb, var(--color-white) 82%, var(--color-ticket-ice));
     stroke: var(--color-white);
     stroke-width: 1;
     vector-effect: non-scaling-stroke;
+  }
+
+  /* Light around a pointer (palace.client.ts sets each window's opacity):
+     it comes quickly and fades back slowly. */
+  .ps-near path,
+  .ps-glow-near path {
+    opacity: 0;
+    transition: opacity calc(var(--duration-reveal) * 1.8) var(--ease-buttery);
+  }
+
+  .ps-near path.is-up,
+  .ps-glow-near path.is-up {
+    transition-duration: var(--duration-open);
+  }
+
+  /* Near the pointer the light is stronger than the scroll's: whiter
+     panes and a wider halo (a stroke around each pane, blurred with the
+     rest of the halo layer). */
+  .ps-near path {
+    fill: var(--color-white);
+  }
+
+  .ps-glow-near path {
+    fill: var(--color-white);
+    stroke: var(--color-ticket-ice);
+    stroke-width: 9;
+    stroke-linejoin: round;
   }
 
   /*
@@ -469,15 +543,18 @@ const steps = [
    *   entry     the section's top climbs from the window's foot to its head
    *             (the palace, on the stage's foot, comes into view late in it)
    *   contain   the stage is held in place for one screen
-   * The lines draw from late in the entry to a fifth into the hold, one
-   * after the other; each window lights over 6 % of the hold at its own
-   * moment (--t, from the centre outwards) while the count climbs over the
-   * same stretch; the lines turn white and the light is full at the end.
-   * The words take the space they need at the top and the palace scales
-   * to the rest (a size container: never wider than the window, never
-   * taller than the space left). The foot keeps the part of the screen a
-   * phone's browser bar may cover free (100lvh - 100svh), so the ground
-   * line lies on the visible lower edge.
+   * The outline is there throughout. Each window lights over 6 % of the
+   * hold at its own moment (--t, from the centre outwards), starting once
+   * a sixth of the hold has passed (so the palace has been in full view
+   * before the first light), while the count climbs over the same
+   * stretch and the light behind the building rises. The words take the
+   * space they need at the top and the palace scales to the rest (a size
+   * container: never wider than the window, never taller than the space
+   * left). The art keeps the part of the screen a phone's browser bar may
+   * cover free (100lvh - 100svh) and the drawing moves down by as much of
+   * it as the bar leaves free (100dvh - 100svh), so the ground line always
+   * lies on the lower edge of what is in view and the palace keeps its
+   * size when the bar comes and goes.
    */
   @media (prefers-reduced-motion: no-preference) {
     @supports (animation-timeline: view()) {
@@ -522,6 +599,7 @@ const steps = [
 
       .ps-draw {
         width: min(100cqw, 380.95cqh);
+        translate: 0 calc(var(--ps-foot) - 1px + 100dvh - 100svh);
       }
 
       .ps-tally {
@@ -532,26 +610,8 @@ const steps = [
         animation-range: contain 16% contain 88%;
       }
 
-      .ps-lines {
-        animation-name: ps-full;
-        animation-timing-function: linear;
-        animation-fill-mode: both;
-        animation-timeline: --palace;
-        animation-range: contain 88% contain 96%;
-      }
-
-      .ps-lines path {
-        stroke-dasharray: 1;
-        animation-name: ps-draw;
-        animation-timing-function: linear;
-        animation-fill-mode: both;
-        animation-timeline: --palace;
-        animation-range: entry calc(72% + var(--i) * 1.4%) contain
-          calc(4% + var(--i) * 1.2%);
-      }
-
       .ps-lit path,
-      .ps-glow path {
+      .ps-glow-lit path {
         animation-name: ps-on;
         animation-timing-function: linear;
         animation-fill-mode: both;
@@ -560,12 +620,10 @@ const steps = [
           calc(22% + var(--t) * 66%);
       }
 
-      /* The programme runs through the hold: one stretch per item (--k of
-         --n). Neighboring items cross-fade over the fifth of a stretch around
-         each border (each item's range reaches a fifth into the
-         neighboring ones), the first is already on screen as the stage arrives
-         and the last stays. Under them each bar fills along its own
-         stretch: transforms and opacity only (MOTION-3). */
+      /* The programme: one item at a time (palace.client.ts marks it).
+         The old item leaves first, then the new one comes, so the two are
+         never on screen together; transforms and opacity only
+         (MOTION-3). Before the script runs, the first item shows. */
       .ps-program {
         max-width: 36rem;
       }
@@ -576,20 +634,22 @@ const steps = [
 
       .ps-step {
         grid-area: 1 / 1;
-        animation-name: ps-step;
-        animation-timing-function: linear;
-        animation-fill-mode: both;
-        animation-timeline: --palace;
-        animation-range: contain calc((var(--k) - 0.2) * 100% / var(--n))
-          contain calc((var(--k) + 1.2) * 100% / var(--n));
+        opacity: 0;
+        translate: 0 0.5rem;
+        transition:
+          opacity var(--duration-close) var(--ease-snappy),
+          translate var(--duration-close) var(--ease-snappy);
       }
 
-      .ps-step.is-first {
-        animation-name: ps-step-first;
-      }
-
-      .ps-step.is-last {
-        animation-name: ps-step-last;
+      .ps-step[data-active],
+      .ps-steps:not(:has([data-active])) .ps-step.is-first {
+        opacity: 1;
+        translate: 0 0;
+        transition:
+          opacity var(--duration-open) var(--ease-emphasized)
+            var(--duration-close),
+          translate var(--duration-open) var(--ease-emphasized)
+            var(--duration-close);
       }
 
       .ps-step-title {
@@ -600,15 +660,6 @@ const steps = [
 
       .ps-bars {
         display: flex;
-      }
-
-      .ps-bar::after {
-        animation-name: ps-fill;
-        animation-timing-function: linear;
-        animation-fill-mode: both;
-        animation-timeline: --palace;
-        animation-range: contain calc(var(--k) * 100% / var(--n)) contain
-          calc((var(--k) + 1) * 100% / var(--n));
       }
     }
   }
@@ -645,62 +696,6 @@ const steps = [
     }
   }
 
-  /* One programme item over its stretch plus a fifth on each side: in
-     while the previous one goes, out while the next one comes. */
-  @keyframes ps-step {
-    0% {
-      opacity: 0;
-      translate: 0 0.6rem;
-    }
-
-    28.6%,
-    71.4% {
-      opacity: 1;
-      translate: 0 0;
-    }
-
-    100% {
-      opacity: 0;
-      translate: 0 -0.4rem;
-    }
-  }
-
-  @keyframes ps-step-first {
-    0%,
-    71.4% {
-      opacity: 1;
-      translate: 0 0;
-    }
-
-    100% {
-      opacity: 0;
-      translate: 0 -0.4rem;
-    }
-  }
-
-  @keyframes ps-step-last {
-    0% {
-      opacity: 0;
-      translate: 0 0.6rem;
-    }
-
-    28.6%,
-    100% {
-      opacity: 1;
-      translate: 0 0;
-    }
-  }
-
-  @keyframes ps-fill {
-    from {
-      scale: 0 1;
-    }
-
-    to {
-      scale: 1 1;
-    }
-  }
-
   @keyframes ps-count {
     from {
       --ps-n: 0;
@@ -708,16 +703,6 @@ const steps = [
 
     to {
       --ps-n: var(--ps-end);
-    }
-  }
-
-  @keyframes ps-draw {
-    from {
-      stroke-dashoffset: 1;
-    }
-
-    to {
-      stroke-dashoffset: 0;
     }
   }
 
@@ -737,13 +722,12 @@ const steps = [
     }
   }
 
-  @keyframes ps-full {
-    from {
-      color: color-mix(in srgb, var(--color-ticket-ice) 62%, transparent);
-    }
-
-    to {
-      color: color-mix(in srgb, var(--color-white) 95%, transparent);
+  @media (prefers-reduced-motion: reduce) {
+    .ps-step,
+    .ps-bar::after,
+    .ps-near path,
+    .ps-glow-near path {
+      transition: none;
     }
   }
 </style>
