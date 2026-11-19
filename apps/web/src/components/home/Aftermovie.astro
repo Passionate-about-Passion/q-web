@@ -17,12 +17,17 @@
 //
 // The stage is pure CSS (scroll-driven animations on the section's view
 // timeline, MOTION-4): the section is as long as the mockup's (260 % of
-// the window height, 160 % of it with the film held in place) and never
-// longer. Each line runs from just outside the window's right edge (the
-// lower one from outside the left) until its last letter has left on the
-// other side, so every word passes in full; the distance is the line's own
-// width plus the window's width (`100%` and `100cqw`), so fonts, resizes
-// and turning the phone need no script. With reduced motion or without
+// the window height, 160 % of it with the film held in place). The window
+// opens over the first 30 % of the hold, quickly. Each line says its words
+// once (no repeats, so it is short) and runs from just outside the
+// window's right edge (the lower one from outside the left) until its last
+// letter has left on the other side, from early in the entry to 68 % of
+// the hold, so the words pass slowly enough to read and every word passes
+// in full. The last third of the hold (about half a screen of scrolling)
+// is the film alone at full size, its name coming in; only then does the
+// page move on. The distance is the line's own width plus the window's
+// width (`100%` and `100cqw`), so fonts, resizes and turning the phone
+// need no script. With reduced motion or without
 // scroll-driven animations it is the plain rounded frame with the film's
 // name, and the running words are not drawn (MOTION-2).
 import "./home-theme.css";
@@ -37,10 +42,10 @@ interface Props {
 
 const { eyebrow, heading, youtubeHref } = Astro.props;
 
-// The two running lines, as in the team's mockup. Decorative: hidden from
-// assistive technology, so nothing is read twice.
-const lineA = "Founders · Talents · Investors · Founders · Talents";
-const lineB = "Two days · One palace · Two days · One palace";
+// The two running lines, as in the team's mockup, each word once.
+// Decorative: hidden from assistive technology, so nothing is read twice.
+const lineA = "Founders · Talents · Investors";
+const lineB = "Two days · One palace";
 // The lower line is drawn as a fine outline around each letter's
 // silhouette only. A text stroke would also trace the font's inner,
 // overlapping contours (a variable font keeps them, where strokes cross
@@ -299,9 +304,11 @@ const lineBCaps = lineB.toUpperCase();
    * The stage. Progress comes from the section's view timeline:
    *   entry       the section's top climbs from the window's foot to its head
    *   contain     the film is held in place (160 % of the window height)
-   * The window opens over the first 42 % of the hold, eased through four
-   * steps (a smoothstep), the lines run from late in the entry to 78 % of
-   * the hold, and the film's name comes in once the last word has left.
+   * The window opens over the first 30 % of the hold, eased through four
+   * steps (a smoothstep); the lines run from early in the entry to 68 % of
+   * the hold, so they have left before the film stands alone at full size
+   * for the last third of the hold (about half a screen), where its name
+   * comes in (72 to 84 %).
    * The window's insets: 15 % of the width and 17 % of the visible height
    * on wide screens, the page gutter and 24 % on narrow ones; the bottom
    * inset adds the part of the screen a phone's browser bar may cover
@@ -350,7 +357,7 @@ const lineBCaps = lineB.toUpperCase();
         animation-timing-function: linear;
         animation-fill-mode: both;
         animation-timeline: --am-film;
-        animation-range: contain 0% contain 42%;
+        animation-range: contain 0% contain 30%;
       }
 
       /* At full size the film's foot melts into the ground (an S-curve
@@ -407,7 +414,7 @@ const lineBCaps = lineB.toUpperCase();
         animation-timing-function: linear;
         animation-fill-mode: both;
         animation-timeline: --am-film;
-        animation-range: entry 55% contain 78%;
+        animation-range: entry 30% contain 68%;
       }
 
       .am-line-b {
@@ -462,7 +469,7 @@ const lineBCaps = lineB.toUpperCase();
         animation-timing-function: linear;
         animation-fill-mode: both;
         animation-timeline: --am-film;
-        animation-range: contain 0% contain 42%;
+        animation-range: contain 0% contain 30%;
       }
 
       .am-more {
@@ -472,7 +479,7 @@ const lineBCaps = lineB.toUpperCase();
         animation-timing-function: linear;
         animation-fill-mode: both;
         animation-timeline: --am-film;
-        animation-range: contain 0% contain 42%;
+        animation-range: contain 0% contain 30%;
       }
 
       .am-bottom {
@@ -488,7 +495,7 @@ const lineBCaps = lineB.toUpperCase();
         animation-timing-function: linear;
         animation-fill-mode: both;
         animation-timeline: --am-film;
-        animation-range: contain 72% contain 86%;
+        animation-range: contain 72% contain 84%;
       }
     }
   }
