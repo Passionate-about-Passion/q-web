@@ -39,13 +39,17 @@ interface Props {
   preloadImageSizes?: string;
   preloadImageType?: string;
   /** Social-share card image, root-relative path under public/. Defaults to
-   * the hero poster (1600x900 JPEG). Pass ogImageWidth/ogImageHeight when the
-   * image has different dimensions. Keep files under ~300 KB so WhatsApp
-   * and other chat previews stay reliable. */
+   * the hero poster. Every share image must be a 1600x900 JPEG of at most
+   * 300 KB (the rule in apps/web/AGENTS.md, enforced by the "share-images"
+   * check in scripts/check/budgets.mjs) so WhatsApp and other chat previews
+   * stay reliable. */
   ogImage?: string;
-  /** Pixel width of ogImage. Defaults to 1600 (the site-wide default shape). */
+  /** Pixel width of ogImage. Defaults to 1600. Share images must be 1600x900
+   * (apps/web/AGENTS.md, scripts/check/budgets.mjs); any other size fails
+   * the share-images check, so only pass this to match a compliant image. */
   ogImageWidth?: number;
-  /** Pixel height of ogImage. Defaults to 900 (the site-wide default shape). */
+  /** Pixel height of ogImage. Defaults to 900. Same 1600x900 rule as
+   * ogImageWidth; a deviation fails scripts/check/budgets.mjs. */
   ogImageHeight?: number;
   /** Accessible alt for og/twitter images. Defaults to the resolved OG title. */
   ogImageAlt?: string;
