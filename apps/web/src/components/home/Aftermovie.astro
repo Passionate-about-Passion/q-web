@@ -341,10 +341,14 @@ const lineBCaps = lineB.toUpperCase();
         --am-r: var(--radius-ticket-card);
       }
 
+      /* The running lines start and end outside the window: the frame
+         clips them itself, so no ancestor of the sticky stage has to (an
+         overflow clip around it made Safari on iPhone shake the stage). */
       .am-frame {
         position: absolute;
         inset: 0;
         display: block;
+        overflow: clip;
         min-height: 0;
         padding: 0;
         border-radius: 0;

@@ -160,7 +160,17 @@ const nextOffer = next
     display: grid;
     justify-items: start;
     gap: var(--space-md);
+    min-width: 0;
     max-width: 26rem;
+  }
+
+  /* On the narrowest phones the ticket link may wrap to two lines rather
+     than run past the screen's edge. */
+  .sp-cta {
+    max-width: 100%;
+    padding-block: var(--space-2xs);
+    white-space: normal;
+    text-align: center;
   }
 
   /* The offer as a sentence: the discount in ice and heavy, the rest

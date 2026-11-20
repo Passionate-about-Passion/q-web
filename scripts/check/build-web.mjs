@@ -27,7 +27,9 @@
  * the shorthand, so they drop the whole declaration and the animation never
  * runs, on the live site only (dev serves the CSS unminified). Write such
  * animations as longhands (animation-name, -timing-function, -fill-mode,
- * -timeline), which Lightning CSS leaves alone.
+ * -timeline), which Lightning CSS leaves alone. It also shortens a range
+ * such as `entry 0% entry 100%` to the bare `entry`, which Safari did not
+ * run (see bareTimelineRanges).
  */
 import { spawn } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
@@ -69,14 +71,35 @@ export function timelineShorthands(css) {
   return found;
 }
 
+/**
+ * `animation-range` values in built CSS that are a bare range name
+ * (`entry`, `entry, exit`). Lightning CSS shortens a range such as
+ * `entry 0% entry 100%` to the bare `entry`; the spec allows it, but Safari
+ * did not run it, and a held stage that never moved covered the live
+ * homepage. It also rewrites other ranges (`contain 100% exit 100%` came
+ * out as `contain 100% exit 0%`), so keep a range it must not touch in a
+ * custom property (`animation-range: var(--range)`), whose value it
+ * passes through as written.
+ */
+const RANGE_NAME = /^(cover|contain|entry|exit|entry-crossing|exit-crossing)$/;
+
+export function bareTimelineRanges(css) {
+  const found = [];
+  for (const match of css.matchAll(/(?:^|[;{\s])animation-range:([^;}]*)/g)) {
+    const value = match[1].trim();
+    const bare = value.split(",").some((part) => RANGE_NAME.test(part.trim()));
+    if (bare) found.push(`animation-range:${value}`);
+  }
+  return found;
+}
+
 function brokenTimelineAnimations() {
   const dir = path.join(REPO_ROOT, "apps", "web", "dist", "_astro");
   const found = [];
   for (const name of readdirSync(dir)) {
     if (!name.endsWith(".css")) continue;
-    for (const hit of timelineShorthands(
-      readFileSync(path.join(dir, name), "utf-8"),
-    ))
+    const css = readFileSync(path.join(dir, name), "utf-8");
+    for (const hit of [...timelineShorthands(css), ...bareTimelineRanges(css)])
       found.push(`${name}: ${hit}`);
   }
   return found;
@@ -140,10 +163,11 @@ function runFixtureBuildGate() {
     const broken = brokenTimelineAnimations();
     if (broken.length > 0) {
       console.error(
-        `\ncheck-build-web: ${broken.length} scroll-driven animation(s) were folded into an invalid\n` +
-          "animation shorthand by the CSS minifier; browsers drop them, so they never run on\n" +
-          "the live site. Write them as longhands (animation-name, animation-timing-function,\n" +
-          "animation-fill-mode, animation-timeline).\n",
+        `\ncheck-build-web: ${broken.length} scroll-driven animation(s) were folded by the CSS\n` +
+          "minifier into a form that does not run on the live site: a timeline inside the\n" +
+          "animation shorthand (write longhands: animation-name, -timing-function, -fill-mode,\n" +
+          "-timeline), or a bare range name in animation-range (write ranges whose start and\n" +
+          "end lie in different named ranges, e.g. `entry 0% contain 0%`).\n",
       );
       for (const hit of broken) console.error(`  ${hit}`);
       process.exit(1);

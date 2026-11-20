@@ -735,23 +735,26 @@
 
   position: relative;
   isolation: isolate;
-  overflow-x: clip;
+  /* No overflow clip here: Safari on iPhone shakes sticky elements (the
+     ticket list, the compare names bar) inside an ancestor that clips
+     overflow. The pools below stay inside the page's width instead. */
 }
 
 .ticket-page :is(.t-hero, .t-included, .t-compare) {
   position: relative;
 }
 
-/* The pool spans the window's width (the hero is only as wide as the
-   page's grid) and runs past the section above and below. */
+/* The pool spans the page's width and runs past the section above and
+   below. The list and the compare sheet are full-width sections; the hero
+   is the page's grid, so its pool reaches out over the grid's gutter. */
 .ticket-page :is(.t-hero, .t-included, .t-compare)::before {
   content: "";
   position: absolute;
   top: calc(-1 * var(--t-bleed));
+  right: 0;
   bottom: calc(-1 * var(--t-bleed));
-  left: 50%;
+  left: 0;
   z-index: -1;
-  width: 100vw;
   background:
     radial-gradient(
       ellipse var(--t-pool-size) at var(--t-pool-at),
@@ -775,7 +778,6 @@
       transparent 100%
     ),
     var(--t-foot-light, none);
-  transform: translateX(-50%);
   filter: var(--q-light-lift);
   -webkit-mask-image: var(--t-pool-mask-top), var(--t-pool-mask-foot);
   -webkit-mask-composite: source-in;
@@ -784,11 +786,18 @@
   pointer-events: none;
 }
 
-/* The phase cards and the heading under them. */
+/* The phase cards and the heading under them. On screens wider than the
+   grid the hero is narrower than the window, so its halo is kept inside
+   the hero's box (it fades out before the box's sides). */
 .ticket-page .t-hero {
   --t-pool-at: 50% 50%;
-  --t-pool-size: 46% 46%;
-  --t-halo-size: 92% 76%;
+  --t-pool-size: 44% 46%;
+  --t-halo-size: 58% 76%;
+}
+
+.ticket-page .t-hero::before {
+  right: calc(-1 * var(--t-gutter));
+  left: calc(-1 * var(--t-gutter));
 }
 
 /* The ticket list and its card, a little towards the card. */

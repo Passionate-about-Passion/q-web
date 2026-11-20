@@ -579,6 +579,21 @@ describe("CLI fail-closed smoke", () => {
     ]);
   });
 
+  // Lightning CSS also shortens `entry 0% entry 100%` to the bare `entry`,
+  // which Safari did not run: a held stage that never moved covered the live
+  // homepage. The gate flags a range that is a bare name, nothing else.
+  it("build-web flags bare animation ranges, not ones with offsets", async () => {
+    const { bareTimelineRanges } = await import("./build-web.mjs");
+    const css =
+      ".a{animation-range:entry,exit}" +
+      ".b{animation-range:entry 0% contain 0%,contain 100% exit 100%}" +
+      ".c{animation-range:entry 60% contain 92%}" +
+      ".d{animation-range:contain calc(16% + var(--t)*66%) contain calc(22% + var(--t)*66%)}" +
+      ".e{animation-range:contain contain 30%}" +
+      ".f{animation-range:var(--h-stage-range)}";
+    assert.deepEqual(bareTimelineRanges(css), ["animation-range:entry,exit"]);
+  });
+
   // The gate is only as good as its tag list. It shipped missing [partner] and
   // [whyq], so it reported "0 content warnings" over a build that had just
   // dropped nine partner logos. Derive the truth from the source instead of
