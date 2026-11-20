@@ -543,6 +543,10 @@ const steps = [
    *   entry     the section's top climbs from the window's foot to its head
    *             (the palace, on the stage's foot, comes into view late in it)
    *   contain   the stage is held in place for one screen
+   *   exit      the section's foot climbs from the window's foot to its head
+   * The stage is fixed to the window and only shifted in and out with the
+   * section (home-theme.css h-stage-in / h-stage-out), so while it is held
+   * nothing moves it, on any browser.
    * The outline is there throughout. Each window lights over 6 % of the
    * hold at its own moment (--t, from the centre outwards), starting once
    * a sixth of the hold has passed (so the palace has been in full view
@@ -551,10 +555,10 @@ const steps = [
    * space they need at the top and the palace scales to the rest (a size
    * container: never wider than the window, never taller than the space
    * left). The art keeps the part of the screen a phone's browser bar may
-   * cover free (100lvh - 100svh) and the drawing moves down by as much of
-   * it as the bar leaves free (100dvh - 100svh), so the ground line always
-   * lies on the lower edge of what is in view and the palace keeps its
-   * size when the bar comes and goes.
+   * cover free (100lvh - 100svh), so the ground line always lies in view
+   * and the palace keeps its size and place when the bar comes and goes
+   * (it does not follow the bar: a drawing that moved with the bar shook
+   * while the bar slid away).
    */
   @media (prefers-reduced-motion: no-preference) {
     @supports (animation-timeline: view()) {
@@ -568,16 +572,20 @@ const steps = [
         view-timeline-inset: 0;
       }
 
-      /* The held stage is a layer of its own: Safari on iPhone then keeps
-         it still on the compositor while the page scrolls under it; drawn
-         by the page instead, it trailed the scroll a frame and shook by a
-         few pixels all through the hold. */
       .ps-pin {
-        position: sticky;
+        position: fixed;
         top: 0;
-        will-change: transform;
+        right: 0;
+        left: 0;
         gap: var(--space-md);
         height: 100lvh;
+        animation-name: h-stage-in, h-stage-out;
+        animation-timing-function: linear;
+        animation-fill-mode: both, forwards;
+        animation-timeline: --palace;
+        animation-range:
+          entry 0% entry 100%,
+          exit 0% exit 100%;
         padding-top: calc(
           var(--h-header-height) + clamp(var(--space-sm), 5svh, 3.5rem)
         );
@@ -604,7 +612,7 @@ const steps = [
 
       .ps-draw {
         width: min(100cqw, 380.95cqh);
-        translate: 0 calc(var(--ps-foot) - 1px + 100dvh - 100svh);
+        translate: 0 calc(var(--ps-foot) - 1px);
       }
 
       .ps-tally {

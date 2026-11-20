@@ -57,99 +57,105 @@ const lineBCaps = lineB.toUpperCase();
 ---
 
 <section class="h-section am" id="aftermovie" aria-labelledby="home-film-title">
-  <div class="h-shell am-shell" data-h-reveal>
-    <div class="am-frame" data-film>
-      <video
-        class="am-video"
-        muted
-        loop
-        playsinline
-        preload="none"
-        poster="/media/hero-poster.jpg"
-        width="1920"
-        height="1080"
-        aria-hidden="true"
-        data-film-video></video>
-      <span class="am-shade" aria-hidden="true"></span>
-      <div class="am-words" aria-hidden="true">
-        <span class="am-line am-line-a">{lineA}</span>
-        <span class="am-line am-line-b">
-          <span class="am-twin">{lineB}</span>
-          <svg class="am-hollow" focusable="false">
-            <mask
-              id="am-hollow-mask"
-              maskUnits="userSpaceOnUse"
-              x="-5%"
-              y="-50%"
-              width="110%"
-              height="200%"
-            >
-              <rect
-                class="am-hollow-keep"
+  <div class="am-stage">
+    <div class="h-shell am-shell" data-h-reveal>
+      <div class="am-frame" data-film>
+        <video
+          class="am-video"
+          muted
+          loop
+          playsinline
+          preload="none"
+          poster="/media/hero-poster.jpg"
+          width="1920"
+          height="1080"
+          aria-hidden="true"
+          data-film-video></video>
+        <span class="am-shade" aria-hidden="true"></span>
+        <div class="am-words" aria-hidden="true">
+          <span class="am-line am-line-a">{lineA}</span>
+          <span class="am-line am-line-b">
+            <span class="am-twin">{lineB}</span>
+            <svg class="am-hollow" focusable="false">
+              <mask
+                id="am-hollow-mask"
+                maskUnits="userSpaceOnUse"
                 x="-5%"
                 y="-50%"
                 width="110%"
-                height="200%"></rect>
-              <text class="am-hollow-cut" x="0" y="0.8em">{lineBCaps}</text>
-            </mask>
-            <text
-              class="am-hollow-text"
-              x="0"
-              y="0.8em"
-              mask="url(#am-hollow-mask)">{lineBCaps}</text
-            >
-          </svg>
-        </span>
-      </div>
-      {
-        youtubeHref && (
-          <a
-            class="am-cover"
-            href={youtubeHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            tabindex="-1"
-            aria-hidden="true"
-          />
-        )
-      }
-      <div class="am-top">
-        <p class="h-eyebrow am-eyebrow" data-lp="aftermovie.eyebrow">
-          {eyebrow}
-        </p>
+                height="200%"
+              >
+                <rect
+                  class="am-hollow-keep"
+                  x="-5%"
+                  y="-50%"
+                  width="110%"
+                  height="200%"></rect>
+                <text class="am-hollow-cut" x="0" y="0.8em">{lineBCaps}</text>
+              </mask>
+              <text
+                class="am-hollow-text"
+                x="0"
+                y="0.8em"
+                mask="url(#am-hollow-mask)">{lineBCaps}</text
+              >
+            </svg>
+          </span>
+        </div>
         {
           youtubeHref && (
             <a
-              class="h-eyebrow am-more"
+              class="am-cover"
               href={youtubeHref}
               target="_blank"
               rel="noopener noreferrer"
-            >
-              <span class="am-more-lead">More on </span>YouTube
-              <svg
-                class="am-more-arrow"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-                focusable="false"
-              >
-                <path
-                  d="M7 17L17 7M9 7h8v8"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.6"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-              <span class="u-visually-hidden"> (opens in a new tab)</span>
-            </a>
+              tabindex="-1"
+              aria-hidden="true"
+            />
           )
         }
-      </div>
-      <div class="am-bottom">
-        <h2 class="am-title" id="home-film-title" data-lp="aftermovie.heading">
-          {heading}
-        </h2>
+        <div class="am-top">
+          <p class="h-eyebrow am-eyebrow" data-lp="aftermovie.eyebrow">
+            {eyebrow}
+          </p>
+          {
+            youtubeHref && (
+              <a
+                class="h-eyebrow am-more"
+                href={youtubeHref}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span class="am-more-lead">More on </span>YouTube
+                <svg
+                  class="am-more-arrow"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M7 17L17 7M9 7h8v8"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.6"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                <span class="u-visually-hidden"> (opens in a new tab)</span>
+              </a>
+            )
+          }
+        </div>
+        <div class="am-bottom">
+          <h2
+            class="am-title"
+            id="home-film-title"
+            data-lp="aftermovie.heading"
+          >
+            {heading}
+          </h2>
+        </div>
       </div>
     </div>
   </div>
@@ -304,6 +310,10 @@ const lineBCaps = lineB.toUpperCase();
    * The stage. Progress comes from the section's view timeline:
    *   entry       the section's top climbs from the window's foot to its head
    *   contain     the film is held in place (160 % of the window height)
+   *   exit        the section's foot climbs from the window's foot to its head
+   * The stage (.am-stage) is fixed to the window and only shifted in and
+   * out with the section (home-theme.css h-stage-in / h-stage-out), so
+   * while the film is held nothing moves it, on any browser.
    * The window opens over the first 30 % of the hold, eased through four
    * steps (a smoothstep); the lines run from early in the entry to 68 % of
    * the hold, so they have left before the film stands alone at full size
@@ -328,11 +338,25 @@ const lineBCaps = lineB.toUpperCase();
         view-timeline-inset: 0;
       }
 
-      .am-shell {
-        position: sticky;
+      .am-stage {
+        position: fixed;
         top: 0;
-        width: 100%;
+        right: 0;
+        left: 0;
         height: 100lvh;
+        animation-name: h-stage-in, h-stage-out;
+        animation-timing-function: linear;
+        animation-fill-mode: both, forwards;
+        animation-timeline: --am-film;
+        animation-range:
+          entry 0% entry 100%,
+          exit 0% exit 100%;
+      }
+
+      .am-shell {
+        position: relative;
+        width: 100%;
+        height: 100%;
         container-type: inline-size;
         --am-x: 15cqw;
         --am-y: 17svh;
