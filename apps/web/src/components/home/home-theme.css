@@ -969,6 +969,37 @@ body:has(main .h-home) .site-footer .footer-inner {
 }
 
 /*
+ * Held stages (the film, PalaceStage.astro the palace; DESIGN.md HOME-1):
+ * the stage is fixed to the window like the site header, and only its
+ * way in and out is tied to the scroll, a plain shift that runs with the
+ * section's view timeline (entry: in from below, exit: out at the top),
+ * so it stands exactly where the section stands. While it is held its
+ * position never changes at all. A sticky stage was placed again by
+ * Safari on iPhone each time the scroll-driven animations inside it
+ * redrew, a frame behind the scroll, so it shook all through the hold;
+ * a fixed one stays as still as the header.
+ */
+@keyframes h-stage-in {
+  from {
+    translate: 0 100%;
+  }
+
+  to {
+    translate: 0 0;
+  }
+}
+
+@keyframes h-stage-out {
+  from {
+    translate: 0 0;
+  }
+
+  to {
+    translate: 0 -100%;
+  }
+}
+
+/*
  * The hanging pass's waiting state (HangingPass.astro): until its entrance
  * the still stays unseen, so it never shows before the pass drops; a
  * failsafe shows it if the script never runs. Reduced motion shows it at
