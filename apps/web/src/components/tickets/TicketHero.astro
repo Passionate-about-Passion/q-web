@@ -1,14 +1,15 @@
 ---
 // Opener of the 2027 ticket page (DESIGN.md TICKETS-1): the discount
-// phase timeline, whose current phase carries the Q (or, without phases,
-// the Q in a glass tile, the original mark with material from light only,
-// over the one-line offer eyebrow, so the discount is never stated twice),
-// the page h1, the intro that writes itself in (MOTION-6) and the clear
-// glass jump to Compare tickets.
+// phases as the homepage's four cards of liquid glass (ui/SaleCards.astro;
+// the phase on sale in icy glass carries the Q and leads to the ticket
+// picker below), or, without phases, the Q in a glass tile, the original
+// mark with material from light only, over the one-line offer eyebrow, so
+// the discount is never stated twice; then the page h1, the intro and the
+// clear glass jump to Compare tickets.
 import "./ticket-theme.css";
 import type { TicketCategoriesContent } from "../../lib/content";
 import IconChevron from "../icons/IconChevron.astro";
-import TicketPhases from "./TicketPhases.astro";
+import SaleCards from "../ui/SaleCards.astro";
 
 interface Props {
   hero: TicketCategoriesContent["hero"];
@@ -25,8 +26,14 @@ const markSrc = "/icon-512.png";
 
 <header class="t-hero t-shell">
   {
-    phases ? (
-      <TicketPhases phases={phases} />
+    phases && phases.items.length > 0 ? (
+      <div class="t-hero-phases">
+        <SaleCards
+          phases={phases}
+          href="#included"
+          actionLabel="Choose your ticket"
+        />
+      </div>
     ) : (
       <>
         <span class="t-mark t-glass" aria-hidden="true">
@@ -52,7 +59,7 @@ const markSrc = "/icon-512.png";
   <p class="t-hero-intro" data-lp="hero.intro">
     {hero.intro}
   </p>
-  <a class="t-btn is-ghost t-hero-compare" href="#compare">
+  <a class="t-btn h-frost is-ghost t-hero-compare" href="#compare">
     <span data-lp="hero.compareLabel">{hero.compareLabel}</span>
     <span class="t-hero-chevron" aria-hidden="true">
       <IconChevron size={20} />
@@ -69,6 +76,13 @@ const markSrc = "/icon-512.png";
     padding-block: clamp(2.5rem, 7vw, 4.5rem)
       clamp(var(--space-lg), 5vw, var(--space-xl));
     text-align: center;
+  }
+
+  /* The four phase cards span the page's grid above the heading. */
+  .t-hero-phases {
+    align-self: stretch;
+    margin-bottom: clamp(var(--space-lg), 5vw, var(--space-xl));
+    text-align: left;
   }
 
   /* The Q tile: neutral glass, the mark sits in it like an inlay. */

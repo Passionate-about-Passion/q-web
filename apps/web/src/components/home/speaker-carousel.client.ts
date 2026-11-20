@@ -1,16 +1,26 @@
 /**
  * The speaker ring on the home page (SpeakerGrid.astro, DESIGN.md HOME-1).
  *
- * The row holds the cards three times over; the view is kept inside the
- * middle copy (after a scroll comes to rest, a position in an outer copy
- * jumps by one copy's width, which shows the very same cards), so it never
- * ends. Scrolling itself is native: touch, trackpad and keyboard keep
- * their own momentum and snapping. A mouse drags the row (free while
- * held, snapped on release). The arrows step one card. With no hand on
- * it, the ring advances one card every few seconds; it stops for good
- * once somebody uses it, and rests while it is off screen, while the tab
- * is hidden, while the pointer is over it or focus is inside, and with
- * reduced motion.
+ * The row holds the cards five times over (`data-copies`); the view is
+ * kept inside the middle copy, so it never ends. Whenever the view rests,
+ * and also while it is still moving once it has run more than a copy away
+ * from the middle (several fast swipes in a row never let it rest), it
+ * jumps by whole copies, which show the very same cards: the ring has no
+ * edge to run into, in either direction.
+ *
+ * With no hand on it, the ring runs slowly and evenly to the left, at the
+ * partner strip's pace (PartnerLogos.astro), like a marquee. It holds while
+ * the pointer is over it, while focus is inside, while it is off screen or
+ * the tab is hidden, and from the moment somebody touches, drags, scrolls
+ * or steps it; a few seconds after the last hand it runs on. Reduced motion
+ * never runs it.
+ *
+ * Scrolling itself is native: touch, trackpad and keyboard keep their own
+ * momentum. While the ring may run, the row has no CSS snapping (it would
+ * pull the slow run back to a card every frame), so the script settles it
+ * on a card once a hand lets go; with reduced motion the browser snaps. A
+ * mouse drags the row (free while held, settled on release). The arrows
+ * step one card.
  *
  * Depth: the page width is where cards stand sharp. A card that leaves it
  * turns away from the middle, shrinks a little, dims and blurs, more the
@@ -20,7 +30,8 @@
  * dirtied.
  */
 
-const STEP_MS = 4200;
+const RUN_PX_S = 28;
+const RESUME_MS = 3200;
 const TURN_DEG = 16;
 const SHRINK = 0.06;
 const DIM = 0.5;
@@ -32,22 +43,21 @@ function initCarousel(root: HTMLElement): void {
   if (!viewport || !track) return;
   const cards = [...track.querySelectorAll<HTMLElement>("[data-speaker-card]")];
   // The depth is drawn on the card inside each slot; the slot keeps its
-  // box, so snapping is never pulled off by a card turned away.
+  // box, so settling is never pulled off by a card turned away.
   const faces = cards.map(
     (c) => c.querySelector<HTMLElement>("[data-speaker-face]") ?? c,
   );
-  const perCopy = cards.filter((c) => c.dataset.copy === "1").length;
+  const copies = Number(root.dataset.copies) || 3;
+  const middle = Math.floor(copies / 2);
+  const perCopy = cards.filter((c) => c.dataset.copy === "0").length;
   if (!perCopy) return;
 
   // The arrows may sit in the section head, outside the rail itself.
   const scope = root.closest("section") ?? root;
   const prev = scope.querySelector<HTMLButtonElement>("[data-speaker-prev]");
   const next = scope.querySelector<HTMLButtonElement>("[data-speaker-next]");
-  const pause = root.querySelector<HTMLButtonElement>("[data-speaker-pause]");
-  const pauseLabel = root.querySelector<HTMLElement>(
-    "[data-speaker-pause-label]",
-  );
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const runs = root.dataset.autoplay !== "off";
 
   // Layout, measured once and again on resize.
   let lefts: number[] = [];
@@ -64,20 +74,37 @@ function initCarousel(root: HTMLElement): void {
     peek = parseFloat(getComputedStyle(track!).paddingLeft) || 0;
   }
 
-  /** Puts the view back into the middle copy, at the same cards. */
-  function recenter(): void {
-    const x = viewport!.scrollLeft;
-    // At rest the first sharp card is always one of the real ones, so the
-    // copies only ever show at the edges and while the row moves.
-    if (x < copyWidth - step / 2) viewport!.scrollLeft = x + copyWidth;
-    else if (x >= copyWidth * 2 - step / 2) {
-      viewport!.scrollLeft = x - copyWidth;
-    }
+  /** Where the view stands when card `index` is the first sharp one. */
+  const snapLeft = (index: number): number => lefts[0]! - peek + index * step;
+  /** The card at the left edge of the sharp zone, as a fraction. */
+  const position = (): number =>
+    (viewport!.scrollLeft - (lefts[0]! - peek)) / step;
+
+  // The run keeps its own exact position (a browser may round scrollLeft).
+  let runX = 0;
+
+  /** Moves the view by whole copies, back into the middle one, at the
+   *  same cards. `always`: at rest, into the middle copy itself; while
+   *  moving, only once the view is more than a copy away from it. */
+  function recenter(always: boolean): void {
+    const from = middle * perCopy;
+    const off = (position() - from) / perCopy;
+    const limit = always ? 0.5 : 1.25;
+    if (off >= -limit && off < limit) return;
+    const shift = Math.round(off) * copyWidth;
+    viewport!.scrollLeft -= shift;
+    runX -= shift;
   }
 
   // ---- depth, one write per visible card per frame
   let frame = 0;
   let shaded = new Set<HTMLElement>();
+
+  function clearFace(card: HTMLElement): void {
+    card.style.transform = "";
+    card.style.opacity = "";
+    card.style.filter = "";
+  }
 
   function shade(): void {
     frame = 0;
@@ -101,9 +128,7 @@ function initCarousel(root: HTMLElement): void {
             : 0;
       now.add(card);
       if (out === 0) {
-        card.style.transform = "";
-        card.style.opacity = "";
-        card.style.filter = "";
+        clearFace(card);
         return;
       }
       const side = left < from ? 1 : -1;
@@ -120,12 +145,7 @@ function initCarousel(root: HTMLElement): void {
       card.style.filter = blur > 0 ? `blur(${blur}px)` : "";
     });
     // Cards that left the window drop their styles.
-    for (const card of shaded) {
-      if (now.has(card)) continue;
-      card.style.transform = "";
-      card.style.opacity = "";
-      card.style.filter = "";
-    }
+    for (const card of shaded) if (!now.has(card)) clearFace(card);
     shaded = now;
   }
 
@@ -133,13 +153,7 @@ function initCarousel(root: HTMLElement): void {
     if (!frame) frame = requestAnimationFrame(shade);
   }
 
-  // ---- stepping
-  /** Where the view stands when card `index` is the first sharp one. */
-  const snapLeft = (index: number): number => lefts[0]! - peek + index * step;
-  /** The card at the left edge of the sharp zone, as a fraction. */
-  const position = (): number =>
-    (viewport!.scrollLeft - (lefts[0]! - peek)) / step;
-
+  // ---- settling on a card
   function scrollToCard(index: number): void {
     viewport!.scrollTo({
       left: snapLeft(index),
@@ -148,97 +162,153 @@ function initCarousel(root: HTMLElement): void {
   }
 
   function go(dir: 1 | -1): void {
-    recenter();
+    recenter(true);
     scrollToCard(Math.round(position()) + dir);
   }
 
-  // ---- auto advance
-  // The rail may advance by itself only where the page asks for it.
-  const autoplay = root.dataset.autoplay !== "off";
-  let stopped = reduced.matches || !autoplay;
-  let hovered = false;
-  let focused = false;
-  let onScreen = false;
-  let timer = 0;
-
-  function schedule(): void {
-    window.clearTimeout(timer);
-    if (stopped || hovered || focused || !onScreen || document.hidden) return;
-    timer = window.setTimeout(() => {
-      go(1);
-      schedule();
-    }, STEP_MS);
-  }
-
-  function stop(): void {
-    stopped = true;
-    window.clearTimeout(timer);
-    pause?.setAttribute("aria-pressed", "true");
-    if (pauseLabel) pauseLabel.textContent = pauseLabel.dataset.play ?? "";
-  }
-
-  pause?.addEventListener("click", () => {
-    if (stopped) {
-      stopped = false;
-      pause.setAttribute("aria-pressed", "false");
-      if (pauseLabel) pauseLabel.textContent = pauseLabel.dataset.pause ?? "";
-      go(1);
-      schedule();
-    } else {
-      stop();
-    }
-  });
-  prev?.addEventListener("click", () => {
-    stop();
-    go(-1);
-  });
-  next?.addEventListener("click", () => {
-    stop();
-    go(1);
-  });
-
-  root.addEventListener("pointerenter", () => {
-    hovered = true;
-    schedule();
-  });
-  root.addEventListener("pointerleave", () => {
-    hovered = false;
-    schedule();
-  });
-  root.addEventListener("focusin", (event) => {
-    // The controls stay usable for a keyboard; only the row itself holds.
-    if (event.target === viewport) focused = true;
-    schedule();
-  });
-  root.addEventListener("focusout", () => {
-    focused = false;
-    schedule();
-  });
-  // A finger or a wheel on the row is a hand on it.
-  viewport.addEventListener("touchstart", stop, { passive: true });
-  viewport.addEventListener(
-    "wheel",
-    (event) => {
-      if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) stop();
-    },
-    { passive: true },
-  );
-  viewport.addEventListener("keydown", (event) => {
-    if (event.key === "ArrowLeft" || event.key === "ArrowRight") stop();
-  });
-
-  // ---- mouse drag (touch and pen scroll natively)
+  // ---- hands on the ring
+  // A mouse drag in progress (touch and pen scroll natively).
   let dragX = 0;
   let dragLeft = 0;
   let dragging = false;
   let moved = false;
+  let hovered = false;
+  let focused = false;
+  let onScreen = false;
+  // A hand is on the ring (or was, a moment ago).
+  let held = false;
+  let resumeTimer = 0;
 
+  const mayRun = (): boolean =>
+    runs &&
+    !reduced.matches &&
+    onScreen &&
+    !document.hidden &&
+    !hovered &&
+    !focused &&
+    !held &&
+    !dragging;
+
+  /** Somebody uses the ring: it holds until they have let go a while. */
+  function hold(): void {
+    held = true;
+    window.clearTimeout(resumeTimer);
+    track!.style.translate = "";
+  }
+
+  /** The hand has let go: run on after a pause. */
+  function release(): void {
+    window.clearTimeout(resumeTimer);
+    resumeTimer = window.setTimeout(() => {
+      held = false;
+      wake();
+    }, RESUME_MS);
+  }
+
+  // ---- the slow run
+  let runFrame = 0;
+  let lastT = 0;
+
+  function tick(t: number): void {
+    runFrame = 0;
+    if (!mayRun()) {
+      lastT = 0;
+      track!.style.translate = "";
+      return;
+    }
+    // A long gap (a frame dropped, the tab back) never jumps the row.
+    const dt = lastT ? Math.min(64, t - lastT) : 0;
+    lastT = t;
+    runX += (RUN_PX_S * dt) / 1000;
+    // Browsers keep scroll positions in whole (device) pixels, which would
+    // make a run this slow tick; the part of a pixel left over moves the
+    // track itself, so the run is perfectly even.
+    const whole = Math.floor(runX);
+    viewport!.scrollLeft = whole;
+    track!.style.translate = `${(whole - runX).toFixed(3)}px 0`;
+    recenter(false);
+    runFrame = requestAnimationFrame(tick);
+  }
+
+  function wake(): void {
+    if (runFrame || !mayRun()) return;
+    runX = viewport!.scrollLeft;
+    lastT = 0;
+    runFrame = requestAnimationFrame(tick);
+  }
+
+  /** Free rows (no CSS snapping) while the ring may run. */
+  function setFree(): void {
+    viewport!.classList.toggle("is-free", runs && !reduced.matches);
+  }
+
+  prev?.addEventListener("click", () => {
+    hold();
+    go(-1);
+  });
+  next?.addEventListener("click", () => {
+    hold();
+    go(1);
+  });
+
+  root.addEventListener("pointerenter", (event) => {
+    if (event.pointerType !== "mouse") return;
+    hovered = true;
+  });
+  root.addEventListener("pointerleave", (event) => {
+    if (event.pointerType !== "mouse") return;
+    hovered = false;
+    wake();
+  });
+  root.addEventListener("focusin", (event) => {
+    // The controls stay usable for a keyboard; only the row itself holds.
+    if (event.target === viewport) focused = true;
+  });
+  root.addEventListener("focusout", () => {
+    focused = false;
+    wake();
+  });
+
+  // A finger on the row stops any momentum, so the view can be put back
+  // into the middle copy right there, before the next swipe.
+  let touching = false;
+  viewport.addEventListener(
+    "touchstart",
+    () => {
+      touching = true;
+      hold();
+      recenter(true);
+    },
+    { passive: true },
+  );
+  const endTouch = (): void => {
+    touching = false;
+    release();
+    // A swipe that stops dead may end with no scrollend at all: look again
+    // once it has been quiet for a moment.
+    quiet();
+  };
+  viewport.addEventListener("touchend", endTouch, { passive: true });
+  viewport.addEventListener("touchcancel", endTouch, { passive: true });
+  viewport.addEventListener(
+    "wheel",
+    (event) => {
+      if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) hold();
+    },
+    { passive: true },
+  );
+  viewport.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") hold();
+  });
+
+  // ---- mouse drag (touch and pen scroll natively)
   viewport.addEventListener("pointerdown", (event) => {
     if (event.pointerType !== "mouse" || event.button !== 0) return;
     dragging = true;
     moved = false;
     dragX = event.clientX;
     dragLeft = viewport.scrollLeft;
+    hold();
   });
   viewport.addEventListener("pointermove", (event) => {
     if (!dragging) return;
@@ -246,16 +316,22 @@ function initCarousel(root: HTMLElement): void {
     if (!moved && Math.abs(dx) < 4) return;
     if (!moved) {
       moved = true;
-      stop();
       viewport.classList.add("is-dragging");
       viewport.setPointerCapture(event.pointerId);
     }
     viewport.scrollLeft = dragLeft - dx;
+    // A long drag may cross a copy: keep the drag's own origin with it.
+    const before = viewport.scrollLeft;
+    recenter(false);
+    dragLeft += viewport.scrollLeft - before;
   });
   const endDrag = (event: PointerEvent): void => {
     if (!dragging) return;
     dragging = false;
-    if (!moved) return;
+    if (!moved) {
+      release();
+      return;
+    }
     if (viewport.hasPointerCapture(event.pointerId)) {
       viewport.releasePointerCapture(event.pointerId);
     }
@@ -277,22 +353,38 @@ function initCarousel(root: HTMLElement): void {
   viewport.addEventListener("dragstart", (event) => event.preventDefault());
 
   // ---- scroll bookkeeping
+  // Rest is the scrollend event, and also a short quiet period after the
+  // last scroll (for browsers without scrollend, and for a swipe that stops
+  // dead, which may never send one). Never while a finger is down.
   let restTimer = 0;
-  // Browsers without the scrollend event get a short quiet period instead.
-  const hasScrollEnd = "onscrollend" in window;
+  function quiet(): void {
+    window.clearTimeout(restTimer);
+    restTimer = window.setTimeout(onRest, 180);
+  }
   const onRest = (): void => {
-    if (dragging) return;
-    recenter();
+    if (dragging || runFrame || touching) return;
+    recenter(true);
     requestShade();
+    if (!held) return;
+    // A hand moved the free row: settle it on the nearest card first.
+    const at = position();
+    if (
+      viewport.classList.contains("is-free") &&
+      Math.abs(at - Math.round(at)) > 0.01
+    ) {
+      scrollToCard(Math.round(at));
+      return;
+    }
+    release();
   };
   viewport.addEventListener(
     "scroll",
     () => {
       requestShade();
-      if (!hasScrollEnd) {
-        window.clearTimeout(restTimer);
-        restTimer = window.setTimeout(onRest, 140);
-      }
+      // Fast swipes in a row never come to rest: never let the view reach
+      // the outer copies on the way.
+      if (!runFrame && !dragging) recenter(false);
+      if (!runFrame) quiet();
     },
     { passive: true },
   );
@@ -300,8 +392,9 @@ function initCarousel(root: HTMLElement): void {
 
   // ---- start
   measure();
+  setFree();
   // Open on the first real card (the start of the middle copy).
-  viewport.scrollLeft = snapLeft(perCopy);
+  viewport.scrollLeft = snapLeft(middle * perCopy);
   shade();
   root.setAttribute("data-ready", "");
 
@@ -313,11 +406,12 @@ function initCarousel(root: HTMLElement): void {
       const first = Math.round(position());
       measure();
       viewport.scrollLeft = snapLeft(first);
+      runX = viewport.scrollLeft;
       shade();
     });
   }).observe(viewport);
 
-  document.addEventListener("visibilitychange", schedule);
+  document.addEventListener("visibilitychange", wake);
   // Before the row comes into view, load and decode every portrait (the
   // copies at the edges too), so no card stalls a frame with its first
   // decode when it slides in.
@@ -339,19 +433,16 @@ function initCarousel(root: HTMLElement): void {
     near.observe(root);
     new IntersectionObserver(([entry]) => {
       onScreen = entry!.isIntersecting;
-      schedule();
+      wake();
     }).observe(root);
   }
   reduced.addEventListener("change", () => {
+    setFree();
     if (reduced.matches) {
-      stop();
-      for (const card of faces) {
-        card.style.transform = "";
-        card.style.opacity = "";
-        card.style.filter = "";
-      }
+      faces.forEach(clearFace);
     } else {
       shade();
+      wake();
     }
   });
 }

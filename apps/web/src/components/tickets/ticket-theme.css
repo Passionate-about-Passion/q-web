@@ -1,28 +1,24 @@
 /*
  * Shared chrome of the 2027 ticket page (DESIGN.md TICKETS-1): page width,
- * eyebrow, the liquid glass buttons, status marks and the animated light
- * field inside each ticket card. Only components under tickets/ import
+ * eyebrow, the liquid glass buttons, status marks, the animated light
+ * fields and the light ticket card. Only components under tickets/ import
  * this file. Deviates from LAYOUT-1, LAYOUT-3, COMP-1, TYPE-1 and DEPTH-1
  * as TICKETS-1 allows: the page is its own sales system.
  *
  * Colors follow the 2027 homepage (HOME-1): the deep navy ground, white
- * type with ice accents, clear liquid glass buttons, dark translucent
- * glass panels, and ticket cards printed like the front of the hanging
- * pass (navy, a beam of Q27 blue light, film grain), without its lines.
+ * type with ice accents, clear and icy liquid glass buttons, dark
+ * translucent glass panels, and the ticket card printed light (white and
+ * icy blue with the pass's film grain, navy type).
  */
 
+/* The homepage's grid (home-theme.css .h-shell, --container-wide): the
+   same gutter as the full-width site header, centered only on monitors
+   wider than about 1680px. */
 .t-shell {
   --t-gutter: clamp(1rem, 5vw, 2.5rem);
 
-  width: min(100% - 2 * var(--t-gutter), var(--container-large));
+  width: min(100% - 2 * var(--t-gutter), var(--container-wide));
   margin-inline: auto;
-}
-
-/* A capped breakout for the five-card row on wide screens (TICKETS-1). */
-@media (min-width: 1440px) {
-  .t-shell.is-wide {
-    width: min(100% - 2 * var(--t-gutter), 92rem);
-  }
 }
 
 /* Header offset for in-page jumps (Compare tickets, All benefits). */
@@ -74,8 +70,8 @@
  * (brightest at the upper left), a soft drop shadow and a white label.
  *   .t-btn           the buy buttons
  *   .t-btn.is-soft   the carousel arrows
- *   .t-btn.is-ghost  the hero's Compare tickets jump link
- * All three are the same glass. Hover and press lighten the glass a step
+ *   .t-btn.is-ghost  the hero's Compare tickets jump link (white, .h-frost)
+ * All three are the same glass; .h-ice and .h-frost tint it (below). Hover and press lighten the glass a step
  * (::before, a composited opacity fade); .is-pressed is set by
  * tickets.client.ts for touch and keyboard, so the state is not a
  * desktop-only :active.
@@ -225,7 +221,7 @@
 @supports not (
   (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
 ) {
-  .t-btn {
+  .t-btn:not(.h-ice, .h-frost) {
     background: color-mix(in srgb, var(--color-navy) 55%, transparent);
   }
 }
@@ -449,6 +445,80 @@
   }
 }
 
+/*
+ * The light surfaces (the ticket card in TicketIncluded, the compare
+ * sheet in TicketCompare): plain, radiant white, so navy type and the ice
+ * buy buttons stand out at full contrast. No tint and no light pools on
+ * the body; the glass and its depth live only at the edges: a lit top
+ * line, a white rim against the navy, cool grey-white shading inside the
+ * edges, deepest along the foot, and a deep cool shadow under it.
+ */
+.ticket-page {
+  --t-white-edge: color-mix(
+    in srgb,
+    var(--color-neutral-lighter) 55%,
+    var(--color-ticket-ice)
+  );
+  --t-white-shadow:
+    inset 0 1.5px 1px var(--color-white),
+    inset 0 0 28px -8px var(--t-white-edge),
+    inset 0 -42px 52px -38px var(--t-white-edge),
+    inset 0 -1.5px 2px
+      color-mix(in srgb, var(--color-ticket-sky) 25%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--color-white) 55%, transparent),
+    0 30px 60px -32px var(--color-ticket-midnight);
+}
+
+.t-light {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: var(--color-navy);
+  background: var(--color-white);
+  box-shadow: var(--t-white-shadow);
+}
+
+/*
+ * A button in the homepage's tinted liquid glass (home-theme.css: .h-ice
+ * icy blue for buying, .h-frost white for Compare tickets; the same fill,
+ * rim, light and navy label). A fine sky outline keeps the glass's edge
+ * on a white surface.
+ */
+.t-btn:is(.h-ice, .h-frost) {
+  --t-btn-ink: var(--hg-ink);
+  --t-btn-ink-pressed: var(--hg-ink);
+
+  background: var(--hg-fill);
+  box-shadow:
+    var(--hg-shadow),
+    0 0 0 1px color-mix(in srgb, var(--color-ticket-sky) 35%, transparent);
+  text-shadow: var(--hg-ink-shadow);
+  -webkit-backdrop-filter: var(--hg-backdrop);
+  backdrop-filter: var(--hg-backdrop);
+}
+
+.t-btn:is(.h-ice, .h-frost)::after {
+  background: var(--hg-rim);
+}
+
+.t-btn:is(.h-ice, .h-frost)::before {
+  background: var(--hg-sheen);
+}
+
+.t-btn:is(.h-ice, .h-frost) .t-btn-arrow {
+  filter: none;
+}
+
+@media (hover: hover) {
+  .t-btn:is(.h-ice, .h-frost):hover {
+    box-shadow:
+      var(--hg-shadow),
+      inset 0 0 0 100vmax
+        color-mix(in srgb, var(--color-white) 22%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--color-ticket-sky) 45%, transparent);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .t-btn,
   .t-btn::before,
@@ -550,49 +620,230 @@
 
 /*
  * Into the footer: the homepage's fade (.h-page-fade in
- * home/home-theme.css), stops at evenly rising OKLab lightness from the
- * navy ground through the page's navy and ice to the footer's white, so
- * no band stands out and there is no hard edge. The footer's hairline is
- * hidden on this page only, where the fade replaces it.
+ * home/home-theme.css), the same stops: the deep blue grows out of clear
+ * (never the dark ground over the light of the compare sheet above, so
+ * there is no dark trough), then its lightness rises along one smoothstep
+ * curve in OKLab through a mid blue and a pale sky into the footer's
+ * white, so no band stands out and there is no hard edge. Its length follows the
+ * window's height. The footer's hairline is hidden on this page only,
+ * where the fade replaces it.
  */
 .t-page-fade {
-  --t-fade: clamp(16rem, 34vw, 26rem);
+  /* The two blues the fade passes: a mid blue, then a pale sky. */
+  --fade-blue: color-mix(
+    in oklab,
+    var(--color-ticket-sky) 50%,
+    var(--color-ticket-deep)
+  );
+  --fade-pale: color-mix(
+    in oklab,
+    var(--color-ticket-sky) 42%,
+    var(--color-ticket-ice)
+  );
 
   position: relative;
   z-index: 1;
-  height: var(--t-fade);
+  height: clamp(22rem, 58vh, 46rem);
+  /* It starts right at the compare sheet's foot (over the section's
+     bottom padding), so it grows straight out of the sheet's light. */
+  margin-top: calc(-1 * clamp(4rem, 9vw, 7rem));
   background: linear-gradient(
     in oklab 180deg,
     transparent 0%,
-    color-mix(in oklab, var(--color-ticket-deep) 23%, var(--t-ground)) 8%,
-    color-mix(in oklab, var(--color-ticket-deep) 54%, var(--t-ground)) 17%,
-    color-mix(in oklab, var(--color-ticket-deep) 93%, var(--t-ground)) 25%,
-    color-mix(in oklab, var(--color-ticket-ice) 12%, var(--color-ticket-deep))
-      33%,
-    color-mix(in oklab, var(--color-ticket-ice) 27%, var(--color-ticket-deep))
-      42%,
-    color-mix(in oklab, var(--color-ticket-ice) 43%, var(--color-ticket-deep))
-      50%,
-    color-mix(in oklab, var(--color-ticket-ice) 59%, var(--color-ticket-deep))
-      58%,
-    color-mix(in oklab, var(--color-ticket-ice) 74%, var(--color-ticket-deep))
-      67%,
-    color-mix(in oklab, var(--color-ticket-ice) 88%, var(--color-ticket-deep))
-      75%,
-    color-mix(in oklab, var(--color-white) 2%, var(--color-ticket-ice)) 83%,
-    color-mix(in oklab, var(--color-white) 59%, var(--color-ticket-ice)) 92%,
+    color-mix(in oklab, var(--color-ticket-deep) 3%, transparent) 5%,
+    color-mix(in oklab, var(--color-ticket-deep) 13%, transparent) 10%,
+    color-mix(in oklab, var(--color-ticket-deep) 29%, transparent) 15%,
+    color-mix(in oklab, var(--color-ticket-deep) 49%, transparent) 20%,
+    color-mix(in oklab, var(--color-ticket-deep) 73%, transparent) 25%,
+    color-mix(in oklab, var(--fade-blue) 2%, var(--color-ticket-deep)) 30%,
+    color-mix(in oklab, var(--fade-blue) 46%, var(--color-ticket-deep)) 35%,
+    color-mix(in oklab, var(--fade-blue) 94%, var(--color-ticket-deep)) 40%,
+    color-mix(in oklab, var(--fade-pale) 18%, var(--fade-blue)) 45%,
+    color-mix(in oklab, var(--fade-pale) 38%, var(--fade-blue)) 50%,
+    color-mix(in oklab, var(--fade-pale) 59%, var(--fade-blue)) 55%,
+    color-mix(in oklab, var(--fade-pale) 79%, var(--fade-blue)) 60%,
+    color-mix(in oklab, var(--fade-pale) 98%, var(--fade-blue)) 65%,
+    color-mix(in oklab, var(--color-ticket-ice) 38%, var(--fade-pale)) 70%,
+    color-mix(in oklab, var(--color-ticket-ice) 76%, var(--fade-pale)) 75%,
+    color-mix(in oklab, var(--color-white) 12%, var(--color-ticket-ice)) 80%,
+    color-mix(in oklab, var(--color-white) 49%, var(--color-ticket-ice)) 85%,
+    color-mix(in oklab, var(--color-white) 76%, var(--color-ticket-ice)) 90%,
+    color-mix(in oklab, var(--color-white) 94%, var(--color-ticket-ice)) 95%,
     var(--color-white) 100%
   );
   pointer-events: none;
 }
 
-/* The page's ground (TicketGround.astro): the homepage's deep navy. */
-:root:has(.t-page-fade) {
-  --t-ground: color-mix(
+/*
+ * The page's light (DESIGN.md TICKETS-1): the ground is the homepage's
+ * deep navy, and the light belongs to the things on the page, never to the
+ * screen. Behind each part (the four phase cards and the heading, the
+ * ticket list and its card, the compare sheet) lies one wide pool that
+ * scrolls with it: Q blue at its brightest right behind the part, falling
+ * off through the deep blue along a long eased tail, with a wider, faint
+ * halo of the same light around it. The pools run past their section's
+ * top and bottom (--t-bleed) and are eased to nothing over twice that, so
+ * neighboring pools meet and sum: between the parts the page is a little
+ * darker, never a hole and never an edge. Static gradients: no cost per
+ * frame, nothing that drifts.
+ */
+.ticket-page {
+  --t-bleed: clamp(8rem, 26vh, 18rem);
+  --t-pool-core: color-mix(
     in srgb,
-    var(--color-ticket-midnight) 64%,
-    var(--color-black)
+    color-mix(in srgb, var(--color-ticket-q27) 62%, var(--color-ticket-deep))
+      72%,
+    transparent
   );
+  --t-pool-tail: color-mix(in srgb, var(--color-ticket-deep) 70%, transparent);
+  --t-pool-mask-top: linear-gradient(
+    180deg,
+    transparent 0,
+    color-mix(in srgb, var(--color-black) 4%, transparent)
+      calc(var(--t-bleed) * 0.25),
+    color-mix(in srgb, var(--color-black) 16%, transparent)
+      calc(var(--t-bleed) * 0.5),
+    color-mix(in srgb, var(--color-black) 32%, transparent)
+      calc(var(--t-bleed) * 0.75),
+    color-mix(in srgb, var(--color-black) 50%, transparent) var(--t-bleed),
+    color-mix(in srgb, var(--color-black) 68%, transparent)
+      calc(var(--t-bleed) * 1.25),
+    color-mix(in srgb, var(--color-black) 84%, transparent)
+      calc(var(--t-bleed) * 1.5),
+    color-mix(in srgb, var(--color-black) 96%, transparent)
+      calc(var(--t-bleed) * 1.75),
+    var(--color-black) calc(var(--t-bleed) * 2)
+  );
+  --t-pool-mask-foot: linear-gradient(
+    0deg,
+    transparent 0,
+    color-mix(in srgb, var(--color-black) 4%, transparent)
+      calc(var(--t-bleed) * 0.25),
+    color-mix(in srgb, var(--color-black) 16%, transparent)
+      calc(var(--t-bleed) * 0.5),
+    color-mix(in srgb, var(--color-black) 32%, transparent)
+      calc(var(--t-bleed) * 0.75),
+    color-mix(in srgb, var(--color-black) 50%, transparent) var(--t-bleed),
+    color-mix(in srgb, var(--color-black) 68%, transparent)
+      calc(var(--t-bleed) * 1.25),
+    color-mix(in srgb, var(--color-black) 84%, transparent)
+      calc(var(--t-bleed) * 1.5),
+    color-mix(in srgb, var(--color-black) 96%, transparent)
+      calc(var(--t-bleed) * 1.75),
+    var(--color-black) calc(var(--t-bleed) * 2)
+  );
+
+  position: relative;
+  isolation: isolate;
+  /* No overflow clip here: Safari on iPhone shakes sticky elements (the
+     ticket list, the compare names bar) inside an ancestor that clips
+     overflow. The pools below stay inside the page's width instead. */
+}
+
+.ticket-page :is(.t-hero, .t-included, .t-compare) {
+  position: relative;
+}
+
+/* The pool spans the page's width and runs past the section above and
+   below. The list and the compare sheet are full-width sections; the hero
+   is the page's grid, so its pool reaches out over the grid's gutter. */
+.ticket-page :is(.t-hero, .t-included, .t-compare)::before {
+  content: "";
+  position: absolute;
+  top: calc(-1 * var(--t-bleed));
+  right: 0;
+  bottom: calc(-1 * var(--t-bleed));
+  left: 0;
+  z-index: -1;
+  background:
+    radial-gradient(
+      ellipse var(--t-pool-size) at var(--t-pool-at),
+      var(--t-pool-core) 0%,
+      color-mix(in srgb, var(--t-pool-core) 92%, transparent) 10%,
+      color-mix(in srgb, var(--t-pool-core) 74%, transparent) 22%,
+      color-mix(in srgb, var(--t-pool-tail) 86%, transparent) 36%,
+      color-mix(in srgb, var(--t-pool-tail) 62%, transparent) 50%,
+      color-mix(in srgb, var(--t-pool-tail) 38%, transparent) 64%,
+      color-mix(in srgb, var(--t-pool-tail) 18%, transparent) 78%,
+      color-mix(in srgb, var(--t-pool-tail) 6%, transparent) 90%,
+      transparent 100%
+    ),
+    radial-gradient(
+      ellipse var(--t-halo-size) at var(--t-pool-at),
+      color-mix(in srgb, var(--t-pool-tail) 26%, transparent) 0%,
+      color-mix(in srgb, var(--t-pool-tail) 21%, transparent) 30%,
+      color-mix(in srgb, var(--t-pool-tail) 12%, transparent) 55%,
+      color-mix(in srgb, var(--t-pool-tail) 5%, transparent) 78%,
+      color-mix(in srgb, var(--t-pool-tail) 1%, transparent) 92%,
+      transparent 100%
+    ),
+    var(--t-foot-light, none);
+  filter: var(--q-light-lift);
+  -webkit-mask-image: var(--t-pool-mask-top), var(--t-pool-mask-foot);
+  -webkit-mask-composite: source-in;
+  mask-image: var(--t-pool-mask-top), var(--t-pool-mask-foot);
+  mask-composite: intersect;
+  pointer-events: none;
+}
+
+/* The phase cards and the heading under them. On screens wider than the
+   grid the hero is narrower than the window, so its halo is kept inside
+   the hero's box (it fades out before the box's sides). */
+.ticket-page .t-hero {
+  --t-pool-at: 50% 50%;
+  --t-pool-size: 44% 46%;
+  --t-halo-size: 58% 76%;
+}
+
+.ticket-page .t-hero::before {
+  right: calc(-1 * var(--t-gutter));
+  left: calc(-1 * var(--t-gutter));
+}
+
+/* The ticket list and its card, a little towards the card. */
+.ticket-page .t-included {
+  --t-pool-at: 56% 50%;
+  --t-pool-size: 50% 44%;
+  --t-halo-size: 96% 72%;
+}
+
+/* The compare sheet: tall, so the light runs down its whole height, and a
+   second pool lies under its foot (its place counted from the section's
+   end), so it is lit all round and leads into the fade below. */
+.ticket-page .t-compare {
+  --t-pool-at: 50% 50%;
+  --t-pool-size: 58% 64%;
+  --t-halo-size: 104% 96%;
+  --t-foot-light: radial-gradient(
+    ellipse 56% clamp(14rem, 34vh, 24rem) at 50%
+      calc(100% - var(--t-bleed) - clamp(4rem, 9vw, 7rem)),
+    var(--t-pool-core) 0%,
+    color-mix(in srgb, var(--t-pool-core) 86%, transparent) 14%,
+    color-mix(in srgb, var(--t-pool-tail) 84%, transparent) 32%,
+    color-mix(in srgb, var(--t-pool-tail) 56%, transparent) 50%,
+    color-mix(in srgb, var(--t-pool-tail) 28%, transparent) 68%,
+    color-mix(in srgb, var(--t-pool-tail) 9%, transparent) 86%,
+    transparent 100%
+  );
+}
+
+/* Phones: the parts fill the width, so the light is a little wider than
+   the screen and reaches round them. */
+@media (max-width: 767px) {
+  .ticket-page :is(.t-hero, .t-included) {
+    --t-pool-size: 78% 40%;
+    --t-halo-size: 120% 70%;
+  }
+
+  .ticket-page .t-compare {
+    --t-pool-size: 80% 62%;
+    --t-halo-size: 124% 94%;
+  }
+}
+
+/* The page's ground: the homepage's deep navy. */
+:root:has(.t-page-fade) {
+  --t-ground: var(--q-night);
 }
 
 body:has(.t-page-fade) {

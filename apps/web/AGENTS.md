@@ -62,7 +62,7 @@ after the hero and before the kickoff panel) open
 Two kinds live here. **Shells** (`Section`, `Container`, `SectionHeader`,
 `Button`) are thin typed Astro wrappers over the `global.css` classes DESIGN.md
 defines: they carry no styles of their own and exist so the markup is written
-once. **Patterns** (`Timeline`, `LogoGrid`) are whole components shared by two
+once. **Patterns** (`Timeline`, `LogoGrid`, `SaleCards`) are whole components shared by two
 or more pages; they own their scoped CSS, which is allowed because they render
 every element that CSS selects, so PRIM-2's boundary is never crossed. A
 pattern keeps page-specific behavior behind an opt-in prop. These rules are
@@ -73,12 +73,17 @@ than in DESIGN.md, but they are cited the same way.
 | --- | --- |
 | `Timeline` | `items`, `images`, `reveal`, `priorityFirstImage`; also owns the `.timeline-intro` class for the caller's intro paragraph |
 | `LogoGrid` | `logos`, `variant="tier"\|"hack"`, `featured`, `eager`, `flip` |
+| `SaleCards` | `phases`, `href`, `actionLabel` |
 
 `Timeline`'s `reveal` emits `[data-reveal]`, which gates every scroll-driven
 rule; the `IntersectionObserver` fallback for browsers without
 `animation-timeline: view()` stays in `AgendaTimeline`, so a page that does not
 opt in ships no script. `LogoGrid`'s two skins differ only in card values, held
 as local custom properties on the list and re-pointed by `.is-hack`.
+`SaleCards` is the discount phases as four glass cards on the homepage
+(HOME-1) and the ticket page (TICKETS-1); `href` is where the card on sale
+leads, and its tints come from the homepage's glass recipe
+(`home/home-theme.css` `.h-pane`, `.h-ice`, `.h-frost`).
 
 **PRIM-1 Standard section shells use the primitives.** `<Section>` (props
 `variant="alternate"|"dark"`, `small`, `as="section"|"article"|"header"|"div"`

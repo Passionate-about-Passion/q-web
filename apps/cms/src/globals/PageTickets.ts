@@ -248,7 +248,7 @@ const offerTicketFields: Field[] = [
     label: "Highlight",
     required: true,
     description:
-      "Up to five short lines on the ticket card. The full list lives under What's included.",
+      "Kept, but not shown at the moment (the ticket page shows one ticket card at a time, with its full benefit list under What's included).",
   }),
   {
     name: "note",
@@ -256,7 +256,7 @@ const offerTicketFields: Field[] = [
     type: "text",
     admin: {
       description:
-        'Optional requirement shown on the card above the buy button, e.g. "Valid student ID required".',
+        'Optional requirement shown on the ticket card above its buy button, e.g. "Valid student ID required".',
     },
   },
 ];
@@ -392,7 +392,8 @@ export const PageTickets: GlobalConfig = pageGlobal({
       label: "Header",
       name: "hero",
       open: true,
-      description: "Top of the page, above the ticket cards.",
+      description:
+        "Top of the page, under the discount cards and above the ticket picker.",
       fields: [
         {
           name: "eyebrow",
@@ -416,7 +417,7 @@ export const PageTickets: GlobalConfig = pageGlobal({
       label: "Discount phases",
       name: "phases",
       description:
-        "Timeline at the top of the page. Leave it empty to show the small label from Header instead. The phase on sale now is set here by hand; nothing changes on a date.",
+        "The four discount cards at the top of the ticket page and in the homepage's sale section. Leave it empty to show the small label from Header instead. The phase on sale now is set here by hand; nothing changes on a date.",
       fields: [
         phaseLabelField(
           "label",
@@ -506,7 +507,7 @@ export const PageTickets: GlobalConfig = pageGlobal({
       label: "Tickets",
       name: "offer",
       description:
-        "Ticket cards. Prices and benefits here also fill What's included and Compare tickets.",
+        "The tickets. Prices and benefits here fill the ticket picker (What's included) and Compare tickets.",
       fields: [
         {
           name: "purchaseHref",
@@ -523,7 +524,9 @@ export const PageTickets: GlobalConfig = pageGlobal({
           name: "buyLabel",
           type: "text",
           required: true,
-          admin: { description: 'Buy button on the cards, e.g. "Buy now".' },
+          admin: {
+            description: 'Buy buttons in Compare tickets, e.g. "Buy now".',
+          },
         },
         {
           name: "detailsLabel",
@@ -531,7 +534,7 @@ export const PageTickets: GlobalConfig = pageGlobal({
           required: true,
           admin: {
             description:
-              'Card link to the full benefit list, e.g. "All benefits".',
+              'Kept, but not shown at the moment (it linked the former card row to the full benefit list), e.g. "All benefits".',
           },
         },
         {

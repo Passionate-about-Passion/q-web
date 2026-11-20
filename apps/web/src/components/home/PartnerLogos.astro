@@ -18,10 +18,11 @@
 // are one static mask on the row, so the logos fade in from the row's name
 // and out towards the window's edge; logos are swapped
 // for copies at their drawn size once the page is idle (home.client.ts);
-// the strip stops on hover and keyboard focus, with the Pause button and
-// off screen. The repeats are decorative, so each partner is met once by
-// keyboard and screen reader. Reduced motion shows plain rows that scroll
-// sideways by hand.
+// the strip stops on hover and while a logo has keyboard focus, and off
+// screen (there is no separate pause control: the team asked for the
+// strip without one; reduced motion stops it for good). The repeats are
+// decorative, so each partner is met once by keyboard and screen reader.
+// Reduced motion shows plain rows that scroll sideways by hand.
 import "./home-theme.css";
 
 export interface PartnerLogo {
@@ -113,24 +114,9 @@ const split = heading ? /^(.*\bof)\s+(.+)$/i.exec(heading) : null;
             </h2>
           )}
           <div class="pl-actions" data-h-reveal>
-            <button
-              type="button"
-              class="pl-pause"
-              aria-pressed="false"
-              data-marquee-toggle
-            >
-              <span class="pl-pause-icon" aria-hidden="true" />
-              <span
-                data-marquee-label
-                data-pause="Pause logos"
-                data-play="Play logos"
-              >
-                Pause logos
-              </span>
-            </button>
             {cta && (
               <a
-                class="h-btn"
+                class="h-btn h-frost"
                 href={cta.href}
                 data-lp="partnerBand.cta"
                 data-lp-href="partnerBand.cta.href"
@@ -250,50 +236,6 @@ const split = heading ? /^(.*\bof)\s+(.+)$/i.exec(heading) : null;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--space-xs);
-  }
-
-  .pl-pause {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.6rem;
-    min-height: 2.75rem;
-    padding: 0 var(--space-sm);
-    border: 0;
-    border-radius: var(--radius-ticket-button);
-    background: transparent;
-    color: var(--h-text-soft);
-    font: inherit;
-    font-size: var(--text-size-tiny);
-    font-weight: var(--font-weight-extrabold);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    cursor: pointer;
-  }
-
-  @media (hover: hover) {
-    .pl-pause:hover {
-      color: var(--color-white);
-    }
-  }
-
-  .pl-pause:focus-visible {
-    outline: 2px solid var(--color-ticket-ice);
-    outline-offset: 2px;
-  }
-
-  /* Pause: two bars; play: a triangle. */
-  .pl-pause-icon {
-    width: 0.7rem;
-    height: 0.8rem;
-    border-inline: 0.22rem solid currentColor;
-  }
-
-  .pl-pause[aria-pressed="true"] .pl-pause-icon {
-    width: 0;
-    height: 0;
-    border-block: 0.42rem solid transparent;
-    border-left: 0.7rem solid currentColor;
-    border-right: 0;
   }
 
   .pl-row {
@@ -429,7 +371,6 @@ const split = heading ? /^(.*\bof)\s+(.+)$/i.exec(heading) : null;
 
     .pl-viewport:hover .pl-track,
     .pl-viewport:focus-within .pl-track,
-    .pl[data-paused] .pl-track,
     .pl[data-offscreen] .pl-track {
       animation-play-state: paused;
     }
@@ -447,8 +388,7 @@ const split = heading ? /^(.*\bof)\s+(.+)$/i.exec(heading) : null;
     }
 
     .pl-group[aria-hidden="true"],
-    .pl-logos[aria-hidden="true"],
-    .pl-pause {
+    .pl-logos[aria-hidden="true"] {
       display: none;
     }
 

@@ -1,11 +1,11 @@
 ---
 // Homepage for the 10th edition (DESIGN.md HOME-1), after the team's
-// "Q-Summit 2027 · Website concept" mockup: a navy page with its own
-// header and fullscreen menu, a short loading intro, the hero with the
-// hanging 3D pass (ADR-0008) and the countdown, key figures, the audience
+// "Q-Summit 2027 · Website concept" mockup: a navy page under the site
+// header, a short loading intro that hands its headline to the hero, the
+// hero with the hanging 3D pass (ADR-0008), key figures, the audience
 // picker, the aftermovie, partners, Mannheim Palace drawn and lit, the
-// speaker rail, the discount phases, the LinkedIn / Instagram section,
-// then the site footer.
+// speaker rail, the discount phases as four cards, the LinkedIn /
+// Instagram section, then the site footer.
 // All content loads at build time from the content layer
 // (src/lib/content.ts). The page is complete without JavaScript; scripts
 // only add the video stream, the countdown and the motion
@@ -299,7 +299,13 @@ const eventLd = {
     <JsonLd data={eventLd} />
   </Fragment>
   <Fragment slot="header">
-    <HomeIntro edition={edition} dates={dates} city={city} year={eventYear} />
+    <HomeIntro
+      edition={edition}
+      startDate={home.event.startDate}
+      endDate={home.event.endDate}
+      city={city}
+      year={eventYear}
+    />
     <HomeHeader edition={edition} dates={dates} city={city} offer={offer} />
   </Fragment>
   <div class="h-home">

@@ -985,7 +985,7 @@ export interface PageHome {
     heading: string;
     intro: string;
     /**
-     * Badge on past speakers, e.g. "Previous Speaker", so nobody reads them as booked for the next edition. Do not call them alumni: Q alumni are former team members. Leave empty for no badge.
+     * Kept, but not shown at the moment: the homepage shows past speakers with their name and role only, no badge on the picture. Do not call them alumni: Q alumni are former team members.
      */
     alumniLabel?: string | null;
     /**
@@ -1036,7 +1036,7 @@ export interface PageHome {
         }[]
       | null;
     /**
-     * Badge on a stand-in card, e.g. "Previous Speaker". It must make clear the person is an earlier speaker, so nobody reads them as booked for the next edition.
+     * Kept, but not shown at the moment: like past speakers, stand-ins show their name and role only, no badge on the picture.
      */
     standInLabel?: string | null;
     cta: {
@@ -1874,11 +1874,11 @@ export interface PageTicket {
      */
     purchaseHref: string;
     /**
-     * Buy button on the cards, e.g. "Buy now".
+     * Buy buttons in Compare tickets, e.g. "Buy now".
      */
     buyLabel: string;
     /**
-     * Card link to the full benefit list, e.g. "All benefits".
+     * Kept, but not shown at the moment (it linked the former card row to the full benefit list), e.g. "All benefits".
      */
     detailsLabel: string;
     /**
@@ -1910,14 +1910,14 @@ export interface PageTicket {
        */
       price: number;
       /**
-       * Up to five short lines on the ticket card. The full list lives under What's included.
+       * Kept, but not shown at the moment (the ticket page shows one ticket card at a time, with its full benefit list under What's included).
        */
       highlights: {
         text: string;
         id?: string | null;
       }[];
       /**
-       * Optional requirement shown on the card above the buy button, e.g. "Valid student ID required".
+       * Optional requirement shown on the ticket card above its buy button, e.g. "Valid student ID required".
        */
       note?: string | null;
       id?: string | null;

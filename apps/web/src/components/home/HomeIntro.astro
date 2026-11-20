@@ -1,29 +1,66 @@
 ---
-// The homepage's loading intro (DESIGN.md HOME-1, after the 2027 concept
-// mockup): a navy field with a pool of light, the Q mark as a solid 3D
-// object in satin white (never glass), its rounded outline drawn in light, the years running from 2017
-// to the edition's year, "10 Years of Q-Summit", and a curtain that rises
-// into the page. "Loading" with three dots that light one after another
-// (each dot has a fixed place, so the word never moves).
+// The homepage's loading intro (DESIGN.md HOME-1), after the team's
+// loading screen film: a navy field with a pool of blue light inside a
+// fine rounded frame, small facts in its corners (the edition at the top
+// left, "Loading" at the top right, the dates at the bottom left, the
+// venue at the bottom right), and in the middle the Q mark, flat and
+// white as in the film (never a 3D render, never glass), in a rounded
+// outline drawn in light, the years running from 2017 to the edition's
+// year (the number turns ice as it arrives), "10 Years of Q-Summit" and a
+// fine progress line, all three in step. The field's light is one soft
+// pool that falls off along a long eased tail, so it shows no rim. Then
+// the loader's content lifts away and the hero's navy and light rise from
+// the bottom behind a soft, long edge (never a hard panel edge); the
+// hero's headline fades in small in the middle of the screen, holds for a
+// moment and zooms into the place where the hero's own headline stands.
+// The panel draws the hero's light over exactly the hero's box, so when it
+// fades into the page nothing changes: the headline is never shown twice
+// and nothing jumps (home-stage.client.ts).
+//
+// "Loading" keeps the site's own three dots (from the first 2027 intro):
+// they light one after another, each in a place of its own, so the word
+// never moves.
 //
 // It never locks anyone out: the inline script below only plays it when
 // motion is welcome, the visitor did not see it in the last twelve hours
 // and did not arrive on a section link (#...). The CSS hides it after a
-// few seconds even if the page script never runs, a failed image only
-// leaves the outline, and any key, a click or "Skip intro" ends it at
-// once. home-stage.client.ts runs it and hands over to the hero.
+// few seconds even if the page script never runs, and any key, a click
+// or "Skip intro" ends it at once. home-stage.client.ts runs it and hands over to the hero.
 interface Props {
   /** e.g. "10 Years of Q-Summit". */
   edition: string;
-  /** e.g. "April 1-2, 2027" (as the content writes it). */
-  dates: string;
+  /** The event's first and last day (ISO dates from the content). */
+  startDate: string;
+  endDate: string;
+  /** e.g. "Mannheim". */
   city: string;
   /** The edition's year, the end of the run of years. */
   year: number;
 }
 
-const { edition, dates, city, year } = Astro.props;
+const { edition, startDate, endDate, city, year } = Astro.props;
 const firstYear = 2017;
+
+// "Q27 · 10th edition", as the pass prints it, when the edition is a
+// number of years; otherwise the plain name.
+const ordinal = (n: number) => {
+  const tens = n % 100;
+  if (tens >= 11 && tens <= 13) return `${n}th`;
+  return `${n}${["th", "st", "nd", "rd"][n % 10] ?? "th"}`;
+};
+const editionNumber = Number(/^(\d+)/.exec(edition)?.[1]);
+const editionLine = Number.isFinite(editionNumber)
+  ? `Q${String(year).slice(-2)} · ${ordinal(editionNumber)} edition`
+  : `Q-Summit ${year}`;
+
+// "01-02.04.2027": the dates as the pass prints them (a hyphen, never a
+// dash), across a month boundary "31.03-01.04.2027".
+const day = (iso: string) => iso.slice(8, 10);
+const month = (iso: string) => iso.slice(5, 7);
+const datesLine =
+  month(startDate) === month(endDate)
+    ? `${day(startDate)}-${day(endDate)}.${month(endDate)}.${endDate.slice(0, 4)}`
+    : `${day(startDate)}.${month(startDate)}-${day(endDate)}.${month(endDate)}.${endDate.slice(0, 4)}`;
 ---
 
 <script is:inline>
@@ -52,17 +89,17 @@ const firstYear = 2017;
   data-last-year={year}
 >
   <span class="hi-glow" aria-hidden="true"></span>
-  <div class="hi-frame" aria-hidden="true">
-    <span class="hi-corner is-tl">Q-Summit {year}</span>
+  <div class="hi-frame" aria-hidden="true" data-intro-frame>
+    <span class="hi-corner is-tl">{editionLine}</span>
     <span class="hi-corner is-tr">
       Loading<span class="hi-dots"
         ><span>.</span><span>.</span><span>.</span></span
       >
     </span>
-    <span class="hi-corner is-bl">{dates}</span>
-    <span class="hi-corner is-br">{city}</span>
+    <span class="hi-corner is-bl">{datesLine}</span>
+    <span class="hi-corner is-br">{city} Palace</span>
   </div>
-  <div class="hi-center" aria-hidden="true">
+  <div class="hi-center" aria-hidden="true" data-intro-center>
     <div class="hi-mark" data-intro-mark>
       <span class="hi-mark-glow" data-intro-glow></span>
       <svg class="hi-outline" viewBox="0 0 160 160">
@@ -83,34 +120,22 @@ const firstYear = 2017;
           pathLength="100"
           data-intro-trace></rect>
       </svg>
-      <span class="hi-q-flat"></span>
-      <img
-        class="hi-q is-a"
-        src="/home/intro/q-intro-a.webp"
-        alt=""
-        width="640"
-        height="640"
-        decoding="async"
-        fetchpriority="high"
-        onerror="this.remove()"
-        data-intro-q
-      />
-      <img
-        class="hi-q is-b"
-        src="/home/intro/q-intro-b.webp"
-        alt=""
-        width="640"
-        height="640"
-        decoding="async"
-        onerror="this.remove()"
-        data-intro-q-b
-      />
+      <span class="hi-q" data-intro-q></span>
     </div>
     <p class="hi-year" data-intro-year>{firstYear}</p>
     <p class="hi-caption" data-intro-caption>{edition}</p>
     <span class="hi-bar"><span data-intro-bar></span></span>
   </div>
   <button type="button" class="hi-skip" data-intro-skip>Skip intro</button>
+  <!-- The panel that rises into the page: the hero's ground and light,
+       and a copy of the hero's headline that home-stage.client.ts sets
+       exactly over the real one. -->
+  <div class="hi-panel" aria-hidden="true" data-intro-panel>
+    <span class="hi-panel-ground" data-intro-panel-ground>
+      <span class="hi-panel-light" data-intro-panel-light></span>
+    </span>
+    <p class="hi-panel-title" data-intro-copy></p>
+  </div>
 </div>
 
 <style>
@@ -128,23 +153,48 @@ const firstYear = 2017;
     place-items: center;
     overflow: hidden;
     color: var(--color-white);
+    /* One wide pool of the deep blue around the mark, held in its middle
+       and falling off along a long eased tail (no rim), over the navy
+       running from home-ground at the top to midnight at the foot. */
     background:
       radial-gradient(
-        55% 45% at 50% 44%,
-        color-mix(in srgb, var(--color-ticket-deep) 92%, transparent),
-        transparent 72%
+        ellipse 72% 62% at 50% 44%,
+        color-mix(in srgb, var(--color-ticket-deep) 90%, transparent) 0%,
+        color-mix(in srgb, var(--color-ticket-deep) 84%, transparent) 14%,
+        color-mix(in srgb, var(--color-ticket-deep) 70%, transparent) 28%,
+        color-mix(in srgb, var(--color-ticket-deep) 50%, transparent) 42%,
+        color-mix(in srgb, var(--color-ticket-deep) 30%, transparent) 56%,
+        color-mix(in srgb, var(--color-ticket-deep) 14%, transparent) 70%,
+        color-mix(in srgb, var(--color-ticket-deep) 5%, transparent) 84%,
+        transparent 100%
       ),
       linear-gradient(
-        180deg,
-        var(--color-home-ground),
-        var(--color-ticket-midnight)
+        in oklab 180deg,
+        var(--color-home-ground) 0%,
+        color-mix(
+            in oklab,
+            var(--color-home-ground) 50%,
+            var(--color-ticket-midnight)
+          )
+          50%,
+        var(--color-ticket-midnight) 100%
       );
+  }
+
+  /* Once the panel covers the screen, the field under it goes, so only
+     the panel is left to fade into the page. */
+  :global(html[data-intro]) .hi.is-covered {
+    background: none;
+  }
+
+  .hi.is-covered > :not(.hi-panel) {
+    visibility: hidden;
   }
 
   /* Failsafe: without the page script the intro clears itself. */
   :global(html[data-intro="play"]) .hi {
     animation: hi-failsafe var(--duration-hover) steps(1, end)
-      calc(var(--duration-reveal) * 9) forwards;
+      calc(var(--duration-reveal) * 11) forwards;
   }
 
   @keyframes hi-failsafe {
@@ -154,19 +204,30 @@ const firstYear = 2017;
     }
   }
 
+  /* The sky's light inside the pool, as soft: it carries on where the
+     mark's own glow ends. */
   .hi-glow {
     position: absolute;
     inset: 0;
     background: radial-gradient(
-      35% 30% at 50% 42%,
-      color-mix(in srgb, var(--color-ticket-sky) 32%, transparent),
-      transparent 70%
+      ellipse 46% 40% at 50% 42%,
+      color-mix(in srgb, var(--color-ticket-sky) 30%, transparent) 0%,
+      color-mix(in srgb, var(--color-ticket-sky) 25%, transparent) 18%,
+      color-mix(in srgb, var(--color-ticket-sky) 16%, transparent) 38%,
+      color-mix(in srgb, var(--color-ticket-sky) 8%, transparent) 58%,
+      color-mix(in srgb, var(--color-ticket-sky) 3%, transparent) 78%,
+      transparent 100%
     );
   }
 
+  /* The fine rounded frame, inset like the film's, its corners holding
+     the facts; they sit on the same inset at every size. */
   .hi-frame {
+    --hi-inset: clamp(0.75rem, 2.4vw, 1.75rem);
+    --hi-edge: clamp(0.85rem, 1.8vw, 1.35rem);
+
     position: absolute;
-    inset: clamp(0.75rem, 2.4vw, 1.75rem);
+    inset: var(--hi-inset);
     border: 1px solid color-mix(in srgb, var(--color-white) 14%, transparent);
     border-radius: var(--radius-ticket-panel);
     color: color-mix(in srgb, var(--color-white) 72%, transparent);
@@ -182,23 +243,25 @@ const firstYear = 2017;
   }
 
   .hi-corner.is-tl {
-    top: 1.1rem;
-    left: 1.35rem;
+    top: var(--hi-edge);
+    left: var(--hi-edge);
   }
 
+  /* "Loading" ends on its dots, flush with the frame's right inset (the
+     last dot's own room is part of the word, so nothing moves). */
   .hi-corner.is-tr {
-    top: 1.1rem;
-    right: 1.35rem;
+    top: var(--hi-edge);
+    right: var(--hi-edge);
   }
 
   .hi-corner.is-bl {
-    bottom: 1.1rem;
-    left: 1.35rem;
+    bottom: var(--hi-edge);
+    left: var(--hi-edge);
   }
 
   .hi-corner.is-br {
-    right: 1.35rem;
-    bottom: 1.1rem;
+    right: var(--hi-edge);
+    bottom: var(--hi-edge);
   }
 
   /* Three dots with a place each; they light one after another, then
@@ -243,27 +306,40 @@ const firstYear = 2017;
     position: relative;
     display: grid;
     justify-items: center;
-    gap: clamp(var(--space-sm), 3vh, var(--space-md));
+    gap: clamp(var(--space-xs), 2.4vh, var(--space-sm));
   }
 
   .hi-mark {
     position: relative;
     display: grid;
     place-items: center;
-    width: clamp(7.5rem, 22vw, 9.5rem);
+    width: clamp(6.5rem, 20vw, 8.5rem);
     aspect-ratio: 1;
     margin-bottom: var(--space-sm);
   }
 
   .hi-mark-glow {
     position: absolute;
-    inset: -45%;
+    inset: -60%;
     border-radius: var(--radius-circle);
     background: radial-gradient(
-      circle,
-      color-mix(in srgb, var(--color-ticket-ice) 42%, transparent) 0%,
-      color-mix(in srgb, var(--color-ticket-sky) 18%, transparent) 40%,
-      transparent 70%
+      circle closest-side,
+      color-mix(in srgb, var(--color-ticket-ice) 38%, transparent) 0%,
+      color-mix(
+          in srgb,
+          color-mix(
+              in srgb,
+              var(--color-ticket-ice) 50%,
+              var(--color-ticket-sky)
+            )
+            24%,
+          transparent
+        )
+        22%,
+      color-mix(in srgb, var(--color-ticket-sky) 13%, transparent) 42%,
+      color-mix(in srgb, var(--color-ticket-sky) 6%, transparent) 60%,
+      color-mix(in srgb, var(--color-ticket-sky) 2%, transparent) 78%,
+      transparent 100%
     );
   }
 
@@ -295,36 +371,19 @@ const firstYear = 2017;
     );
   }
 
-  /* The flat mark under the renders: shows if the renders fail. */
-  .hi-q-flat {
+  /* The Q: the site's mark, flat white, its counter open to the ground. */
+  .hi-q {
     position: absolute;
-    inset: 12%;
+    inset: 13%;
     background: var(--color-white);
     -webkit-mask: url(/icon-512.png) center / contain no-repeat;
     mask: url(/icon-512.png) center / contain no-repeat;
   }
 
-  .hi-q {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
-
-  .hi-q.is-b {
-    opacity: 0;
-  }
-
-  /* With a render present, the flat mark stays hidden under it. */
-  .hi-mark:has(.hi-q) .hi-q-flat {
-    visibility: hidden;
-  }
-
   .hi-year {
     margin: 0;
-    transition: color calc(var(--duration-reveal) * 2.2) var(--ease-buttery);
-    font-size: clamp(3.5rem, 13vw, 4.75rem);
+    transition: color calc(var(--duration-reveal) * 1.2) var(--ease-buttery);
+    font-size: clamp(3rem, 11vw, 4.5rem);
     font-variant-numeric: tabular-nums;
     font-weight: var(--font-weight-extrabold);
     letter-spacing: -0.04em;
@@ -343,14 +402,15 @@ const firstYear = 2017;
     text-transform: uppercase;
   }
 
+  /* The progress line: fine, ice, filling from the left. */
   .hi-bar {
     display: block;
-    width: min(15rem, 60vw);
-    height: 3px;
+    width: min(9.5rem, 44vw);
+    height: 2px;
     margin-top: var(--space-2xs);
     border-radius: var(--radius-pill);
     overflow: hidden;
-    background: color-mix(in srgb, var(--color-white) 14%, transparent);
+    background: color-mix(in srgb, var(--color-white) 16%, transparent);
   }
 
   .hi-bar span {
@@ -363,7 +423,7 @@ const firstYear = 2017;
 
   .hi-skip {
     position: absolute;
-    bottom: clamp(2.5rem, 7vh, 4rem);
+    bottom: clamp(2.75rem, 8vh, 4.5rem);
     left: 50%;
     min-height: 2.75rem;
     padding: 0 var(--space-sm);
@@ -391,19 +451,92 @@ const firstYear = 2017;
     }
   }
 
+  /* What rises into the page: the hero's navy and the hero's light
+     (home-theme.css .hi-panel-light, placed over the hero's box by
+     home-stage.client.ts), led by a long soft edge (--hi-edge, eased to
+     nothing above the ground), so the loader's light gives way to the
+     hero's without a line. The ground starts below the screen; once it
+     has risen, its soft edge lies above the screen. */
+  .hi-panel {
+    --hi-edge: 50vh;
+
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .hi-panel-ground {
+    position: absolute;
+    inset: calc(-1 * var(--hi-edge)) 0 0;
+    background: var(--q-night);
+    transform: translateY(100%);
+    -webkit-mask-image: linear-gradient(
+      180deg,
+      transparent 0,
+      color-mix(in srgb, var(--color-black) 6%, transparent)
+        calc(var(--hi-edge) * 0.2),
+      color-mix(in srgb, var(--color-black) 22%, transparent)
+        calc(var(--hi-edge) * 0.4),
+      color-mix(in srgb, var(--color-black) 50%, transparent)
+        calc(var(--hi-edge) * 0.6),
+      color-mix(in srgb, var(--color-black) 80%, transparent)
+        calc(var(--hi-edge) * 0.8),
+      var(--color-black) var(--hi-edge)
+    );
+    mask-image: linear-gradient(
+      180deg,
+      transparent 0,
+      color-mix(in srgb, var(--color-black) 6%, transparent)
+        calc(var(--hi-edge) * 0.2),
+      color-mix(in srgb, var(--color-black) 22%, transparent)
+        calc(var(--hi-edge) * 0.4),
+      color-mix(in srgb, var(--color-black) 50%, transparent)
+        calc(var(--hi-edge) * 0.6),
+      color-mix(in srgb, var(--color-black) 80%, transparent)
+        calc(var(--hi-edge) * 0.8),
+      var(--color-black) var(--hi-edge)
+    );
+  }
+
+  /* While it rises, the light's own top edge is eased too (over
+     --hi-lift, which home-stage.client.ts runs down to nothing as the
+     ground settles), so no line of light crosses the screen; at rest it
+     is exactly the hero's light. */
+  .hi-panel-light {
+    --hi-lift: 0px;
+
+    position: absolute;
+    top: var(--hi-edge);
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    -webkit-mask-image:
+      linear-gradient(180deg, transparent 0, var(--color-black) var(--hi-lift)),
+      var(--hx-foot-mask);
+    -webkit-mask-composite: source-in;
+    mask-image:
+      linear-gradient(180deg, transparent 0, var(--color-black) var(--hi-lift)),
+      var(--hx-foot-mask);
+    mask-composite: intersect;
+  }
+
+  /* The copy of the headline: placed over the real one, then started
+     small in the middle of the screen (home-stage.client.ts), where it
+     fades in, and zooms from its own top left corner into place. No
+     will-change: a layer would keep the text rasterized at its small
+     start size and blur it on the way up. */
+  .hi-panel-title {
+    position: absolute;
+    margin: 0;
+    color: var(--color-white);
+    opacity: 0;
+    transform-origin: 0 0;
+  }
+
   @media (max-width: 479px) {
-    .hi-corner {
+    .hi-frame {
       letter-spacing: 0.12em;
-    }
-
-    .hi-corner.is-tl,
-    .hi-corner.is-bl {
-      left: 0.9rem;
-    }
-
-    .hi-corner.is-tr,
-    .hi-corner.is-br {
-      right: 0.9rem;
     }
   }
 </style>

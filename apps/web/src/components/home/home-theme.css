@@ -10,6 +10,31 @@
  * navy still reads on a phone screen.
  */
 
+/* The night under the homepage and the ticket page, one value for the
+   page, the body behind it and the intro's panel. Phones squeeze the page
+   into a small, often dim screen, so there the night is a step lighter
+   and every pool of light shines a little brighter (--q-light-lift; the
+   curves and their tails stay exactly as they are). */
+:root {
+  --q-night: color-mix(
+    in srgb,
+    var(--color-ticket-midnight) 64%,
+    var(--color-black)
+  );
+  --q-light-lift: none;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --q-night: color-mix(
+      in srgb,
+      var(--color-ticket-midnight) 92%,
+      var(--color-black)
+    );
+    --q-light-lift: brightness(1.24);
+  }
+}
+
 .h-home {
   --h-gutter: clamp(1rem, 5vw, 2.5rem);
   --h-line: color-mix(in srgb, var(--color-white) 14%, transparent);
@@ -32,11 +57,7 @@
     var(--h-line-strong) 76%,
     transparent
   );
-  --h-ground: color-mix(
-    in srgb,
-    var(--color-ticket-midnight) 64%,
-    var(--color-black)
-  );
+  --h-ground: var(--q-night);
 
   position: relative;
   isolation: isolate;
@@ -44,7 +65,10 @@
   /* A very deep navy, never black; lighter zones come only where a
      section needs them (the pools below and the light behind the pass). */
   background: var(--h-ground);
-  overflow-x: clip;
+  /* No overflow clip here (DESIGN.md HOME-1): Safari on iPhone shakes a
+     sticky element (the palace, the film) inside any ancestor that clips
+     overflow, a frame behind the scroll all through the hold. Whatever
+     could run past the window's sides clips itself (.am-frame). */
 }
 
 @media (max-width: 767px) {
@@ -62,30 +86,21 @@
 /* The page under the homepage keeps the same navy, so overscroll and the
    gaps around the fixed header never flash white. */
 body:has(main .h-home) {
-  background: color-mix(
-    in srgb,
-    var(--color-ticket-midnight) 64%,
-    var(--color-black)
-  );
+  background: var(--q-night);
 }
 
-/* One page width with an even gutter (LAYOUT-1 deviation, HOME-1). */
+/* One page width with an even gutter (LAYOUT-1 deviation, HOME-1): the
+   wide 2027 grid (--container-wide), so on every laptop screen the content
+   starts and ends on the same gutter as the full-width site header, and
+   only wider monitors center it. The ticket page uses the same grid. */
 .h-shell {
-  width: min(100% - 2 * var(--h-gutter), var(--container-large));
+  width: min(100% - 2 * var(--h-gutter), var(--container-wide));
   margin-inline: auto;
 }
 
 .h-section {
   position: relative;
   padding-block: clamp(4.5rem, 10vw, 8.5rem);
-}
-
-/* Sections below the first screen are laid out and painted only as they
-   come near the window (the page is long and most of it starts far away);
-   the reserved height keeps the scrollbar honest. */
-.h-home .h-section {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 56rem;
 }
 
 .h-eyebrow {
@@ -126,14 +141,97 @@ body:has(main .h-home) {
 }
 
 /*
- * Buttons: clear liquid glass, the same material as the round controls
- * over the film and the speaker rail (.h-glass-btn below), in the shape
- * of the ticket page's buy button: a faint white body that blurs what
- * lies behind it, a one-pixel specular rim (brightest at the upper left),
- * a soft drop shadow and a white uppercase label with a trailing arrow.
- * Hover lightens the glass and nudges the arrow, a press gives a little
- * and springs back (MOTION-6). No glow. The same everywhere on the
- * homepage, the header's Tickets too.
+ * Liquid glass in three tints, one recipe (the variables below). Every
+ * glass button, field, card and pane on the page reads them, so a tint is
+ * one class, never a separate drawing:
+ *
+ *   clear    (no class) a faint white body over a darkened blur and a
+ *            white label: the round controls over the speaker rail
+ *   .h-ice   Q Icy Blue: the ticket and offer actions (the header's
+ *            Tickets, the hero's buy link, the sale's CTA, the menu's
+ *            ticket link, the pass's ticket link, the discount on sale)
+ *   .h-frost white: the other actions and calm surfaces ("Why Q?", View
+ *            all partners, See all speakers, the name field, the coming
+ *            discounts, the social pane)
+ *
+ * The two light tints are bright, slightly transparent bodies (the navy
+ * shows through towards the foot), lit along the top edge, with a soft
+ * caustic inside the lower edge, a one-pixel specular rim and a drop
+ * shadow, so they keep the glass's depth; their label is navy, never
+ * white, so it keeps its contrast. Hover and focus lighten the glass a
+ * step, a press gives a little and springs back (MOTION-6). No glow.
+ */
+.h-ice {
+  --hg-fill: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-ticket-ice) 86%, var(--color-white)) 0%,
+    color-mix(in srgb, var(--color-ticket-ice) 88%, transparent) 52%,
+    color-mix(in srgb, var(--color-ticket-cyan) 74%, transparent) 100%
+  );
+  --hg-ink: var(--color-navy);
+  --hg-ink-soft: color-mix(in srgb, var(--color-navy) 78%, transparent);
+  --hg-ink-shadow: 0 1px 0
+    color-mix(in srgb, var(--color-white) 45%, transparent);
+  --hg-icon-shadow: none;
+  --hg-shadow:
+    inset 0 1px 1px var(--color-white),
+    inset 0 -1px 2px
+      color-mix(in srgb, var(--color-ticket-sky) 45%, transparent),
+    inset 0 -12px 18px -14px
+      color-mix(in srgb, var(--color-ticket-sky) 70%, transparent),
+    0 14px 28px -16px var(--color-ticket-midnight);
+  --hg-rim: linear-gradient(
+    140deg,
+    var(--color-white) 0%,
+    color-mix(in srgb, var(--color-white) 55%, transparent) 30%,
+    color-mix(in srgb, var(--color-ticket-cyan) 40%, transparent) 60%,
+    color-mix(in srgb, var(--color-white) 85%, transparent) 100%
+  );
+  --hg-sheen: color-mix(in srgb, var(--color-white) 34%, transparent);
+  --hg-backdrop: blur(12px) saturate(170%);
+}
+
+.h-frost {
+  --hg-fill: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-white) 94%, transparent) 0%,
+    color-mix(in srgb, var(--color-white) 82%, transparent) 55%,
+    color-mix(in srgb, var(--color-white) 72%, var(--color-ticket-ice)) 100%
+  );
+  --hg-ink: var(--color-navy);
+  --hg-ink-soft: color-mix(in srgb, var(--color-navy) 74%, transparent);
+  /* The quiet ink of a coming offer: grey, a little blue, still legible. */
+  --hg-ink-muted: color-mix(
+    in srgb,
+    var(--color-navy) 45%,
+    var(--color-neutral)
+  );
+  --hg-ink-shadow: 0 1px 0
+    color-mix(in srgb, var(--color-white) 55%, transparent);
+  --hg-icon-shadow: none;
+  --hg-shadow:
+    inset 0 1px 1px var(--color-white),
+    inset 0 -1px 2px
+      color-mix(in srgb, var(--color-ticket-sky) 28%, transparent),
+    inset 0 -12px 18px -14px
+      color-mix(in srgb, var(--color-ticket-ice) 90%, transparent),
+    0 14px 28px -16px var(--color-ticket-midnight);
+  --hg-rim: linear-gradient(
+    140deg,
+    var(--color-white) 0%,
+    color-mix(in srgb, var(--color-white) 60%, transparent) 30%,
+    color-mix(in srgb, var(--color-ticket-ice) 60%, transparent) 60%,
+    var(--color-white) 100%
+  );
+  --hg-sheen: color-mix(in srgb, var(--color-white) 40%, transparent);
+  --hg-backdrop: blur(14px) saturate(140%);
+}
+
+/*
+ * Buttons: liquid glass (clear by default, .h-ice / .h-frost tinted) in
+ * the shape of the ticket page's buy button: a calm rounded rectangle,
+ * the specular rim, a soft drop shadow and an uppercase label, buy links
+ * with a trailing arrow. Hover lightens the glass and nudges the arrow.
  */
 .h-btn {
   position: relative;
@@ -146,28 +244,42 @@ body:has(main .h-home) {
   padding: 0 1.75rem;
   border: 0;
   border-radius: var(--radius-ticket-button);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--color-white) 18%, transparent),
-    color-mix(in srgb, var(--color-white) 6%, transparent)
+  background: var(
+    --hg-fill,
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-white) 18%, transparent),
+      color-mix(in srgb, var(--color-white) 6%, transparent)
+    )
   );
-  box-shadow:
+  box-shadow: var(
+    --hg-shadow,
     inset 0 1px 1px color-mix(in srgb, var(--color-white) 75%, transparent),
     inset 0 -1px 1px color-mix(in srgb, var(--color-white) 20%, transparent),
-    0 12px 26px -16px var(--color-ticket-midnight);
-  color: var(--color-white);
+    0 12px 26px -16px var(--color-ticket-midnight)
+  );
+  color: var(--hg-ink, var(--color-white));
   font: inherit;
   font-size: var(--text-size-small);
   font-weight: var(--font-weight-semibold);
   letter-spacing: 0.09em;
   line-height: 1;
   text-decoration: none;
-  text-shadow: 0 1px 2px color-mix(in srgb, var(--color-black) 35%, transparent);
+  text-shadow: var(
+    --hg-ink-shadow,
+    0 1px 2px color-mix(in srgb, var(--color-black) 35%, transparent)
+  );
   text-transform: uppercase;
   white-space: nowrap;
   cursor: pointer;
-  -webkit-backdrop-filter: blur(10px) saturate(150%) brightness(0.8);
-  backdrop-filter: blur(10px) saturate(150%) brightness(0.8);
+  -webkit-backdrop-filter: var(
+    --hg-backdrop,
+    blur(10px) saturate(150%) brightness(0.8)
+  );
+  backdrop-filter: var(
+    --hg-backdrop,
+    blur(10px) saturate(150%) brightness(0.8)
+  );
   transition: transform var(--duration-glass-release) var(--ease-glass-spring);
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
@@ -175,19 +287,23 @@ body:has(main .h-home) {
 }
 
 /* The specular rim: one pixel, bright where light meets the edge. */
-.h-btn::after {
+.h-btn::after,
+.h-pane::after {
   content: "";
   position: absolute;
   inset: 0;
   padding: 1px;
   border-radius: inherit;
-  background: linear-gradient(
-    140deg,
-    color-mix(in srgb, var(--color-white) 95%, transparent) 0%,
-    color-mix(in srgb, var(--color-white) 35%, transparent) 30%,
-    color-mix(in srgb, var(--color-white) 12%, transparent) 55%,
-    color-mix(in srgb, var(--color-white) 30%, transparent) 85%,
-    color-mix(in srgb, var(--color-white) 90%, transparent) 100%
+  background: var(
+    --hg-rim,
+    linear-gradient(
+      140deg,
+      color-mix(in srgb, var(--color-white) 95%, transparent) 0%,
+      color-mix(in srgb, var(--color-white) 35%, transparent) 30%,
+      color-mix(in srgb, var(--color-white) 12%, transparent) 55%,
+      color-mix(in srgb, var(--color-white) 30%, transparent) 85%,
+      color-mix(in srgb, var(--color-white) 90%, transparent) 100%
+    )
   );
   pointer-events: none;
   -webkit-mask:
@@ -200,13 +316,17 @@ body:has(main .h-home) {
 }
 
 /* Hover and press: the glass lightens a step. */
-.h-btn::before {
+.h-btn::before,
+.h-pane::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: -1;
   border-radius: inherit;
-  background: color-mix(in srgb, var(--color-white) 10%, transparent);
+  background: var(
+    --hg-sheen,
+    color-mix(in srgb, var(--color-white) 10%, transparent)
+  );
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--duration-hover) var(--ease-snappy);
@@ -214,10 +334,28 @@ body:has(main .h-home) {
 
 .h-btn svg {
   flex: none;
-  filter: drop-shadow(
-    0 1px 2px color-mix(in srgb, var(--color-black) 35%, transparent)
+  filter: var(
+    --hg-icon-shadow,
+    drop-shadow(
+      0 1px 2px color-mix(in srgb, var(--color-black) 35%, transparent)
+    )
   );
   transition: transform var(--duration-hover) var(--ease-snappy);
+}
+
+/*
+ * Panes and cards of tinted glass (.h-pane with .h-ice or .h-frost): the
+ * buttons' recipe on a larger surface. No backdrop blur: behind a resting
+ * pane lies only the slow ground, where a blur changes nothing visible
+ * but costs a pass on every frame.
+ */
+.h-pane {
+  position: relative;
+  isolation: isolate;
+  border-radius: var(--radius-ticket-card);
+  background: var(--hg-fill);
+  box-shadow: var(--hg-shadow);
+  color: var(--hg-ink, var(--color-white));
 }
 
 @media (hover: hover) {
@@ -241,11 +379,12 @@ body:has(main .h-home) {
   transition-timing-function: var(--ease-snappy);
 }
 
-/* Without backdrop blur, a dark tint keeps the label on a calm surface. */
+/* Without backdrop blur, a dark tint keeps the white label of clear glass
+   on a calm surface (the light tints carry their own body). */
 @supports not (
   (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
 ) {
-  .h-btn {
+  .h-btn:not(.h-ice, .h-frost) {
     background: color-mix(in srgb, var(--color-navy) 55%, transparent);
   }
 }
@@ -253,6 +392,64 @@ body:has(main .h-home) {
 .h-btn:focus-visible {
   outline: 2px solid var(--color-ticket-ice);
   outline-offset: 3px;
+}
+
+/* A link that is a whole pane (the discount on sale): its glass lightens
+   on hover and focus like a button's. */
+@media (hover: hover) {
+  a.h-pane:hover::before {
+    opacity: 1;
+  }
+}
+
+a.h-pane:focus-visible::before,
+a.h-pane:active::before {
+  opacity: 1;
+}
+
+a.h-pane:focus-visible {
+  outline: 2px solid var(--color-ticket-ice);
+  outline-offset: 4px;
+}
+
+/*
+ * A field of white liquid glass (the name on the pass): the frost tint,
+ * a navy entry and placeholder, a sky caret. Focus brightens the glass
+ * and draws a sky ring inside the rim, so it is always visible.
+ */
+.h-field {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0 var(--space-sm);
+  border: 0;
+  border-radius: var(--radius-ticket-panel);
+  background: var(--hg-fill);
+  box-shadow: var(--hg-shadow);
+  color: var(--hg-ink);
+  caret-color: var(--color-ticket-sky);
+  font: inherit;
+  font-size: var(--text-size-regular);
+  font-weight: var(--font-weight-semibold);
+  -webkit-backdrop-filter: var(--hg-backdrop);
+  backdrop-filter: var(--hg-backdrop);
+  transition: box-shadow var(--duration-hover) var(--ease-snappy);
+}
+
+.h-field::placeholder {
+  color: var(--hg-ink-soft);
+  opacity: 1;
+}
+
+.h-field:focus::placeholder {
+  color: transparent;
+}
+
+.h-field:focus,
+.h-field:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 0 0 2px var(--color-ticket-sky),
+    var(--hg-shadow);
 }
 
 /*
@@ -470,45 +667,62 @@ body:has(main .h-home) {
  * The site footer on the homepage (DESIGN.md HOME-1) stays the white
  * footer of every page. The navy page melts into it through a long fade
  * (.h-page-fade, the last element of the page), so there is no hard edge
- * and no hairline between them: an S-curve of lightness (slow at both ends, so
- * neither end shows where it starts) through the page's navy and ice,
- * interpolated in OKLab so it never turns grey and never passes a band.
+ * and no hairline between them. Its lightness rises along one smoothstep
+ * curve in OKLab (evenly spaced stops, no kink): first the deep blue
+ * itself grows out of clear, never the dark ground laid over the light
+ * the last section leaves (so the fade can never darken it into a
+ * trough), then on through a mid blue and a pale sky into the footer's
+ * white. Its length follows the window's height, so on a large
+ * monitor it is as gentle as on a laptop. The ticket page uses the same
+ * fade (.t-page-fade).
  */
 body:has(main .h-home) .site-footer.site-footer {
   border-top: 0;
 }
 
 body:has(main .h-home) .site-footer .footer-inner {
-  width: min(100% - 2 * clamp(1rem, 5vw, 2.5rem), var(--container-large));
+  width: min(100% - 2 * clamp(1rem, 5vw, 2.5rem), var(--container-wide));
   padding-inline: 0;
 }
 
 .h-page-fade {
+  /* The two blues the fade passes: a mid blue, then a pale sky. */
+  --fade-blue: color-mix(
+    in oklab,
+    var(--color-ticket-sky) 50%,
+    var(--color-ticket-deep)
+  );
+  --fade-pale: color-mix(
+    in oklab,
+    var(--color-ticket-sky) 42%,
+    var(--color-ticket-ice)
+  );
+
   position: relative;
-  height: clamp(16rem, 34vw, 26rem);
+  height: clamp(22rem, 58vh, 46rem);
   margin-top: calc(-1 * clamp(var(--space-lg), 6vw, 5rem));
-  /* Stops at evenly rising OKLab lightness (an S-curve), so no part of
-     the fade is steeper than another and no band stands out. */
   background: linear-gradient(
     in oklab 180deg,
     transparent 0%,
-    color-mix(in oklab, var(--color-ticket-deep) 23%, var(--h-ground)) 8%,
-    color-mix(in oklab, var(--color-ticket-deep) 54%, var(--h-ground)) 17%,
-    color-mix(in oklab, var(--color-ticket-deep) 93%, var(--h-ground)) 25%,
-    color-mix(in oklab, var(--color-ticket-ice) 12%, var(--color-ticket-deep))
-      33%,
-    color-mix(in oklab, var(--color-ticket-ice) 27%, var(--color-ticket-deep))
-      42%,
-    color-mix(in oklab, var(--color-ticket-ice) 43%, var(--color-ticket-deep))
-      50%,
-    color-mix(in oklab, var(--color-ticket-ice) 59%, var(--color-ticket-deep))
-      58%,
-    color-mix(in oklab, var(--color-ticket-ice) 74%, var(--color-ticket-deep))
-      67%,
-    color-mix(in oklab, var(--color-ticket-ice) 88%, var(--color-ticket-deep))
-      75%,
-    color-mix(in oklab, var(--color-white) 2%, var(--color-ticket-ice)) 83%,
-    color-mix(in oklab, var(--color-white) 59%, var(--color-ticket-ice)) 92%,
+    color-mix(in oklab, var(--color-ticket-deep) 3%, transparent) 5%,
+    color-mix(in oklab, var(--color-ticket-deep) 13%, transparent) 10%,
+    color-mix(in oklab, var(--color-ticket-deep) 29%, transparent) 15%,
+    color-mix(in oklab, var(--color-ticket-deep) 49%, transparent) 20%,
+    color-mix(in oklab, var(--color-ticket-deep) 73%, transparent) 25%,
+    color-mix(in oklab, var(--fade-blue) 2%, var(--color-ticket-deep)) 30%,
+    color-mix(in oklab, var(--fade-blue) 46%, var(--color-ticket-deep)) 35%,
+    color-mix(in oklab, var(--fade-blue) 94%, var(--color-ticket-deep)) 40%,
+    color-mix(in oklab, var(--fade-pale) 18%, var(--fade-blue)) 45%,
+    color-mix(in oklab, var(--fade-pale) 38%, var(--fade-blue)) 50%,
+    color-mix(in oklab, var(--fade-pale) 59%, var(--fade-blue)) 55%,
+    color-mix(in oklab, var(--fade-pale) 79%, var(--fade-blue)) 60%,
+    color-mix(in oklab, var(--fade-pale) 98%, var(--fade-blue)) 65%,
+    color-mix(in oklab, var(--color-ticket-ice) 38%, var(--fade-pale)) 70%,
+    color-mix(in oklab, var(--color-ticket-ice) 76%, var(--fade-pale)) 75%,
+    color-mix(in oklab, var(--color-white) 12%, var(--color-ticket-ice)) 80%,
+    color-mix(in oklab, var(--color-white) 49%, var(--color-ticket-ice)) 85%,
+    color-mix(in oklab, var(--color-white) 76%, var(--color-ticket-ice)) 90%,
+    color-mix(in oklab, var(--color-white) 94%, var(--color-ticket-ice)) 95%,
     var(--color-white) 100%
   );
   pointer-events: none;
@@ -516,98 +730,209 @@ body:has(main .h-home) .site-footer .footer-inner {
 
 /*
  * Section grounds: one continuous navy from the hero to the footer, with
- * no lines, no lenses and no cuts at any seam. A section may bring its own
- * pool of light (--h-pool-color, centred at --h-pool-at, --h-pool-size
- * large): it falls off along a smoothstep curve, so it has no visible rim,
- * and a vertical mask (--h-edge-mask) takes it to nothing well before the
- * section's top and bottom edge, whatever the section's height. Every
- * seam therefore meets on the bare ground. Static gradients: no cost per
- * frame.
+ * no lines, lenses or cuts at any seam. A section may bring its own pool
+ * of light (--h-pool-color, centred at --h-pool-at, --h-pool-size large):
+ * a held core that falls off along a long smoothstep tail, and around it a
+ * much wider, faint halo of the same light, so neighboring pools reach
+ * each other instead of standing as islands with dark holes between them.
+ * The layer runs past the section's top and bottom by --h-pool-bleed and
+ * is eased to nothing over twice that (two masks, intersected, so a short
+ * section never folds them over each other): at a seam the light of both
+ * neighbors overlaps and sums, so no seam shows. Sections are therefore
+ * not content-visibility contained (that would clip the light at the
+ * section's own box). Static gradients: no cost per frame.
  */
 .h-home {
-  /* Eased to nothing over the outer fifth of the height. */
-  --h-edge-mask: linear-gradient(
+  --h-pool-bleed: clamp(7rem, 24vh, 16rem);
+  --h-pool-top: linear-gradient(
     180deg,
-    transparent 0%,
-    color-mix(in srgb, var(--color-black) 4%, transparent) 4%,
-    color-mix(in srgb, var(--color-black) 26%, transparent) 9%,
-    color-mix(in srgb, var(--color-black) 62%, transparent) 14%,
-    color-mix(in srgb, var(--color-black) 90%, transparent) 19%,
-    var(--color-black) 24%,
-    var(--color-black) 76%,
-    color-mix(in srgb, var(--color-black) 90%, transparent) 81%,
-    color-mix(in srgb, var(--color-black) 62%, transparent) 86%,
-    color-mix(in srgb, var(--color-black) 26%, transparent) 91%,
-    color-mix(in srgb, var(--color-black) 4%, transparent) 96%,
-    transparent 100%
+    transparent 0,
+    color-mix(in srgb, var(--color-black) 4%, transparent)
+      calc(var(--h-pool-bleed) * 0.25),
+    color-mix(in srgb, var(--color-black) 16%, transparent)
+      calc(var(--h-pool-bleed) * 0.5),
+    color-mix(in srgb, var(--color-black) 32%, transparent)
+      calc(var(--h-pool-bleed) * 0.75),
+    color-mix(in srgb, var(--color-black) 50%, transparent) var(--h-pool-bleed),
+    color-mix(in srgb, var(--color-black) 68%, transparent)
+      calc(var(--h-pool-bleed) * 1.25),
+    color-mix(in srgb, var(--color-black) 84%, transparent)
+      calc(var(--h-pool-bleed) * 1.5),
+    color-mix(in srgb, var(--color-black) 96%, transparent)
+      calc(var(--h-pool-bleed) * 1.75),
+    var(--color-black) calc(var(--h-pool-bleed) * 2)
+  );
+  --h-pool-foot: linear-gradient(
+    0deg,
+    transparent 0,
+    color-mix(in srgb, var(--color-black) 4%, transparent)
+      calc(var(--h-pool-bleed) * 0.25),
+    color-mix(in srgb, var(--color-black) 16%, transparent)
+      calc(var(--h-pool-bleed) * 0.5),
+    color-mix(in srgb, var(--color-black) 32%, transparent)
+      calc(var(--h-pool-bleed) * 0.75),
+    color-mix(in srgb, var(--color-black) 50%, transparent) var(--h-pool-bleed),
+    color-mix(in srgb, var(--color-black) 68%, transparent)
+      calc(var(--h-pool-bleed) * 1.25),
+    color-mix(in srgb, var(--color-black) 84%, transparent)
+      calc(var(--h-pool-bleed) * 1.5),
+    color-mix(in srgb, var(--color-black) 96%, transparent)
+      calc(var(--h-pool-bleed) * 1.75),
+    var(--color-black) calc(var(--h-pool-bleed) * 2)
   );
 }
 
-.h-home :is(.wp, .am, .pl, .sr, .sp, .h-social)::before {
+.h-home :is(.hs, .wp, .am, .pl, .sr, .sp, .h-social)::before {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: calc(-1 * var(--h-pool-bleed)) 0;
   z-index: -1;
-  background: radial-gradient(
-    ellipse var(--h-pool-size) at var(--h-pool-at),
-    var(--h-pool-color) 0%,
-    color-mix(in srgb, var(--h-pool-color) 91%, transparent) 18%,
-    color-mix(in srgb, var(--h-pool-color) 68%, transparent) 38%,
-    color-mix(in srgb, var(--h-pool-color) 38%, transparent) 58%,
-    color-mix(in srgb, var(--h-pool-color) 12%, transparent) 78%,
-    color-mix(in srgb, var(--h-pool-color) 2%, transparent) 92%,
-    transparent 100%
-  );
-  -webkit-mask-image: var(--h-edge-mask);
-  mask-image: var(--h-edge-mask);
+  background:
+    radial-gradient(
+      ellipse var(--h-pool-size) at var(--h-pool-at),
+      var(--h-pool-color) 0%,
+      color-mix(in srgb, var(--h-pool-color) 94%, transparent) 12%,
+      color-mix(in srgb, var(--h-pool-color) 80%, transparent) 26%,
+      color-mix(in srgb, var(--h-pool-color) 60%, transparent) 40%,
+      color-mix(in srgb, var(--h-pool-color) 40%, transparent) 54%,
+      color-mix(in srgb, var(--h-pool-color) 22%, transparent) 68%,
+      color-mix(in srgb, var(--h-pool-color) 9%, transparent) 82%,
+      color-mix(in srgb, var(--h-pool-color) 3%, transparent) 92%,
+      transparent 100%
+    ),
+    radial-gradient(
+      ellipse var(--h-halo-size, 96% 70%) at var(--h-pool-at),
+      color-mix(in srgb, var(--h-pool-color) 24%, transparent) 0%,
+      color-mix(in srgb, var(--h-pool-color) 20%, transparent) 30%,
+      color-mix(in srgb, var(--h-pool-color) 12%, transparent) 55%,
+      color-mix(in srgb, var(--h-pool-color) 5%, transparent) 78%,
+      color-mix(in srgb, var(--h-pool-color) 1%, transparent) 92%,
+      transparent 100%
+    );
+  filter: var(--q-light-lift);
+  -webkit-mask-image: var(--h-pool-top), var(--h-pool-foot);
+  -webkit-mask-composite: source-in;
+  mask-image: var(--h-pool-top), var(--h-pool-foot);
+  mask-composite: intersect;
   pointer-events: none;
 }
 
-/* The pools: lighter zones that bring a section forward, never extreme. */
+/* The pools: lighter zones that bring a section forward, never extreme.
+   The key figures carry only a faint halo, the bridge from the hero's
+   light to the audience picker's. */
+.h-home .hs {
+  position: relative;
+  --h-pool-color: color-mix(in srgb, var(--color-ticket-deep) 34%, transparent);
+  --h-pool-at: 40% 50%;
+  --h-pool-size: 40% 34%;
+  --h-halo-size: 90% 80%;
+}
+
 .h-home .wp {
-  --h-pool-color: color-mix(in srgb, var(--color-ticket-deep) 80%, transparent);
+  --h-pool-color: color-mix(in srgb, var(--color-ticket-deep) 76%, transparent);
   --h-pool-at: 72% 50%;
-  --h-pool-size: 48% 46%;
+  --h-pool-size: 52% 48%;
 }
 
 .h-home .am {
   --h-pool-color: color-mix(in srgb, var(--color-ticket-sky) 16%, transparent);
   --h-pool-at: 50% 50%;
-  --h-pool-size: 56% 40%;
+  --h-pool-size: 60% 42%;
 }
 
 .h-home .pl {
-  --h-pool-color: color-mix(in srgb, var(--color-ticket-deep) 66%, transparent);
-  --h-pool-at: 66% 52%;
-  --h-pool-size: 54% 46%;
+  --h-pool-color: color-mix(in srgb, var(--color-ticket-deep) 62%, transparent);
+  --h-pool-at: 60% 50%;
+  --h-pool-size: 58% 48%;
 }
 
 .h-home .sr {
   --h-pool-color: color-mix(
     in srgb,
     color-mix(in srgb, var(--color-ticket-sky) 30%, var(--color-ticket-deep))
-      80%,
+      76%,
     transparent
   );
-  --h-pool-at: 50% 56%;
-  --h-pool-size: 62% 46%;
+  --h-pool-at: 50% 60%;
+  --h-pool-size: 64% 46%;
 }
 
 .h-home .sp {
   --h-pool-color: color-mix(
     in srgb,
     color-mix(in srgb, var(--color-ticket-sky) 26%, var(--color-ticket-deep))
-      78%,
+      74%,
     transparent
   );
   --h-pool-at: 50% 52%;
-  --h-pool-size: 58% 46%;
+  --h-pool-size: 62% 48%;
 }
 
 .h-home .h-social {
-  --h-pool-color: color-mix(in srgb, var(--color-ticket-deep) 76%, transparent);
+  --h-pool-color: color-mix(in srgb, var(--color-ticket-deep) 72%, transparent);
   --h-pool-at: 50% 46%;
-  --h-pool-size: 52% 44%;
+  --h-pool-size: 56% 46%;
+}
+
+/*
+ * The hero's light (HomeHero.astro .hx-light), also drawn by the intro's
+ * panel over exactly the hero's box (HomeIntro.astro .hi-panel-light), so
+ * when the panel fades into the page nothing changes: the pass stands in
+ * a pool of light, brightest right behind the card, falling off through
+ * the Q blues along a long eased tail; a faint ice glow rises at the
+ * lower left, as in the mockup. Everything is gone by the hero's foot
+ * (an S-curve over its lowest third), so the hero never ends in a cut.
+ * The spot's place and size come from --hx-spot-*.
+ */
+.hx-light,
+.hi-panel-light {
+  --hx-spot: var(--hx-spot-size, 52%);
+  --hx-foot-mask: linear-gradient(
+    180deg,
+    var(--color-black) 62%,
+    color-mix(in srgb, var(--color-black) 90%, transparent) 69%,
+    color-mix(in srgb, var(--color-black) 66%, transparent) 77%,
+    color-mix(in srgb, var(--color-black) 36%, transparent) 85%,
+    color-mix(in srgb, var(--color-black) 12%, transparent) 93%,
+    transparent 100%
+  );
+
+  background:
+    radial-gradient(
+      circle at var(--hx-spot-x, 76%) var(--hx-spot-y, 52%),
+      color-mix(in srgb, var(--color-ticket-ice) 26%, var(--color-ticket-sky))
+        0%,
+      color-mix(in srgb, var(--color-ticket-sky) 62%, transparent)
+        calc(var(--hx-spot) * 0.27),
+      color-mix(in srgb, var(--color-ticket-deep) 70%, transparent)
+        calc(var(--hx-spot) * 0.58),
+      color-mix(in srgb, var(--color-ticket-deep) 50%, transparent)
+        calc(var(--hx-spot) * 0.76),
+      color-mix(in srgb, var(--color-ticket-deep) 30%, transparent)
+        calc(var(--hx-spot) * 0.94),
+      color-mix(in srgb, var(--color-ticket-deep) 14%, transparent)
+        calc(var(--hx-spot) * 1.12),
+      color-mix(in srgb, var(--color-ticket-deep) 5%, transparent)
+        calc(var(--hx-spot) * 1.3),
+      transparent calc(var(--hx-spot) * 1.48)
+    ),
+    radial-gradient(
+      ellipse 52% 46% at 4% 92%,
+      color-mix(in srgb, var(--color-ticket-ice) 14%, transparent) 0%,
+      color-mix(in srgb, var(--color-ticket-ice) 11%, transparent) 28%,
+      color-mix(in srgb, var(--color-ticket-ice) 6%, transparent) 54%,
+      color-mix(in srgb, var(--color-ticket-ice) 2%, transparent) 78%,
+      transparent 100%
+    );
+  filter: var(--q-light-lift);
+  -webkit-mask-image: var(--hx-foot-mask);
+  mask-image: var(--hx-foot-mask);
+}
+
+/* The palace's light (PalaceStage.astro .ps-pin::before) is lifted on
+   phones like every other pool. */
+.ps-pin::before {
+  filter: var(--q-light-lift);
 }
 
 /*

@@ -4,19 +4,22 @@
  *
  *   stage     intro, hero entrance, pass, reveals, counters
  *             (home-stage.client.ts, GSAP; ADR-0008)
- *   marquee   the partner strips stop off screen and with the Pause button
+ *   marquee   the partner strips stop off screen
  *   logos     partner logos are swapped for copies at their drawn size
  *   why       the audience picker: a tab list (hover picks on a fine
  *             pointer, arrow keys move, the card links to the page)
- *   film      the aftermovie loads near the window, plays muted in view,
- *             pauses off screen, in hidden tabs and with its button (the
- *             stage around it is CSS, Aftermovie.astro)
- *   program   a click on a bar of the palace stage's programme scrolls to
- *             that item (the stage itself is CSS, PalaceStage.astro)
+ *   film      the aftermovie loads near the window, plays muted in view
+ *             and pauses off screen and in hidden tabs (the stage around
+ *             it is CSS, Aftermovie.astro)
+ *   palace    the programme's items and bars follow the scroll in clear
+ *             steps, a bar jumps to its item, and windows light around a
+ *             fine pointer (palace.client.ts; the drawing, the scroll's
+ *             lights and the count are CSS, PalaceStage.astro)
  *   clock     the countdown to the end of the discount phase on sale
  *   hero film last edition's film behind the hero, after load, in view only
  */
 import { startHomeStage } from "./home-stage.client";
+import { initPalace } from "./palace.client";
 
 const reduceMotion = () =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -42,16 +45,6 @@ function tabKeyTarget(key: string, index: number, last: number): number {
 function initMarquee(): void {
   const root = document.querySelector<HTMLElement>("[data-marquee]");
   if (!root) return;
-  const toggle = root.querySelector<HTMLButtonElement>("[data-marquee-toggle]");
-  const label = root.querySelector<HTMLElement>("[data-marquee-label]");
-  toggle?.addEventListener("click", () => {
-    const paused = root.toggleAttribute("data-paused");
-    toggle.setAttribute("aria-pressed", String(paused));
-    if (label) {
-      label.textContent =
-        (paused ? label.dataset.play : label.dataset.pause) ?? "";
-    }
-  });
   if ("IntersectionObserver" in window) {
     new IntersectionObserver(([entry]) => {
       root.toggleAttribute("data-offscreen", !entry!.isIntersecting);
@@ -181,16 +174,16 @@ function initWhyTabs(): void {
 }
 
 /**
- * The aftermovie: poster first, the stream near the window, muted loop.
- * The button always shows what a press does (pause while the film plays,
- * play while it stands), so a blocked autoplay leaves the poster with a
- * working play button. Where the poster stays on purpose (reduced motion,
- * data saving, a slow connection) nothing loads until the button asks.
+ * The aftermovie: poster first, the stream near the window, muted loop
+ * while in view. Where the poster stays on purpose (reduced motion, data
+ * saving, a slow connection) nothing loads; a blocked autoplay keeps the
+ * poster. There is no play or pause button (the team asked for the film
+ * without one): it is silent, plays only while it is on screen, and a
+ * click on it opens the channel on YouTube.
  */
 function initFilm(): void {
   const frame = document.querySelector<HTMLElement>("[data-film]");
   const video = frame?.querySelector<HTMLVideoElement>("[data-film-video]");
-  const toggle = frame?.querySelector<HTMLButtonElement>("[data-film-toggle]");
   if (!frame || !video) return;
 
   const conn = (
@@ -201,29 +194,15 @@ function initFilm(): void {
     !!conn?.saveData ||
     /^(slow-2g|2g|3g)$/.test(conn?.effectiveType ?? "") ||
     window.matchMedia("(prefers-reduced-data: reduce)").matches;
-  const observe = "IntersectionObserver" in window;
+  if (lean || !("IntersectionObserver" in window)) return;
 
   let loading: Promise<void> | undefined;
-  // In lean mode the film waits for the button; otherwise it plays in view.
-  let userPaused = lean || !observe;
-  let inView = !observe;
-
-  const sync = () => {
-    if (!toggle) return;
-    const playing = !video.paused;
-    toggle.dataset.state = playing ? "playing" : "paused";
-    toggle.setAttribute(
-      "aria-label",
-      playing ? "Pause the film" : "Play the film",
-    );
-  };
-  video.addEventListener("play", sync);
-  video.addEventListener("pause", sync);
+  let inView = false;
 
   const play = () => {
-    if (userPaused || !inView || document.hidden) return;
-    // A blocked autoplay keeps the poster; the button then offers play.
-    video.play().catch(sync);
+    if (!inView || document.hidden) return;
+    // A blocked autoplay keeps the poster.
+    video.play().catch(() => {});
   };
   const pause = () => video.pause();
 
@@ -251,65 +230,20 @@ function initFilm(): void {
     return loading;
   }
 
-  if (toggle) {
-    toggle.hidden = false;
-    sync();
-  }
-
-  if (observe) {
-    if (!lean) {
-      new IntersectionObserver(
-        ([entry]) => {
-          if (entry!.isIntersecting) void load().then(play);
-        },
-        { rootMargin: "600px 0px" },
-      ).observe(frame);
-    }
-    new IntersectionObserver(([entry]) => {
-      inView = entry!.isIntersecting;
-      if (inView) play();
-      else pause();
-    }).observe(frame);
-  }
+  new IntersectionObserver(
+    ([entry]) => {
+      if (entry!.isIntersecting) void load().then(play);
+    },
+    { rootMargin: "600px 0px" },
+  ).observe(frame);
+  new IntersectionObserver(([entry]) => {
+    inView = entry!.isIntersecting;
+    if (inView) play();
+    else pause();
+  }).observe(frame);
   document.addEventListener("visibilitychange", () =>
     document.hidden ? pause() : play(),
   );
-
-  toggle?.addEventListener("click", () => {
-    if (video.paused) {
-      userPaused = false;
-      inView = true;
-      void load().then(play);
-    } else {
-      userPaused = true;
-      pause();
-    }
-  });
-}
-
-/**
- * The palace stage's programme runs with the scroll (CSS). A click on one
- * of its bars scrolls to the middle of that item's stretch of the hold,
- * the same place a visitor reaches by scrolling. Pointer shortcut only:
- * every item is in the page as text.
- */
-function initPalaceProgram(): void {
-  const root = document.querySelector<HTMLElement>("[data-palace-program]");
-  const stage = root?.closest<HTMLElement>("section");
-  const pin = root?.closest<HTMLElement>(".ps-pin");
-  if (!root || !stage || !pin) return;
-  const bars = [...root.querySelectorAll<HTMLElement>("[data-palace-bar]")];
-  bars.forEach((bar, i) => {
-    bar.addEventListener("click", () => {
-      const hold = stage.offsetHeight - pin.offsetHeight;
-      if (hold <= 0) return;
-      const top = stage.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({
-        top: top + (hold * (i + 0.5)) / bars.length,
-        behavior: reduceMotion() ? "auto" : "smooth",
-      });
-    });
-  });
 }
 
 /**
@@ -413,7 +347,7 @@ export function initHomePage(): void {
   initLogoThumbs();
   initWhyTabs();
   initFilm();
-  initPalaceProgram();
+  initPalace();
   initPhaseClock();
   initHeroFilm();
 }
