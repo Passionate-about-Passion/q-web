@@ -65,7 +65,10 @@
   /* A very deep navy, never black; lighter zones come only where a
      section needs them (the pools below and the light behind the pass). */
   background: var(--h-ground);
-  overflow-x: clip;
+  /* No overflow clip here (DESIGN.md HOME-1): Safari on iPhone shakes a
+     sticky element (the palace, the film) inside any ancestor that clips
+     overflow, a frame behind the scroll all through the hold. Whatever
+     could run past the window's sides clips itself (.am-frame). */
 }
 
 @media (max-width: 767px) {

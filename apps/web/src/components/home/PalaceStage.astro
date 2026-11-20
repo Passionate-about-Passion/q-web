@@ -568,10 +568,10 @@ const steps = [
         view-timeline-inset: 0;
       }
 
-      /* The held stage is a layer of its own: Safari on iPhone then keeps
-         it still on the compositor while the page scrolls under it; drawn
-         by the page instead, it trailed the scroll a frame and shook by a
-         few pixels all through the hold. */
+      /* The held stage is a layer of its own. It stays still on iPhone
+         only because no ancestor clips overflow (home-theme.css .h-home):
+         inside a clip Safari placed it a frame behind the scroll and it
+         shook all through the hold. */
       .ps-pin {
         position: sticky;
         top: 0;
