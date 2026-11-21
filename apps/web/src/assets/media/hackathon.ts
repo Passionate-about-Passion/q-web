@@ -92,10 +92,7 @@ export const partnerLogos: Record<string, { src: string; label?: boolean }> = {
   "partner-sap.svg": { src: "/media/partner-sap.svg" },
   "partner-microsoft.svg": { src: "/media/partner-microsoft.svg" },
   "partner-ibm.svg": { src: "/media/partner-ibm.svg" },
-  // "partner-pwc.svg" is an option in the CMS already, but the file has not
-  // been uploaded yet: without an entry here the band writes the name
-  // instead of asking for a file that is not there. Add the line once the
-  // logo is in the Media library under that name.
+  "partner-pwc.svg": { src: "/media/partner-pwc.svg" },
   "partner-le-wagon.svg": { src: "/media/partner-le-wagon.svg" },
   "partner-ace.webp": { src: "/media/partner-ace.webp" },
 };
