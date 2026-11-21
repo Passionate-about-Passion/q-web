@@ -64,15 +64,19 @@ const statusLabel = (
   applyOpen ? "applications open" : application.comingSoonLabel
 ).toLowerCase();
 
-// The band: every partner once, in the order of the groups.
+// The band: every partner once, in the order of the groups. A logo links to
+// the partner's own site (web addresses only: the band opens them in a new
+// tab).
 const band = partners.groups
   .flatMap((group) => group.partners)
   .map((partner) => {
     const logo = partnerLogos[partner.logoFile];
+    const href = partner.href.trim();
     return {
       name: partner.name,
       ...(logo ? { logo: logo.src } : {}),
       ...(logo?.label ? { label: true } : {}),
+      ...(/^https?:\/\//i.test(href) ? { href } : {}),
     };
   });
 
@@ -264,9 +268,21 @@ const json = JSON.stringify(data).replace(/</g, "\\u003c");
       band.length > 0 && (
         <div class="partners" aria-label={partners.heading}>
           <p class="partners__label">// {partners.heading.toLowerCase()}</p>
-          <ul class="sr-only">
+          <ul class="sr-only partners__names">
             {band.map((partner) => (
-              <li>{partner.name}</li>
+              <li>
+                {partner.href ? (
+                  <a
+                    href={partner.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {partner.name}
+                  </a>
+                ) : (
+                  partner.name
+                )}
+              </li>
             ))}
           </ul>
           <div class="partners__viewport" aria-hidden="true">

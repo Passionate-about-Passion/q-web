@@ -512,6 +512,26 @@ html:has(.qhack) {
 .qhack .hero__foot::before {
   width: min(100%, 46rem);
 }
+/* The page comes up in one soft move: the hero's text blocks rise in one
+   after the other while the lockup assembles (hero-particles.ts fades its
+   characters in over the same time). Plain CSS, so it needs no script. */
+.qhack .hero__status,
+.qhack .hero__foot,
+.qhack .partners {
+  animation: qh-rise var(--duration-hack-reveal) var(--ease-hack-out) both;
+}
+.qhack .hero__foot {
+  animation-delay: calc(var(--duration-hack-reveal) * 0.15);
+}
+.qhack .partners {
+  animation-delay: calc(var(--duration-hack-reveal) * 0.3);
+}
+@keyframes qh-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.6rem);
+  }
+}
 .qhack .hero__status-strong {
   color: var(--color-white);
   font-weight: var(--heading-weight);
@@ -598,19 +618,60 @@ html:has(.qhack) {
   gap: var(--gap);
   padding-right: var(--gap);
   align-items: center;
+  opacity: 0;
+  transition: opacity var(--duration-hack-reveal) ease-out;
   animation: qh-marquee var(--duration-hack-band) linear infinite paused;
 }
 .qhack .partners__track.is-ready {
+  opacity: 1;
   animation-play-state: running;
 }
 .qhack .partners__viewport:hover .partners__track {
   animation-play-state: paused;
 }
-/* a logo, redrawn in the page's material (js/partners.js) */
+/* a logo, redrawn in the page's material (partner-band.ts) */
 .qhack .plogo {
   flex: none;
   display: block;
   opacity: 0.92;
+}
+/* a logo that leads to the partner's own site */
+.qhack .plink {
+  flex: none;
+  display: block;
+  cursor: pointer;
+}
+.qhack .plink .plogo {
+  transition:
+    opacity var(--duration-hover),
+    filter var(--duration-hover);
+}
+.qhack .plink:hover .plogo {
+  opacity: 1;
+  filter: drop-shadow(0 0 0.6rem var(--glow));
+}
+/* The partners as a list of links, for keyboards and screen readers (the
+   moving band is for the pointer). It shows itself while one of its links
+   has the focus. */
+.qhack .partners__names {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.qhack .partners__names:focus-within {
+  position: static;
+  width: auto;
+  height: auto;
+  clip-path: none;
+  white-space: normal;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs) var(--space-sm);
+  padding: 0 var(--gutter) var(--space-2xs);
+  font-size: var(--text-size-small);
+}
+.qhack .partners__names a {
+  color: var(--haze);
 }
 @keyframes qh-marquee {
   to {
@@ -779,6 +840,24 @@ html:has(.qhack) {
 .qhack .partner {
   background: var(--ink);
 }
+/* The light under a terminal window falls past the end of its section. Each
+   section therefore lies above the one that follows, or the follower's
+   ground would cut that light off in a straight line. */
+.qhack .program {
+  z-index: 11;
+}
+.qhack .movie {
+  z-index: 10;
+}
+.qhack .film {
+  z-index: 9;
+}
+.qhack .apply {
+  z-index: 8;
+}
+.qhack .partner {
+  z-index: 7;
+}
 .qhack .sec-head {
   margin-bottom: clamp(var(--space-md), 5vh, var(--space-xl));
 }
@@ -860,8 +939,12 @@ html:has(.qhack) {
     color-mix(in srgb, var(--panel-hi) 92%, transparent),
     color-mix(in srgb, var(--panel-lo) 94%, transparent)
   );
+  /* The light under the window is a soft pool, not a bar: a shade of the
+     ground sits right at the edge (listed first, so it lies on top), and the
+     violet only comes up a little below it and runs out far. */
   box-shadow:
-    0 2rem 5rem -2rem color-mix(in srgb, var(--violet) 55%, transparent),
+    0 0.8rem 2.2rem -0.4rem color-mix(in srgb, var(--ink) 88%, transparent),
+    0 4.5rem 9rem -3.5rem color-mix(in srgb, var(--violet) 50%, transparent),
     inset 0 1px 0 color-mix(in srgb, var(--color-white) 5%, transparent);
   overflow: hidden;
 }
@@ -1990,6 +2073,11 @@ body:has(.qhack) .site-footer .footer-inner.is-coming {
 }
 /* ---------------------------------------------------------------- motion */
 @media (prefers-reduced-motion: reduce) {
+  .qhack .hero__status,
+  .qhack .hero__foot,
+  .qhack .partners {
+    animation: none;
+  }
   .qhack .partners__track,
   .qhack .dot,
   .qhack .status.is-hacked .status__apply {
