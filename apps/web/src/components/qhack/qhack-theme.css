@@ -1,0 +1,2100 @@
+/*
+ * Q-Hack 2027, the /hackathon page (DESIGN.md HACK-1).
+ *
+ * The page is a terminal that somebody else is typing into: a near black
+ * violet ground, JetBrains Mono for everything that is typed, Montserrat
+ * only for the section headings, glows that are light and not elevation.
+ * It brings its own header (the site's pages as paths) and a status line
+ * fixed to the bottom edge, and ends in the white site footer.
+ *
+ * Every rule is scoped under .qhack, the class of the page's two wrappers
+ * (header slot and page body), so nothing here reaches another page and no
+ * class name can meet one of the conference styles. Colors come from the
+ * hack-* tokens only; the shades in between are color-mix() of them.
+ * Layout, type scale and buttons deliberately skip the conference
+ * primitives (LAYOUT-1, LAYOUT-3, COMP-1, TYPE-1).
+ */
+
+.qhack {
+  /* ground and panels, darkest first */
+  --pit: color-mix(in srgb, var(--color-hack-night) 55%, var(--color-black));
+  --ink: var(--color-hack-night);
+  --panel-lo: color-mix(
+    in srgb,
+    var(--color-hack-ink) 15%,
+    var(--color-hack-night)
+  );
+  --ink-2: color-mix(
+    in srgb,
+    var(--color-hack-ink) 22%,
+    var(--color-hack-night)
+  );
+  --panel: color-mix(
+    in srgb,
+    var(--color-hack-ink) 45%,
+    var(--color-hack-night)
+  );
+  --panel-hi: color-mix(
+    in srgb,
+    var(--color-hack-ink) 55%,
+    var(--color-hack-night)
+  );
+  --panel-lit: color-mix(
+    in srgb,
+    var(--color-hack-ink) 55%,
+    var(--color-hack-deep)
+  );
+  /* the violet ramp */
+  --deep: var(--color-hack-ink);
+  --mid: var(--color-hack-deep);
+  --violet: var(--color-hack-violet);
+  --glow: var(--color-hack-glow);
+  --glow-hi: color-mix(
+    in srgb,
+    var(--color-hack-glow) 70%,
+    var(--color-hack-haze)
+  );
+  --haze: color-mix(in srgb, var(--color-hack-haze) 70%, var(--color-white));
+  /* type */
+  --text: var(--color-hack-mist);
+  --dim: color-mix(
+    in srgb,
+    var(--color-hack-mist) 55%,
+    var(--color-hack-violet)
+  );
+  --dot: color-mix(in srgb, var(--color-hack-mist) 30%, var(--color-hack-ink));
+  /* accents: the prompt and what is typed by the other side, and "done" */
+  --pink: var(--color-hack-pink);
+  --ok: var(--color-hack-mint);
+  --line: color-mix(in srgb, var(--haze) 16%, transparent);
+  --line-strong: color-mix(in srgb, var(--haze) 34%, transparent);
+  /* the color half way down the fade into the white footer */
+  --fade-mid: color-mix(
+    in srgb,
+    var(--color-hack-violet) 55%,
+    var(--color-hack-haze)
+  );
+
+  --mono: var(--font-mono);
+  /* status line height; body:has() below repeats it for browsers that
+     resolve the page's variables only inside .qhack */
+  --bar: 2.25rem;
+  --top: 3.75rem;
+  /* how long the page takes to run up into the white footer */
+  --fade: clamp(11rem, 24vw, 18rem);
+  /* never under the notch of a phone held sideways */
+  --gutter: max(
+    clamp(1rem, 4vw, 3rem),
+    env(safe-area-inset-left, 0px),
+    env(safe-area-inset-right, 0px)
+  );
+
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: var(--text-size-regular);
+  line-height: 1.6;
+  font-variant-ligatures: none;
+  color-scheme: dark;
+}
+
+/* The page ground, and room for the status line under the footer. No
+   overflow clip on the page or its wrappers: in Safari a clipping ancestor
+   makes a sticky stage (the laptop) trail the scroll by a frame. */
+body:has(.qhack) {
+  background-color: var(--color-hack-night);
+  padding-bottom: calc(2.25rem + env(safe-area-inset-bottom, 0px));
+}
+html:has(.qhack) {
+  scroll-padding-top: calc(3.75rem + var(--space-sm));
+}
+
+/* The conference element styles stop at the page's edge (TYPE-1): headings
+   take the color and size of where they stand, paragraphs the plain
+   one-line rhythm of a terminal. */
+.qhack :is(h1, h2, h3, h4, h5, h6) {
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+.qhack p {
+  margin: 1em 0;
+}
+.qhack a {
+  color: var(--haze);
+  text-underline-offset: 0.2em;
+}
+.qhack a:hover {
+  color: var(--color-white);
+}
+.qhack :focus-visible {
+  outline: 2px solid var(--haze);
+  outline-offset: 3px;
+  border-radius: calc(var(--radius-button) * 0.4);
+  box-shadow: none;
+}
+.qhack ::selection {
+  background: var(--glow);
+  color: var(--color-white);
+}
+.qhack pre {
+  margin: 0;
+  font-family: var(--mono);
+}
+.qhack .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.qhack .wrap {
+  width: min(100%, 76rem);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+.qhack .sel {
+  user-select: all;
+}
+/* ---------------------------------------------------------------- type */
+/* Typed text keeps its final size from the first frame: the untyped rest is
+   laid out but hidden, so nothing below it ever jumps. */
+.qhack [data-type] .t-rest {
+  visibility: hidden;
+}
+.qhack [data-type].is-typing .t-done::after,
+.qhack [data-type].keeps-caret.is-typed .t-done::after {
+  content: "_";
+  /* takes no room, in any typeface, so it can never push a word onto a new line */
+  display: inline-block;
+  width: 0;
+  color: var(--haze);
+  animation: qh-blink var(--duration-hack-blink) steps(1) infinite;
+}
+@keyframes qh-blink {
+  50% {
+    opacity: 0;
+  }
+}
+/* ---------------------------------------------------------------- buttons */
+.qhack .btn-ascii {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.4rem;
+  font-family: var(--mono);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--text-size-regular);
+  line-height: 1;
+  color: var(--color-white);
+  text-decoration: none;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--glow) 42%, transparent),
+    color-mix(in srgb, var(--violet) 42%, transparent)
+  );
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-button);
+  cursor: pointer;
+  white-space: pre;
+  transition:
+    background-color var(--duration-icon),
+    border-color var(--duration-icon),
+    transform var(--duration-icon);
+}
+.qhack .btn-ascii:hover {
+  border-color: var(--haze);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--glow) 75%, transparent),
+    color-mix(in srgb, var(--violet) 75%, transparent)
+  );
+  color: var(--color-white);
+}
+.qhack .btn-ascii:active {
+  transform: translateY(1px);
+}
+.qhack .btn-ascii--small {
+  min-height: 2.25rem;
+  font-size: var(--text-size-small);
+  padding-block: 0.35rem;
+}
+.qhack .link-ascii {
+  color: var(--dim);
+  text-decoration: none;
+  font-size: var(--text-size-small);
+}
+.qhack .link-ascii:hover {
+  color: var(--haze);
+}
+/* ---------------------------------------------------------------- top bar */
+/* The header of the Q-Summit site in the terminal dress of this page: the Q
+   on the left, the pages as paths, tickets on the right. */
+.qhack .top {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 40;
+  height: var(--top);
+  display: flex;
+  align-items: center;
+  gap: clamp(var(--space-sm), 3vw, 2.5rem);
+  padding-inline: var(--gutter);
+  pointer-events: none;
+  transition:
+    opacity var(--duration-open),
+    transform var(--duration-open),
+    visibility calc(var(--duration-hover) * 0);
+}
+/* The bar's backdrop: solid behind the links and buttons, so page text that
+   scrolls under them never mixes in, then a soft way out below the bar. */
+.qhack .top::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 -1.5rem;
+  z-index: -1;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ink) 97%, transparent) 0%,
+    color-mix(in srgb, var(--ink) 97%, transparent) 60%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+/* over the white footer the dark bar would only smear: it steps aside */
+.qhack .top.is-away {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-0.5rem);
+  transition:
+    opacity var(--duration-open),
+    transform var(--duration-open),
+    visibility calc(var(--duration-hover) * 0) var(--duration-open);
+}
+.qhack .top > * {
+  pointer-events: auto;
+}
+.qhack .top__logo {
+  flex: none;
+  display: block;
+  border-radius: var(--radius-button-small);
+}
+.qhack .top__mark {
+  display: block;
+  width: 2.125rem;
+  height: 2.125rem;
+  background-color: var(--color-white);
+  -webkit-mask: url("/icon-512.png") center / contain no-repeat;
+  mask: url("/icon-512.png") center / contain no-repeat;
+  transition: filter var(--duration-icon);
+}
+.qhack .top__logo:hover .top__mark {
+  filter: drop-shadow(0 0 0.5rem var(--glow));
+}
+.qhack .top__nav {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.9rem, 2.1vw, 1.9rem);
+  margin-left: auto;
+  font-size: var(--text-size-small);
+}
+.qhack .top__link {
+  padding: var(--space-2xs) 0;
+  font: inherit;
+  color: var(--dim);
+  text-decoration: none;
+  white-space: nowrap;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.qhack .top__link:hover,
+.qhack .top__link[aria-expanded="true"] {
+  color: var(--color-white);
+}
+/* the page you are on */
+.qhack .top__link[aria-current="page"] {
+  color: var(--color-white);
+  text-decoration: underline;
+  text-decoration-color: var(--glow);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.5em;
+}
+.qhack .top__chev {
+  color: var(--haze);
+}
+.qhack .top__group {
+  position: relative;
+}
+.qhack .top__sub {
+  position: absolute;
+  top: 100%;
+  left: -0.85rem;
+  min-width: 14.5rem;
+  margin: 0;
+  padding: 0.4rem;
+  list-style: none;
+  background: color-mix(in srgb, var(--panel) 98%, transparent);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-card);
+  box-shadow: 0 1.5rem 3rem -1rem
+    color-mix(in srgb, var(--color-black) 70%, transparent);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition:
+    opacity var(--duration-hover),
+    transform var(--duration-hover),
+    visibility calc(var(--duration-hover) * 0) var(--duration-hover);
+}
+.qhack .top__group.is-open .top__sub {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition-delay: calc(var(--duration-hover) * 0);
+}
+.qhack .top__sub a {
+  display: block;
+  padding: var(--space-2xs) 0.7rem;
+  color: var(--dim);
+  text-decoration: none;
+  white-space: nowrap;
+  border-radius: var(--radius-button);
+}
+.qhack .top__sub a::before {
+  content: "└ ";
+  color: var(--line-strong);
+}
+.qhack .top__sub a:hover {
+  color: var(--color-white);
+  background: color-mix(in srgb, var(--glow) 30%, transparent);
+}
+.qhack .top__end {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+}
+.qhack .top__menu {
+  display: none;
+}
+/* Narrow windows: the pages move into a sheet under the bar. */
+@media (max-width: 960px) {
+  .qhack .top__menu {
+    display: inline-flex;
+  }
+  .qhack .top__end {
+    margin-left: auto;
+  }
+  .qhack .top__nav {
+    position: absolute;
+    inset: calc(var(--top) - 0.25rem) var(--gutter) auto;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    margin: 0;
+    padding: var(--space-2xs);
+    max-height: calc(100vh - var(--top) - var(--bar) - 1rem);
+    overflow: auto;
+    font-size: var(--text-size-regular);
+    background: color-mix(in srgb, var(--panel) 98.5%, transparent);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-card);
+    box-shadow: 0 2rem 4rem -1rem
+      color-mix(in srgb, var(--color-black) 80%, transparent);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition:
+      opacity var(--duration-icon),
+      transform var(--duration-icon),
+      visibility calc(var(--duration-hover) * 0) var(--duration-icon);
+  }
+  .qhack .top.is-open .top__nav {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition-delay: calc(var(--duration-hover) * 0);
+  }
+  .qhack .top__link {
+    width: 100%;
+    padding: 0.7rem var(--space-xs);
+    text-align: left;
+  }
+  .qhack .top__sub {
+    position: static;
+    display: none;
+    min-width: 0;
+    padding: 0 0 0.25rem var(--space-sm);
+    background: none;
+    border: 0;
+    box-shadow: none;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+  .qhack .top__group.is-open .top__sub {
+    display: block;
+  }
+}
+/* ---------------------------------------------------------------- hero */
+.qhack .hero {
+  position: relative;
+  min-height: calc(100vh - var(--bar));
+  /* for browsers without svh */
+  min-height: calc(100svh - var(--bar));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  /* the marquee must not widen the page */
+  grid-template-rows: auto minmax(9rem, 1fr) auto auto;
+  /* the lockup always has a band of its own */
+  padding-top: var(--top);
+  isolation: isolate;
+  background:
+    radial-gradient(
+      60% 55% at 62% 46%,
+      color-mix(in srgb, var(--glow) 34%, transparent),
+      color-mix(in srgb, var(--mid) 16%, transparent) 45%,
+      transparent 75%
+    ),
+    var(--ink);
+  overflow: hidden;
+}
+/* press and hold on a phone: no text selection, no call-out menu */
+@media (hover: none) {
+  .qhack .hero {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+}
+.qhack .hero__ascii {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+}
+.qhack .hero__status {
+  justify-self: start;
+  /* only as wide as its text: the lockup may stand beside it */
+  padding: clamp(var(--space-sm), 4vh, 2.5rem) var(--gutter) 0;
+  font-size: calc(var(--text-size-small) * 0.93);
+  line-height: 1.55;
+  color: var(--dim);
+}
+.qhack .hero__status p {
+  margin: 0;
+}
+/* A soft dark cloud behind the text blocks. On the dark page it is invisible;
+   characters that fly past pass behind it, so the text always stays readable. */
+.qhack .hero__status,
+.qhack .hero__foot {
+  position: relative;
+  z-index: 0;
+}
+.qhack .hero__status::before,
+.qhack .hero__foot::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -1.25rem auto -1.25rem -2rem;
+  width: min(100%, 26rem);
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--ink) 90%, transparent),
+    color-mix(in srgb, var(--ink) 62%, transparent) 62%,
+    transparent
+  );
+  pointer-events: none;
+}
+.qhack .hero__foot::before {
+  width: min(100%, 46rem);
+}
+.qhack .hero__status-strong {
+  color: var(--color-white);
+  font-weight: var(--heading-weight);
+  font-size: var(--text-size-regular);
+}
+.qhack .dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: var(--space-2xs);
+  border-radius: var(--radius-circle);
+  background: var(--ok);
+  box-shadow: 0 0 0.6rem var(--ok);
+  animation: qh-pulse var(--duration-hack-pulse) ease-in-out infinite;
+}
+.qhack .dot--soon {
+  background: var(--pink);
+  box-shadow: 0 0 0.6rem var(--pink);
+}
+@keyframes qh-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+.qhack .hero__foot {
+  grid-row: 3;
+  padding: 0 var(--gutter) clamp(var(--space-sm), 3vh, var(--space-lg));
+}
+.qhack .hero__hint {
+  margin: 0 0 0.6rem;
+  font-size: var(--text-size-tiny);
+  color: var(--dim);
+  opacity: 0;
+  animation: qh-hint-in var(--duration-hack-reveal) var(--duration-hack-hint)
+    ease-out forwards;
+}
+@keyframes qh-hint-in {
+  to {
+    opacity: 0.85;
+  }
+}
+.qhack .hero__tag {
+  margin: 0 0 var(--space-sm);
+  font-size: clamp(1rem, 0.6rem + 1.4vw, 1.5rem);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-white);
+  text-shadow: 0 0 1.2rem color-mix(in srgb, var(--ink) 90%, transparent);
+}
+.qhack .hero__cta {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs) var(--space-md);
+}
+.qhack .partners {
+  grid-row: 4;
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--ink) 55%, transparent);
+  padding-block: 0.7rem 0.9rem;
+}
+.qhack .partners__label {
+  margin: 0 0 var(--space-2xs);
+  padding-inline: var(--gutter);
+  font-size: var(--text-size-tiny);
+  color: var(--dim);
+}
+.qhack .partners__viewport {
+  overflow: hidden;
+  min-height: 2.75rem;
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-black) 8%,
+    var(--color-black) 92%,
+    transparent
+  );
+}
+/* Two identical rows side by side; the track moves by exactly one row. */
+.qhack .partners__track {
+  --gap: clamp(2.5rem, 5vw, 4.5rem);
+  display: flex;
+  width: max-content;
+  gap: var(--gap);
+  padding-right: var(--gap);
+  align-items: center;
+  animation: qh-marquee var(--duration-hack-band) linear infinite paused;
+}
+.qhack .partners__track.is-ready {
+  animation-play-state: running;
+}
+.qhack .partners__viewport:hover .partners__track {
+  animation-play-state: paused;
+}
+/* a logo, redrawn in the page's material (js/partners.js) */
+.qhack .plogo {
+  flex: none;
+  display: block;
+  opacity: 0.92;
+}
+@keyframes qh-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+/* ---------------------------------------------------------------- machine */
+.qhack .machine {
+  position: relative;
+  height: 560vh;
+  background: var(--ink);
+}
+.qhack .machine__pin {
+  position: sticky;
+  top: 0;
+  height: calc(100vh - var(--bar));
+  /* for browsers without svh */
+  height: calc(100svh - var(--bar));
+  overflow: hidden;
+  isolation: isolate;
+}
+.qhack .machine__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  will-change: opacity;
+}
+.qhack .machine__copy {
+  position: absolute;
+  left: var(--gutter);
+  bottom: clamp(1.5rem, 9vh, 5rem);
+  max-width: 34rem;
+  will-change: opacity;
+  pointer-events: none;
+}
+.qhack .eyebrow {
+  margin: 0 0 var(--space-xs);
+  font-size: calc(var(--text-size-small) * 0.93);
+  color: var(--haze);
+}
+.qhack .machine__title {
+  margin: 0;
+  font-size: clamp(2rem, 1rem + 4.4vw, 4.5rem);
+  line-height: 1.02;
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: -0.02em;
+  color: var(--color-white);
+}
+/* only the three lines themselves: the typing spans inside them stay inline,
+   or every line is twice as high while it is being typed */
+.qhack .machine__title > span {
+  display: block;
+}
+.qhack .machine__hint {
+  margin: var(--space-sm) 0 0;
+  max-width: 26rem;
+  font-size: var(--text-size-small);
+  color: var(--dim);
+}
+.qhack .machine__alert {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--top) + 0.5rem);
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 0.25rem var(--space-xs);
+  font-size: calc(var(--text-size-small) * 0.93);
+  font-weight: var(--heading-weight);
+  color: var(--ink);
+  background: var(--pink);
+  opacity: 0;
+  white-space: nowrap;
+}
+.qhack .machine__apply {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(88vh, 68vw);
+  height: 36vh;
+  transform: translate(-50%, -50%);
+  border-radius: var(--radius-card);
+  visibility: hidden;
+}
+.qhack .machine__apply.is-live {
+  visibility: visible;
+  cursor: pointer;
+}
+.qhack .machine__fallback {
+  display: none;
+  position: absolute;
+  inset: 0;
+  place-content: center;
+  text-align: center;
+  font-size: var(--text-size-large);
+  line-height: 2;
+}
+.qhack .machine.is-static {
+  height: auto;
+}
+.qhack .machine.is-static .machine__pin {
+  position: relative;
+  height: auto;
+  min-height: 70svh;
+}
+.qhack .machine.is-static .machine__fallback {
+  display: grid;
+}
+.qhack .machine.is-static .machine__canvas,
+.qhack .machine.is-static .machine__apply,
+.qhack .machine.is-static .machine__copy {
+  display: none;
+}
+/* A phone held sideways: the stage is very low, so the copy shrinks. */
+@media (max-height: 520px) and (orientation: landscape) {
+  .qhack .machine__copy {
+    bottom: 0.75rem;
+    max-width: 21rem;
+  }
+  .qhack .machine__title {
+    font-size: clamp(1.25rem, 7vh, 2rem);
+  }
+  .qhack .machine__hint {
+    display: none;
+  }
+  .qhack .eyebrow {
+    margin-bottom: 0.35rem;
+  }
+}
+@media (max-width: 760px) {
+  .qhack .machine {
+    height: 480vh;
+  }
+  .qhack .machine__apply {
+    width: 72vw;
+    height: 31vw;
+  }
+}
+/* Q rain that leaves the laptop and becomes the page background for a moment. */
+.qhack .rain-bg {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+}
+/* ---------------------------------------------------------------- sections */
+.qhack .program,
+.qhack .movie,
+.qhack .film,
+.qhack .apply,
+.qhack .partner {
+  position: relative;
+  z-index: 6;
+  /* above the rain layer */
+  padding-block: clamp(4rem, 12vh, 8rem);
+}
+.qhack .program {
+  background: linear-gradient(180deg, transparent 0, var(--ink) 22rem);
+}
+.qhack .movie,
+.qhack .film,
+.qhack .apply,
+.qhack .partner {
+  background: var(--ink);
+}
+.qhack .sec-head {
+  margin-bottom: clamp(var(--space-md), 5vh, var(--space-xl));
+}
+.qhack .sec-path {
+  margin: 0 0 var(--space-xs);
+  font-size: var(--text-size-small);
+  color: var(--dim);
+}
+/* Section headings: Montserrat ExtraBold, white, capitals (the CI's headline
+   face). About two thirds the height of the character banners they replace. */
+.qhack .sec-title {
+  margin: 0;
+  max-width: 100%;
+  font-family: var(--font-primary);
+  font-weight: var(--font-weight-extrabold);
+  font-size: clamp(2.25rem, 8.4vw, 7rem);
+  line-height: 0.95;
+  letter-spacing: -0.015em;
+  text-transform: uppercase;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  color: var(--color-white);
+}
+.qhack .sec-lede {
+  margin: 1.25rem 0 0;
+  max-width: 42rem;
+  color: var(--dim);
+}
+/* Where the rain lands: a thin line of light with a soft bloom. It is part
+   of the page and moves with the scroll, so it never pops in or out. */
+.qhack .horizon {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 0;
+  pointer-events: none;
+}
+.qhack .horizon::before {
+  content: "";
+  position: absolute;
+  inset: -8rem 0 auto;
+  height: 16rem;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    color-mix(in srgb, var(--haze) 30%, transparent),
+    color-mix(in srgb, var(--glow) 13%, transparent) 45%,
+    transparent 72%
+  );
+}
+.qhack .horizon::after {
+  content: "";
+  position: absolute;
+  inset: -1px 10% auto;
+  height: 2px;
+  border-radius: calc(var(--radius-button) * 0.4);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--haze) 22%,
+    var(--color-white) 50%,
+    var(--haze) 78%,
+    transparent
+  );
+  box-shadow:
+    0 0 1.2rem color-mix(in srgb, var(--haze) 80%, transparent),
+    0 0 3.2rem color-mix(in srgb, var(--glow) 60%, transparent);
+  animation: qh-horizon var(--duration-hack-horizon) ease-in-out infinite;
+}
+@keyframes qh-horizon {
+  50% {
+    opacity: 0.6;
+  }
+}
+/* ---------------------------------------------------------------- terminal */
+.qhack .term {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-hack-cta);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--panel-hi) 92%, transparent),
+    color-mix(in srgb, var(--panel-lo) 94%, transparent)
+  );
+  box-shadow:
+    0 2rem 5rem -2rem color-mix(in srgb, var(--violet) 55%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--color-white) 5%, transparent);
+  overflow: hidden;
+}
+.qhack .term__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0.7rem var(--space-sm);
+  background: color-mix(in srgb, var(--haze) 6%, transparent);
+  border-bottom: 1px solid var(--line);
+  font-size: calc(var(--text-size-small) * 0.93);
+  color: var(--dim);
+}
+.qhack .term__dots {
+  display: inline-flex;
+  gap: 0.4rem;
+}
+.qhack .term__dots i {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: var(--radius-circle);
+  background: var(--dot);
+}
+.qhack .term__dots i:nth-child(1) {
+  background: var(--pink);
+}
+.qhack .term__dots i:nth-child(2) {
+  background: var(--haze);
+}
+.qhack .term__title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.qhack .term__meta {
+  color: var(--haze);
+  font-variant-numeric: tabular-nums;
+}
+.qhack .term__body {
+  padding: clamp(var(--space-sm), 3vw, 1.75rem);
+  font-size: clamp(0.875rem, 0.8rem + 0.35vw, 1.0625rem);
+  line-height: 1.75;
+}
+.qhack .term__body p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.qhack .p {
+  color: var(--dim);
+}
+.qhack .k {
+  color: var(--pink);
+}
+.qhack .q {
+  color: var(--pink);
+  font-weight: var(--heading-weight);
+}
+.qhack .c {
+  color: var(--dim);
+}
+/* ---------------------------------------------------------------- program log */
+.qhack .log {
+  list-style: none;
+  margin: 0;
+  padding: clamp(var(--space-md), 4vw, var(--space-xl))
+    clamp(var(--space-sm), 3vw, var(--space-lg));
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: var(--log-gap);
+  row-gap: 0.4rem;
+  --log-gap: clamp(3.5rem, 8vw, 7rem);
+  z-index: 1;
+  /* above the line: diamonds and day labels cover it where it passes */
+}
+/* The line itself is an SVG under the list (see initProgram). */
+.qhack .log-wrap {
+  position: relative;
+}
+.qhack .log__trace {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.qhack .log__trace line {
+  stroke-linecap: round;
+}
+.qhack .trace__rail {
+  stroke: color-mix(in srgb, var(--haze) 22%, transparent);
+  stroke-width: 1.5;
+  stroke-dasharray: 1 7;
+}
+.qhack .trace__bloom {
+  stroke: color-mix(in srgb, var(--glow) 16%, transparent);
+  stroke-width: 18;
+}
+.qhack .trace__glow {
+  stroke: color-mix(in srgb, var(--glow) 50%, transparent);
+  stroke-width: 6;
+}
+.qhack .trace__lit {
+  stroke: var(--haze);
+  stroke-width: 2;
+}
+.qhack .trace__head,
+.qhack .trace__packet {
+  fill: var(--color-white);
+}
+.qhack .trace__halo {
+  fill: color-mix(in srgb, var(--haze) 30%, transparent);
+}
+.qhack .log__day {
+  grid-column: 1 / -1;
+  grid-row: var(--row);
+  justify-self: center;
+  position: relative;
+  z-index: 1;
+  margin: var(--space-sm) 0;
+  padding: 0.3rem 0.9rem;
+  background: var(--ink-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  font-size: calc(var(--text-size-small) * 0.93);
+  color: var(--haze);
+  white-space: nowrap;
+}
+/* Entries alternate left and right, each one starting a row below the one
+   before it, so every entry has its own place on the line. */
+.qhack .log__item {
+  position: relative;
+  grid-row: var(--row) / span 2;
+  padding-block: 0.9rem;
+  min-width: 0;
+}
+.qhack .log__item.is-left {
+  grid-column: 1;
+  text-align: right;
+}
+.qhack .log__item.is-right {
+  grid-column: 2;
+}
+/* a short tick from the diamond to its entry */
+.qhack .log__item::before {
+  content: "";
+  position: absolute;
+  top: calc(1.7rem - 1px);
+  width: calc(var(--log-gap) / 2 - 1.15rem);
+  height: 2px;
+  border-radius: calc(var(--radius-button) * 0.4);
+  background: linear-gradient(
+    90deg,
+    var(--haze),
+    color-mix(in srgb, var(--haze) 20%, transparent)
+  );
+  transform: scaleX(0);
+  transition: transform var(--duration-reveal) var(--ease-hack-out)
+    calc(var(--duration-hover) * 0.8);
+}
+.qhack .log__item.is-left::before {
+  right: calc(var(--log-gap) / -2 + 0.75rem);
+  transform-origin: right;
+  background: linear-gradient(
+    270deg,
+    var(--haze),
+    color-mix(in srgb, var(--haze) 20%, transparent)
+  );
+}
+.qhack .log__item.is-right::before {
+  left: calc(var(--log-gap) / -2 + 0.75rem);
+  transform-origin: left;
+}
+.qhack .log__item.is-on::before {
+  transform: scaleX(1);
+}
+/* The diamond of an entry. --near (0..1, set by the script) is how deep the
+   point of the line is inside it: it glows up as the point sinks in. */
+.qhack .log__node {
+  position: absolute;
+  top: 1.3rem;
+  width: 0.8rem;
+  height: 0.8rem;
+  transform: rotate(45deg);
+  border: 2px solid color-mix(in srgb, var(--haze) 55%, transparent);
+  border-radius: calc(var(--radius-button) * 0.4);
+  background: var(--ink-2);
+  box-shadow: 0 0 calc(var(--near, 0) * 1.3rem) calc(var(--near, 0) * 0.12rem)
+    color-mix(in srgb, var(--haze) 85%, transparent);
+  transition:
+    background-color var(--duration-open),
+    border-color var(--duration-open);
+}
+.qhack .log__item.is-left .log__node {
+  right: calc(var(--log-gap) / -2 - 0.4rem);
+}
+.qhack .log__item.is-right .log__node {
+  left: calc(var(--log-gap) / -2 - 0.4rem);
+}
+.qhack .log__item.is-on .log__node {
+  background: var(--haze);
+  border-color: var(--color-white);
+  box-shadow:
+    0 0 calc(0.8rem + var(--near, 0) * 1.1rem) var(--glow),
+    0 0 2.2rem color-mix(in srgb, var(--glow) 65%, transparent);
+  animation: qh-node-on var(--duration-hack-node) var(--ease-hack-pop);
+}
+/* the burst when the point arrives: a ring that runs outwards */
+.qhack .log__item.is-on .log__node::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border: 2px solid var(--haze);
+  border-radius: calc(var(--radius-button) * 0.4);
+  opacity: 0;
+  animation: qh-node-ping calc(var(--duration-hack-node) * 1.4) ease-out;
+}
+@keyframes qh-node-on {
+  0% {
+    transform: rotate(45deg) scale(0.5);
+    background: var(--color-white);
+  }
+  45% {
+    transform: rotate(135deg) scale(1.55);
+    background: var(--color-white);
+  }
+  100% {
+    transform: rotate(225deg) scale(1);
+  }
+}
+@keyframes qh-node-ping {
+  from {
+    transform: scale(1);
+    opacity: 0.95;
+  }
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+/* an entry stays dim until the line has reached it once */
+.qhack .log__item > :not(.log__node) {
+  opacity: 0.4;
+  transition: opacity calc(var(--duration-reveal) * 1.2);
+}
+.qhack .log__item.is-seen > :not(.log__node) {
+  opacity: 1;
+}
+.qhack .log__time {
+  margin: 0;
+  font-size: var(--text-size-small);
+  color: var(--pink);
+  font-variant-numeric: tabular-nums;
+}
+.qhack .log__time b {
+  color: var(--dim);
+  font-weight: var(--font-weight-regular);
+}
+.qhack .log__title {
+  margin: 0.15rem 0 0.25rem;
+  font-family: var(--font-primary);
+  font-weight: var(--font-weight-extrabold);
+  font-size: clamp(1.0625rem, 0.85rem + 0.9vw, 1.5rem);
+  line-height: 1.15;
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+  color: var(--color-white);
+}
+.qhack .log__text {
+  margin: 0;
+  font-size: calc(var(--text-size-regular) * 0.94);
+  line-height: 1.6;
+  color: var(--dim);
+}
+@media (max-width: 760px) {
+  .qhack .log {
+    grid-template-columns: 1fr;
+    padding-left: 2.5rem;
+    row-gap: var(--space-2xs);
+  }
+  .qhack .log__day {
+    grid-row: auto;
+    justify-self: start;
+    margin-left: -1.9rem;
+  }
+  .qhack .log__item.is-left,
+  .qhack .log__item.is-right {
+    grid-column: 1;
+    grid-row: auto;
+    text-align: left;
+  }
+  .qhack .log__item::before {
+    display: none;
+  }
+  .qhack .log__item.is-left .log__node,
+  .qhack .log__item.is-right .log__node {
+    left: -1.8rem;
+    right: auto;
+  }
+}
+/* ---------------------------------------------------------------- aftermovie */
+.qhack .movie__stage {
+  position: relative;
+  aspect-ratio: 2.39 / 1;
+  background: var(--pit);
+  overflow: hidden;
+}
+.qhack .movie__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+}
+.qhack .movie__stage.is-playing .movie__video {
+  opacity: 1;
+}
+.qhack .movie__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transition: opacity var(--duration-open);
+}
+.qhack .movie__stage.is-playing .movie__canvas {
+  opacity: 0;
+  pointer-events: none;
+}
+.qhack .movie__stage.is-revealing .movie__play,
+.qhack .movie__stage.is-playing .movie__play {
+  opacity: 0;
+  pointer-events: none;
+}
+/* without WebGL: the poster and the plain player */
+.qhack .movie__stage.is-plain .movie__canvas {
+  display: none;
+}
+.qhack .movie__stage.is-plain .movie__video {
+  opacity: 1;
+}
+/* The way to the real film: a round play button with what you get next to
+   it. It breathes a little, so it reads as the thing to press. */
+.qhack .movie__play {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(0.6rem, 3.5vw, 1.75rem);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  max-width: calc(100% - 1.5rem);
+  padding: 0.6rem 1.3rem 0.6rem 0.65rem;
+  font: inherit;
+  text-align: left;
+  color: var(--color-white);
+  background: color-mix(in srgb, var(--ink) 88%, transparent);
+  border: 1px solid var(--haze);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  animation: qh-play-pulse var(--duration-hack-pulse) ease-out infinite;
+  transition:
+    opacity var(--duration-open),
+    background-color var(--duration-icon);
+}
+.qhack .movie__play:hover {
+  background: var(--violet);
+}
+.qhack .movie__play:active {
+  transform: translateX(-50%) translateY(1px);
+}
+.qhack .movie__play-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--radius-circle);
+  background: var(--haze);
+}
+.qhack .movie__play-icon::before {
+  content: "";
+  margin-left: 0.2rem;
+  border-left: 0.9rem solid var(--ink);
+  border-block: 0.58rem solid transparent;
+}
+.qhack .movie__play-text {
+  min-width: 0;
+}
+.qhack .movie__play-text strong {
+  display: block;
+  font-size: var(--text-size-regular);
+  font-weight: var(--heading-weight);
+  line-height: 1.25;
+  white-space: nowrap;
+}
+.qhack .movie__play-text small {
+  display: block;
+  font-size: var(--text-size-tiny);
+  line-height: 1.3;
+  color: var(--haze);
+  white-space: nowrap;
+}
+@keyframes qh-play-pulse {
+  0% {
+    box-shadow:
+      0 0 0 0 color-mix(in srgb, var(--haze) 55%, transparent),
+      0 0.8rem 2rem -0.6rem
+        color-mix(in srgb, var(--color-black) 80%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow:
+      0 0 0 1rem transparent,
+      0 0.8rem 2rem -0.6rem
+        color-mix(in srgb, var(--color-black) 80%, transparent);
+  }
+}
+.qhack .movie__note {
+  margin: 0;
+  padding: 0.6rem var(--space-sm);
+  font-size: var(--text-size-tiny);
+  color: var(--dim);
+  border-top: 1px solid var(--line);
+}
+@media (max-width: 560px) {
+  .qhack .movie__play {
+    gap: 0.6rem;
+    padding: 0.4rem 0.9rem 0.4rem 0.45rem;
+  }
+  .qhack .movie__play-icon {
+    width: 2rem;
+    height: 2rem;
+  }
+  .qhack .movie__play-icon::before {
+    border-left-width: 0.68rem;
+    border-block-width: 0.44rem;
+  }
+  .qhack .movie__play-text strong {
+    font-size: var(--text-size-small);
+  }
+  .qhack .movie__play-text small {
+    display: none;
+  }
+}
+/* ---------------------------------------------------------------- film roll */
+.qhack .film__stage {
+  position: relative;
+  margin-bottom: 4rem;
+  height: clamp(18rem, min(64vh, 46vw), 44rem);
+  background:
+    radial-gradient(
+      50% 30% at 50% 78%,
+      color-mix(in srgb, var(--glow) 40%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      70% 60% at 50% 45%,
+      color-mix(in srgb, var(--mid) 35%, transparent),
+      transparent 75%
+    );
+}
+.qhack .film__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: pan-y;
+  cursor: grab;
+}
+.qhack .film__canvas.is-dragging {
+  cursor: grabbing;
+}
+.qhack .film__ui {
+  position: absolute;
+  inset: 100% 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.4rem, 2vw, var(--space-sm));
+  padding-inline: var(--gutter);
+}
+.qhack .film__ui .btn-ascii {
+  flex: none;
+}
+/* takes the room between the buttons (they stay put when the text changes)
+   and wraps on a narrow phone */
+.qhack .film__caption {
+  flex: 0 1 24rem;
+  min-width: 0;
+  margin: 0;
+  text-align: center;
+  font-size: clamp(0.8125rem, 3.4vw, 0.9375rem);
+  line-height: 1.35;
+  color: var(--haze);
+  font-variant-numeric: tabular-nums;
+}
+/* Without WebGL (or with reduced motion) the photos are a plain grid. */
+.qhack .film__grid {
+  display: none;
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--gutter);
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: var(--space-xs);
+}
+.qhack .film__grid img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-button);
+}
+.qhack .film.is-static .film__stage {
+  display: none;
+}
+.qhack .film.is-static .film__grid {
+  display: grid;
+}
+/* ---------------------------------------------------------------- ask q-hack */
+.qhack .apply__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .qhack .apply__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* The answers, below the picker. Asking a question scrolls the window here
+   (see reveal in js/ask.js), and the newest turn is marked. */
+.qhack .chat__out {
+  margin-top: 1.1rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed var(--line-strong);
+}
+.qhack .term__body .chat__rule {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  min-height: 2.25rem;
+  margin-bottom: 0.35rem;
+  font-size: calc(var(--text-size-small) * 0.93);
+  color: var(--dim);
+}
+.qhack .chat__again {
+  min-height: 2.25rem;
+  padding: 0.4rem 0.7rem;
+  font-family: var(--mono);
+  font-weight: var(--font-weight-semibold);
+  font-size: calc(var(--text-size-small) * 0.93);
+  line-height: 1;
+  color: var(--haze);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-button);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.qhack .chat__again:hover {
+  color: var(--color-white);
+  border-color: var(--line-strong);
+}
+.qhack .chat__log {
+  min-height: 6.5rem;
+  max-height: min(19rem, 46vh);
+  overflow-y: auto;
+  padding-right: var(--space-2xs);
+  scrollbar-width: thin;
+  scrollbar-color: var(--violet) transparent;
+}
+.qhack .chat__empty {
+  color: var(--dim);
+}
+.qhack .chat__turn {
+  margin-top: 0.9rem;
+  padding-left: 0.8rem;
+  border-left: 2px solid var(--line);
+  opacity: 0.55;
+  transition:
+    opacity var(--duration-open),
+    border-color var(--duration-open);
+}
+.qhack .chat__turn:first-child {
+  margin-top: 0.2rem;
+}
+/* the one just asked */
+.qhack .chat__turn.is-new {
+  opacity: 1;
+  border-left-color: var(--pink);
+  animation: qh-chat-in calc(var(--duration-reveal) * 2.2) ease-out;
+}
+@keyframes qh-chat-in {
+  from {
+    background: color-mix(in srgb, var(--pink) 20%, transparent);
+  }
+  to {
+    background: transparent;
+  }
+}
+.qhack .chat__q {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-white);
+}
+.qhack .chat__a a {
+  color: var(--haze);
+}
+/* the prompt */
+.qhack .ask {
+  display: flex;
+  flex-wrap: wrap;
+  /* in a narrow window the enter button moves below the field */
+  align-items: flex-end;
+  gap: var(--space-xs);
+  margin-top: 0.9rem;
+}
+.qhack .ask__label {
+  color: var(--color-white);
+  font-weight: var(--font-weight-semibold);
+  padding-bottom: 0.55rem;
+  white-space: nowrap;
+}
+.qhack .ask__label span[aria-hidden] {
+  color: var(--dim);
+}
+.qhack .ask__input {
+  flex: 1 1 9rem;
+  min-width: 0;
+  width: auto;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px dashed var(--line-strong);
+  border-radius: 0;
+  color: var(--color-white);
+  font: inherit;
+  font-size: var(--text-size-regular);
+  /* no zoom on iOS */
+  padding: 0.45rem 0.1rem;
+  caret-color: var(--haze);
+}
+.qhack .ask__input::placeholder {
+  color: var(--dim);
+  opacity: 0.7;
+}
+.qhack .ask__input:focus {
+  outline: none;
+  border-bottom: 1px solid var(--haze);
+}
+.qhack .ask__enter {
+  min-height: 2.75rem;
+  padding: var(--space-2xs) var(--space-sm);
+  font-family: var(--mono);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--text-size-regular);
+  line-height: 1;
+  color: var(--pink);
+  background: color-mix(in srgb, var(--pink) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pink) 45%, transparent);
+  border-radius: var(--radius-card);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.qhack .ask__enter:hover {
+  background: color-mix(in srgb, var(--pink) 16%, transparent);
+}
+/* topics, and the questions of the chosen one (or what matches the typing) */
+.qhack .chat__topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem var(--space-2xs);
+  margin-top: var(--space-sm);
+}
+.qhack .chat__topic {
+  padding: 0.45rem 0.35rem;
+  font-family: var(--mono);
+  font-weight: var(--font-weight-semibold);
+  font-size: calc(var(--text-size-small) * 0.93);
+  line-height: 1;
+  color: var(--dim);
+  white-space: pre;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-button);
+  cursor: pointer;
+}
+.qhack .chat__topic:hover {
+  color: var(--color-white);
+  border-color: var(--line-strong);
+}
+.qhack .chat__topic[aria-pressed="true"] {
+  color: var(--color-white);
+  background: color-mix(in srgb, var(--glow) 40%, transparent);
+  border-color: var(--haze);
+}
+.qhack .chat__list {
+  list-style: none;
+  margin: var(--space-xs) 0 0;
+  padding: 0;
+  min-height: 9.9rem;
+  /* four questions: the answers below stay where they are for most topics */
+}
+.qhack .chat__opt {
+  display: flex;
+  /* the marker in its own column: a long question wraps under itself */
+  padding: 0.42rem var(--space-2xs);
+  line-height: 1.45;
+  border-radius: var(--radius-button);
+  cursor: pointer;
+}
+.qhack .chat__opt[aria-selected="true"] {
+  color: var(--color-white);
+  background: color-mix(in srgb, var(--glow) 28%, transparent);
+}
+.qhack .chat__opt.is-asked {
+  color: var(--dim);
+}
+.qhack .chat__mark {
+  flex: none;
+  width: 1.4em;
+  color: var(--pink);
+  white-space: pre;
+}
+.qhack .chat__done {
+  flex: none;
+  margin-left: 0.5em;
+  color: var(--ok);
+}
+.qhack .chat__none {
+  padding: 0.42rem var(--space-2xs);
+  color: var(--dim);
+}
+@media (max-width: 480px) {
+  .qhack .ask__label {
+    flex-basis: 100%;
+    padding-bottom: 0;
+  }
+}
+/* ---------------------------------------------------------------- become a partner */
+.qhack .partner__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: clamp(var(--space-md), 4vw, var(--space-xl));
+  align-items: center;
+}
+.qhack .term__body .partner__lede {
+  margin: 0 0 1.25rem;
+  font-family: var(--font-primary);
+  font-weight: var(--font-weight-extrabold);
+  font-size: clamp(1.25rem, 1rem + 1.4vw, 2rem);
+  line-height: 1.2;
+  white-space: normal;
+  text-wrap: balance;
+  color: var(--color-white);
+}
+.qhack .partner__points {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.8rem;
+}
+.qhack .partner__points .k {
+  display: block;
+}
+.qhack .partner__action {
+  display: grid;
+  gap: 0.9rem;
+  justify-items: start;
+  padding: clamp(var(--space-sm), 3vw, 1.75rem);
+  background: color-mix(in srgb, var(--glow) 10%, transparent);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-card);
+}
+.qhack .partner__prompt {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-white);
+}
+.qhack .term__body .partner__small {
+  font-size: calc(var(--text-size-small) * 0.93);
+  white-space: normal;
+  color: var(--dim);
+}
+.qhack .btn-ascii--big {
+  min-height: 3.5rem;
+  padding-inline: 0.8rem;
+  font-size: var(--text-size-medium);
+  background: linear-gradient(180deg, var(--glow), var(--violet));
+  border-color: var(--haze);
+  box-shadow: 0 0 2.2rem -0.5rem var(--glow);
+}
+.qhack .btn-ascii--big:hover {
+  background: linear-gradient(180deg, var(--glow-hi), var(--glow));
+  box-shadow: 0 0 2.6rem -0.3rem var(--glow);
+}
+@media (max-width: 800px) {
+  .qhack .partner__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .qhack .btn-ascii--big {
+    font-size: var(--text-size-regular);
+  }
+}
+/* ---------------------------------------------------------------- reveals */
+/* Terminal windows rise into place the first time they come into view. */
+.qhack-js .qhack [data-reveal] {
+  opacity: 0;
+  transform: translateY(2rem) scale(0.985);
+  transition:
+    opacity var(--duration-hack-reveal) var(--ease-hack-out),
+    transform var(--duration-hack-reveal) var(--ease-hack-out);
+}
+.qhack-js .qhack [data-reveal].is-in {
+  opacity: 1;
+  transform: none;
+}
+/* ---------------------------------------------------------------- not yet */
+/* Applications are closed: an apply button tears the page open for a moment
+   and a terminal says "soon". */
+.qhack .denied {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: var(--gutter);
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  overflow: hidden auto;
+  /* a phone held sideways is lower than the window: then it scrolls */
+}
+.qhack .denied[open] {
+  display: flex;
+}
+.qhack .denied::backdrop {
+  background: color-mix(in srgb, var(--ink) 80%, transparent);
+}
+.qhack .denied__rain {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.5;
+  pointer-events: none;
+}
+.qhack .denied__tear {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: repeating-linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pink) 55%, transparent) 0 3px,
+    transparent 3px 11px,
+    color-mix(in srgb, var(--glow) 60%, transparent) 11px 13px,
+    transparent 13px 37px
+  );
+}
+.qhack .denied.is-in .denied__tear {
+  animation: qh-tear calc(var(--duration-reveal) * 1.1) steps(7) both;
+}
+@keyframes qh-tear {
+  0% {
+    opacity: 0.9;
+    transform: translateX(-3%) scaleY(1.4);
+  }
+  30% {
+    opacity: 0.7;
+    transform: translateX(4%);
+  }
+  60% {
+    opacity: 0.45;
+    transform: translateX(-2%) scaleY(0.8);
+  }
+  100% {
+    opacity: 0;
+    transform: none;
+  }
+}
+.qhack .denied__panel {
+  position: relative;
+  width: min(100%, 42rem);
+  margin: auto;
+  /* centered, but never pushed out of reach at the top */
+}
+.qhack .denied.is-in .denied__panel {
+  animation: qh-breach var(--duration-reveal) var(--ease-hack-out) both;
+}
+@keyframes qh-breach {
+  0% {
+    opacity: 0;
+    transform: translate(-1.2rem, 0.4rem) skewX(-8deg);
+    clip-path: inset(0 0 70% 0);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(0.8rem, -0.2rem) skewX(5deg);
+    clip-path: inset(30% 0 20% 0);
+  }
+  50% {
+    transform: translate(-0.3rem, 0) skewX(-2deg);
+    clip-path: inset(0);
+  }
+  100% {
+    transform: none;
+    clip-path: inset(0);
+  }
+}
+.qhack .denied__log {
+  min-height: 7em;
+}
+.qhack .denied__art {
+  margin-top: var(--space-sm);
+  min-height: 4.5rem;
+  font-weight: var(--heading-weight);
+  line-height: 1;
+  white-space: pre;
+  overflow: hidden;
+  color: var(--pink);
+  text-shadow: 0 0 1rem color-mix(in srgb, var(--pink) 45%, transparent);
+}
+.qhack .denied__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs) var(--space-md);
+  margin-top: 1.25rem;
+}
+/* ---------------------------------------------------------------- footer */
+.qhack .eof {
+  position: relative;
+  z-index: 6;
+  background: var(--ink);
+  padding: var(--space-lg) var(--gutter)
+    calc(var(--fade) * 0.6 + var(--space-md));
+  color: var(--dim);
+  font-size: var(--text-size-small);
+}
+.qhack .eof pre {
+  overflow: hidden;
+  color: var(--line-strong);
+  margin-bottom: var(--space-sm);
+}
+.qhack .eof p {
+  margin: 0;
+}
+.qhack .eof .sel {
+  white-space: nowrap;
+  /* the address stays in one piece */
+}
+/* ---------------------------------------------------------------- into the footer */
+/* The page ends the way the other Q-Summit pages do: it runs up into the
+   footer's white without an edge. The way is longer here, because this page
+   comes out of the dark. One eased run from the ground through violet to
+   white: the first half eases in, the second eases out, and both leave the
+   middle at the same rate, so no stripe stands out on the way. This
+   gradient is the fallback: the page script (ditherFade) paints the same
+   curve with a fine dither over it, because an 8 bit gradient out of near
+   black shows bands, above all on OLED phones. */
+.qhack .page-fade {
+  position: relative;
+  z-index: 7;
+  height: var(--fade);
+  margin-top: calc(var(--fade) * -0.6);
+  background: repeat-x top left / auto 100%
+    linear-gradient(
+      180deg,
+      var(--ink) 0%,
+      color-mix(in srgb, var(--fade-mid) 1.6%, var(--ink)) 6.25%,
+      color-mix(in srgb, var(--fade-mid) 6.25%, var(--ink)) 12.5%,
+      color-mix(in srgb, var(--fade-mid) 14.1%, var(--ink)) 18.75%,
+      color-mix(in srgb, var(--fade-mid) 25%, var(--ink)) 25%,
+      color-mix(in srgb, var(--fade-mid) 39.1%, var(--ink)) 31.25%,
+      color-mix(in srgb, var(--fade-mid) 56.25%, var(--ink)) 37.5%,
+      color-mix(in srgb, var(--fade-mid) 76.6%, var(--ink)) 43.75%,
+      var(--fade-mid) 50%,
+      color-mix(in srgb, var(--color-white) 23.4%, var(--fade-mid)) 56.25%,
+      color-mix(in srgb, var(--color-white) 43.75%, var(--fade-mid)) 62.5%,
+      color-mix(in srgb, var(--color-white) 60.9%, var(--fade-mid)) 68.75%,
+      color-mix(in srgb, var(--color-white) 75%, var(--fade-mid)) 75%,
+      color-mix(in srgb, var(--color-white) 85.9%, var(--fade-mid)) 81.25%,
+      color-mix(in srgb, var(--color-white) 93.75%, var(--fade-mid)) 87.5%,
+      color-mix(in srgb, var(--color-white) 98.4%, var(--fade-mid)) 93.75%,
+      var(--color-white) 100%
+    );
+  pointer-events: none;
+}
+
+/* The white site footer follows, as on every page. It laps over the end of
+   the fade (on screens with a fractional pixel ratio a hairline of the dark
+   page showed between the two) and has no rule of its own on this page,
+   where the fade replaces it. */
+body:has(.qhack) .site-footer {
+  position: relative;
+  z-index: 7;
+  margin-top: -1px;
+  border-top-color: transparent;
+}
+/* Its content comes in softly once, when it is reached. The page script
+   sets this waiting state itself, so without the script the footer is
+   simply there. */
+body:has(.qhack) .site-footer .footer-inner.is-waiting {
+  opacity: 0;
+  filter: blur(8px);
+  transform: translateY(0.75rem);
+}
+body:has(.qhack) .site-footer .footer-inner.is-coming {
+  transition:
+    opacity var(--duration-hack-reveal) ease-out,
+    filter var(--duration-hack-reveal) ease-out,
+    transform var(--duration-hack-reveal) ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  body:has(.qhack) .site-footer .footer-inner.is-waiting {
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+  body:has(.qhack) .site-footer .footer-inner.is-coming {
+    transition: none;
+  }
+}
+/* ---------------------------------------------------------------- status line */
+.qhack .status {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 50;
+  height: calc(var(--bar) + env(safe-area-inset-bottom, 0px));
+  padding: 0 var(--space-2xs) env(safe-area-inset-bottom, 0px);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  background: var(--panel);
+  border-top: 1px solid var(--line-strong);
+  font-size: calc(var(--text-size-small) * 0.93);
+  line-height: 1;
+  color: var(--dim);
+  white-space: nowrap;
+  transition: background-color calc(var(--duration-close) * 2);
+}
+.qhack .status__session {
+  padding: 0.35rem var(--space-2xs);
+  background: var(--haze);
+  color: var(--ink);
+  font-weight: var(--heading-weight);
+}
+.qhack .status__wins {
+  list-style: none;
+  display: flex;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+.qhack .status__wins a {
+  display: block;
+  padding: 0.35rem var(--space-2xs);
+  color: var(--dim);
+  text-decoration: none;
+}
+.qhack .status__wins a:hover {
+  color: var(--color-white);
+}
+.qhack .status__wins a[aria-current="true"] {
+  color: var(--color-white);
+  background: color-mix(in srgb, var(--glow) 50%, transparent);
+}
+.qhack .status__msg {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--pink);
+  font-weight: var(--font-weight-semibold);
+}
+.qhack .status__clock {
+  font-variant-numeric: tabular-nums;
+  color: var(--haze);
+}
+.qhack .status__apply {
+  margin-left: auto;
+  padding: 0.35rem var(--space-xs);
+  background: var(--glow);
+  color: var(--color-white);
+  font-weight: var(--heading-weight);
+  text-decoration: none;
+}
+.qhack .status__apply:hover {
+  background: var(--glow-hi);
+}
+.qhack .status.is-hacked {
+  background: var(--panel-lit);
+}
+.qhack .status.is-hacked .status__apply {
+  background: var(--pink);
+  color: var(--ink);
+  animation: qh-nudge calc(var(--duration-hack-reveal) * 2) ease-in-out 3;
+}
+@keyframes qh-nudge {
+  50% {
+    box-shadow: 0 0 0 0.35rem color-mix(in srgb, var(--pink) 25%, transparent);
+  }
+}
+@media (max-width: 900px) {
+  .qhack .status__wins li:not(.is-current) {
+    display: none;
+  }
+  .qhack .status__clock {
+    display: none;
+  }
+}
+@media (max-width: 600px) {
+  .qhack .status__msg {
+    display: none;
+  }
+}
+/* ---------------------------------------------------------------- motion */
+@media (prefers-reduced-motion: reduce) {
+  .qhack .partners__track,
+  .qhack .dot,
+  .qhack .status.is-hacked .status__apply {
+    animation: none !important;
+  }
+  .qhack [data-type] .t-done::after {
+    animation: none;
+  }
+  .qhack .hero__hint {
+    animation: none;
+    opacity: 0.85;
+  }
+  .qhack .movie__play,
+  .qhack .horizon::after,
+  .qhack .log__item.is-on .log__node,
+  .qhack .log__item.is-on .log__node::after {
+    animation: none;
+  }
+  .qhack .log__item.is-on .log__node::after {
+    display: none;
+  }
+  .qhack-js .qhack [data-reveal] {
+    opacity: 1;
+    filter: none;
+    transform: none;
+    transition: none;
+  }
+  .qhack .chat__turn.is-new {
+    animation: none;
+  }
+  .qhack .top,
+  .qhack .top.is-away {
+    transition: none;
+  }
+  .qhack .denied.is-in .denied__tear,
+  .qhack .denied.is-in .denied__panel {
+    animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------- answers from the CMS */
+/* An answer is rich text: its paragraphs run on in the terminal's line, a
+   new paragraph starts a new line. */
+.qhack .chat__a p {
+  display: inline;
+  margin: 0;
+}
+.qhack .chat__a p + p::before {
+  content: "\A";
+  white-space: pre;
+}
+
+/* A sentence with a link in it wraps like prose: a terminal body otherwise
+   keeps every line break of its markup. */
+.qhack .term__body .partner__small,
+.qhack .term__body .partner__lede {
+  white-space: normal;
+}
+
+/* ---------------------------------------------------------------- without the script */
+/* The page is HTML first. .qhack-js is set before the first paint
+   (QhackPage.astro) and taken back if the script never arrives. Without it
+   the laptop is its short text block, the photos are a plain grid, the film
+   shows its poster and every answer is written out. */
+html:not(.qhack-js) .qhack .machine {
+  height: auto;
+}
+html:not(.qhack-js) .qhack .machine__pin {
+  position: relative;
+  height: auto;
+  min-height: 70svh;
+}
+html:not(.qhack-js) .qhack .machine__fallback {
+  display: grid;
+}
+html:not(.qhack-js)
+  .qhack
+  :is(.machine__canvas, .machine__apply, .machine__copy) {
+  display: none;
+}
+html:not(.qhack-js) .qhack .film__stage {
+  display: none;
+}
+html:not(.qhack-js) .qhack .film__grid {
+  display: grid;
+}
+html:not(.qhack-js) .qhack :is(.movie__canvas, .movie__play) {
+  display: none;
+}
+html:not(.qhack-js) .qhack .movie__video {
+  opacity: 1;
+}
+html:not(.qhack-js) .qhack :is(.ask, .chat__topics, .chat__list, .chat__again) {
+  display: none;
+}
+html:not(.qhack-js) .qhack .chat__log {
+  max-height: none;
+}
+html:not(.qhack-js) .qhack .chat__turn {
+  opacity: 1;
+}
+@media (max-width: 960px) {
+  html:not(.qhack-js) .qhack .top:focus-within .top__nav {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+}

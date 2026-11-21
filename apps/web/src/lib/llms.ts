@@ -323,27 +323,30 @@ export function buildLlmsFullTxt(opts: {
         hackathon.title,
         hackathon.metaDescription,
       ),
+      // The 2027 page (DESIGN.md HACK-1). `benefits` and `closingCta` are
+      // the 2026 archive and no longer part of the page.
       ...section("Hero", [hackathon.hero.headline, hackathon.hero.tagline]),
-      ...section("Benefits", [
-        hackathon.benefits.heading,
-        ...hackathon.benefits.cards.map((card) =>
-          bullet(card.title, card.description),
-        ),
-      ]),
+      ...section(
+        "Facts",
+        hackathon.facts.map((item) => bullet(item.title, item.description)),
+      ),
       ...section("Schedule", [
         hackathon.schedule.heading,
         hackathon.schedule.intro,
-        ...hackathon.schedule.items.map(
-          (item) => `- ${item.date}: **${item.title}**: ${item.description}`,
-        ),
+        ...hackathon.schedule.items.flatMap((item) => [
+          ...(item.day ? [`- ${item.day}`] : []),
+          `- ${item.date}${item.mark ? ` (${item.mark})` : ""}: **${item.title}**${item.description ? `: ${item.description}` : ""}`,
+        ]),
       ]),
-      ...section("Closing", [
-        hackathon.closingCta.heading,
-        hackathon.closingCta.text,
-        bullet(
-          "Email",
-          `${hackathon.closingCta.mailtoLabel} <${hackathon.closingCta.mailtoEmail}>`,
+      ...section("Partner pitch", [
+        hackathon.partnerPitch.heading,
+        hackathon.partnerPitch.lede,
+        ...hackathon.partnerPitch.points.map((point) =>
+          bullet(point.title, point.description),
         ),
+        ...(hackathon.partnerPitch.contactEmail
+          ? [bullet("Email", hackathon.partnerPitch.contactEmail)]
+          : []),
       ]),
       "---",
       "",

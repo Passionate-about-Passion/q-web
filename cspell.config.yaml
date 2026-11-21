@@ -91,6 +91,7 @@ words:
   - Bytespider
   - changeme
   - CHANGEME
+  - chev
   - clickjacking
   - cloover
   - CMCD
@@ -108,6 +109,7 @@ words:
   - Dedup
   - desaturated
   - desync
+  - deutsch
   - disambiguator
   - distros
   - docstrings
@@ -165,6 +167,8 @@ words:
   - latebird
   - lede
   - Lennart
+  - letterboxed
+  - letterforms
   - libpq
   - liveavatar
   - llms
@@ -174,12 +178,14 @@ words:
   - longhands
   - lqip
   - lukas
+  - luma
   - mailtos
   - Mannheim
   - maximalism
   - Mbps
   - mediump
   - Menlo
+  - meshopt
   - metacharacter
   - miniflare
   - misalign
@@ -198,9 +204,11 @@ words:
   - oauth
   - oklab
   - oklch
+  - OLED
   - pageleave
   - passwordless
   - payloadcms
+  - persp
   - PGDATABASE
   - PGHOST
   - PGPASSWORD
@@ -211,12 +219,20 @@ words:
   - pitchbattle
   - PITR
   - PKCE
+  - plogo
   - PostHog
   - prebuilding
   - predev
   - prerendered
   - projectService
+  - qask
+  - qfilm
   - qhack
+  - qhero
+  - qkeys
+  - qlogo
+  - qmovie
+  - qprogram
   - qsummit
   - qube
   - qweb
@@ -235,7 +251,11 @@ words:
   - Schneckenhof
   - scroller
   - scrollmaps
+  - slerp
   - smoothstep
+  - Sobel
+  - softbox
+  - softboxes
   - Speedinvest
   - spherecast
   - sslmode
@@ -250,6 +270,7 @@ words:
   - textareas
   - thenable
   - trackpad
+  - tris
   - tseslint
   - ttfb
   - Typeform
@@ -266,6 +287,7 @@ words:
   - unreviewed
   - unstub
   - unsuffixed
+  - untinted
   - untranscoded
   - untunably
   - upserts
@@ -285,6 +307,7 @@ words:
   - WHATWG
   - whyq
   - wordmark
+  - wordmarks
   - workerd
   - worktree
   - worktrees

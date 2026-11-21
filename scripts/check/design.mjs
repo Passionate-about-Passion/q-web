@@ -195,18 +195,16 @@ const ALLOWED_WARNINGS = new Map([
   ["warning colors.ticket-ground", UNREFERENCED],
   ["warning colors.ticket-press", UNREFERENCED],
   ["warning colors.home-ground", UNREFERENCED],
+  ["warning colors.hack-night", UNREFERENCED],
   ["warning colors.hack-ink", UNREFERENCED],
   ["warning colors.hack-deep", UNREFERENCED],
   ["warning colors.hack-violet", UNREFERENCED],
   ["warning colors.hack-mid", UNREFERENCED],
   ["warning colors.hack-glow", UNREFERENCED],
-  ["warning colors.hack-yellow", UNREFERENCED],
-  ["warning colors.hack-red", UNREFERENCED],
-  ["warning colors.hack-coral", UNREFERENCED],
-  ["warning colors.hack-sky", UNREFERENCED],
-  ["warning colors.hack-ember", UNREFERENCED],
   ["warning colors.hack-haze", UNREFERENCED],
   ["warning colors.hack-mist", UNREFERENCED],
+  ["warning colors.hack-pink", UNREFERENCED],
+  ["warning colors.hack-mint", UNREFERENCED],
 ]);
 
 function designCli(args) {
@@ -288,6 +286,10 @@ const UNMAPPED_TOKENS = new Map([
     "font wiring (Astro Fonts API indirection), governed by the Typography prose (TYPE-3)",
   ],
   [
+    "--font-mono",
+    "see --font-primary; the second face, /hackathon only (DESIGN.md HACK-1)",
+  ],
+  [
     "--padding-global",
     "a percentage, not a spec Dimension; carried on components.container.padding instead",
   ],
@@ -303,12 +305,6 @@ const UNMAPPED_TOKENS = new Map([
   ["--heading-line-height-loose", "see --heading-line-height-tight"],
   ["--text-body-line-height", "see --heading-line-height-tight"],
   ["--radius-circle", "50%, not a spec Dimension (number + px/em/rem)"],
-  [
-    "--radius-hack-lid",
-    "elliptical percentage radius of the drawn laptop, not a spec Dimension (DESIGN.md HACK-1)",
-  ],
-  ["--radius-hack-bezel", "see --radius-hack-lid"],
-  ["--radius-hack-base", "see --radius-hack-lid"],
   [
     "--ease-snappy",
     "the spec has no motion token group; governed by the Motion prose (MOTION-1)",
@@ -372,18 +368,17 @@ const UNMAPPED_TOKENS = new Map([
   ["--duration-glass-light", "see --ease-glass-spring"],
   ["--duration-glass-stagger", "see --ease-glass-spring"],
   [
-    "--duration-hack-fall",
-    "see --ease-snappy; Q-Hack campaign only (DESIGN.md HACK-1)",
+    "--duration-hack-blink",
+    "see --ease-snappy; /hackathon only (DESIGN.md HACK-1)",
   ],
-  ["--duration-hack-sway", "see --duration-hack-fall"],
-  ["--duration-hack-light", "see --duration-hack-fall"],
-  ["--duration-hack-shimmer", "see --duration-hack-fall"],
-  ["--duration-hack-sweep", "see --duration-hack-fall"],
-  ["--duration-hack-reveal", "see --duration-hack-fall"],
-  ["--ease-hack-fall", "see --duration-hack-fall"],
-  ["--ease-hack-sway", "see --duration-hack-fall"],
-  ["--duration-hack-turn", "see --duration-hack-fall"],
-  ["--ease-hack-turn", "see --duration-hack-fall"],
+  ["--duration-hack-pulse", "see --duration-hack-blink"],
+  ["--duration-hack-band", "see --duration-hack-blink"],
+  ["--duration-hack-horizon", "see --duration-hack-blink"],
+  ["--duration-hack-reveal", "see --duration-hack-blink"],
+  ["--duration-hack-node", "see --duration-hack-blink"],
+  ["--duration-hack-hint", "see --duration-hack-blink"],
+  ["--ease-hack-out", "see --duration-hack-blink"],
+  ["--ease-hack-pop", "see --duration-hack-blink"],
 ]);
 
 /** DESIGN.md front matter path -> tokens.css custom property. */

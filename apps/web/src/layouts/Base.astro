@@ -144,6 +144,11 @@ const pageEventAttrs = pageEvent
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
     <Font cssVariable="--font-montserrat" preload />
     {
+      /* A page's own head additions. /hackathon renders its second face
+         here (DESIGN.md HACK-1), so no other page downloads it. */
+    }
+    <slot name="head" />
+    {
       preloadImageSrcset ? (
         <link
           rel="preload"

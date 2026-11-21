@@ -1,8 +1,4 @@
 {
   "$comment": "Ratchet for scripts/check/design.mjs. Raw CSS literals inherited from the Webflow port, listed per file per rule as normalized values. Entries may only be REMOVED. Regenerate with `pnpm run check:design --update-baseline` AFTER removing literals, never to admit new ones.",
-  "files": {
-    "apps/web/src/components/hackathon/HackHero.astro": {
-      "TYPE-2": ["font-size: 0.5rem"]
-    }
-  }
+  "files": {}
 }

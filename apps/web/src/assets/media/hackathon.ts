@@ -1,9 +1,11 @@
 /**
- * Fixed `/media/*` assets of the Q-Hack x Hacktoberfest page. Like every
- * other `/media/*` file they live on R2 (local: gitignored public/media),
- * never in git. Each one is a Media library upload in the CMS under exactly
- * this filename (Payload stores uploads at the bucket root, so the keys are
- * flat); see the comments for the source of each.
+ * Fixed `/media/*` assets of the Q-Hack page (/hackathon, DESIGN.md
+ * HACK-1). Like every other `/media/*` file they live on R2 (local:
+ * gitignored public/media), never in git. The images are Media library
+ * uploads in the CMS under exactly these filenames (Payload stores uploads
+ * at the bucket root, so the keys are flat); the film is a video and is
+ * uploaded to R2 by a maintainer. The photos of the page are not listed
+ * here: they are picked by editors (page-hackathon, Impressions).
  */
 
 /**
@@ -18,105 +20,82 @@ export const qHackLogoWhite = {
 } as const;
 
 /**
- * Official Hacktoberfest 2026 horizontal logo, white colorway, unmodified
- * download from hacktoberfest.com/brand
- * (brand/logos/hacktoberfest-2026-horizontal-white.svg). Brand rules: no
- * recoloring or effects, clear space of at least the H height.
+ * The Q-Hack aftermovie of the 2027 page. Like the home film it is a video,
+ * so it cannot go through the Media library (images only) and lives on R2
+ * under these keys, uploaded by a maintainer. 1024x576, 13 seconds. The
+ * poster is a frame of the same film and IS a Media library upload.
  */
-export const hacktoberfestLogoWhite = {
-  src: "/media/hacktoberfest-2026-horizontal-white.svg",
-  width: 2243,
-  height: 215,
+export const qHackAftermovie = {
+  src: "/media/q-hack-aftermovie.mp4",
+  poster: "/media/q-hack-aftermovie-poster.webp",
+  width: 1024,
+  height: 576,
 } as const;
 
 /**
- * Width ladder of every look-back photo, same `-p-<width>` suffix scheme
- * as the other sized R2 photos (lib/team-media.ts). Real WebP, encoded
- * from the originals with sharp (quality 72 at 1024 and 1536, 70 below,
- * effort 6, smart subsampling); all share the 3:2 originals' ratio.
+ * The partner logos of the 2027 page's band, by the `logoFile` key an
+ * editor picks in the CMS (keep in sync with HACKATHON_LOGO_FILE_OPTIONS in
+ * apps/cms/src/globals/PageHackathon.ts). The band redraws every logo in
+ * white, filled with characters, and trims it to its own ink, so it needs
+ * no size or clear-space data here. `label` writes the partner's name
+ * beside a file that is only a mark.
  */
-export const PHOTO_WIDTHS = [480, 768, 1024, 1536] as const;
-export type PhotoWidth = (typeof PHOTO_WIDTHS)[number];
-
-export interface PastPhoto {
-  /** Base key under /media, without the `-p-<width>.webp` suffix. */
-  key: string;
-  /** Intrinsic ratio of every variant (3:2). */
-  width: number;
-  height: number;
-  alt: string;
-  /** Short caption shown on the photo. */
-  caption: string;
-  /** CSS object-position for deliberate crops. */
-  focus: string;
-  /** Average colors of the top and bottom half: the frame's placeholder
-   * while the photo loads (colors only, no image data in git). */
-  tint: readonly [string, string];
-}
-
-/** URL of one width variant. */
-export const photoUrl = (photo: PastPhoto, width: PhotoWidth): string =>
-  `/media/${photo.key}-p-${width}.webp`;
-
-/** `srcset` over the whole width ladder. */
-export const photoSrcset = (photo: PastPhoto): string =>
-  PHOTO_WIDTHS.map((w) => `${photoUrl(photo, w)} ${w}w`).join(", ");
-
-const photo = (
-  name: string,
-  alt: string,
-  caption: string,
-  focus: string,
-  tint: readonly [string, string],
-): PastPhoto => ({
-  key: name,
-  width: 1536,
-  height: 1024,
-  alt,
-  caption,
-  focus,
-  tint,
-});
-
-/**
- * Photos from earlier Q-Hack and Q-Summit events (event photo set 38688 to
- * 38730). Always shown as retrospective, never as pictures of the upcoming
- * Hack Day.
- */
-export const pastPhotos = {
-  hallProjection: photo(
-    "q-hack-hall-projection",
-    "Participants at their tables in the university hall, the Q-Hack logo projected on the wall",
-    "The hacking hall",
-    "40% 60%",
-    ["#925da4", "#361c70"],
-  ),
-  hallOverview: photo(
-    "q-hack-hall-overview",
-    "Overview of the hacking hall with teams at their laptops under violet light",
-    "Teams at work",
-    "50% 55%",
-    ["#87509c", "#4c3356"],
-  ),
-  prizeConfetti: photo(
-    "q-hack-prize-confetti",
-    "Winning team on stage under falling confetti at the hackathon pitch battle",
-    "Pitch battle winners",
-    "50% 45%",
-    ["#2065b1", "#33405a"],
-  ),
-  laptopWork: photo(
-    "q-hack-laptop-work",
-    "Two participants working on a laptop and a phone in a lounge corner",
-    "Heads down, building",
-    "62% 45%",
-    ["#631931", "#2c1721"],
-  ),
-  audience: photo(
-    "q-hack-audience",
-    "Audience in a dark hall watching the stage",
-    "Full house at the finals",
-    "50% 40%",
-    ["#3d3c60", "#533a48"],
-  ),
-} as const;
+export const partnerLogos: Record<string, { src: string; label?: boolean }> = {
+  "69bfc230ceecbebceff708fc_new-logo.webp": {
+    src: "/media/hackathon/partners/spherecast.webp",
+  },
+  "69b17a0e089f34c65a5e14a2_Picnic_logo.svg": {
+    src: "/media/hackathon/partners/picnic.svg",
+  },
+  "69bfc037724d038aa2ba26bc_image.png": {
+    src: "/media/hackathon/partners/exxeta.png",
+  },
+  "69c25665fc7b9cf5fb7a2889_f6961aac836f-Logo__2_.webp": {
+    src: "/media/hackathon/partners/cloover.webp",
+  },
+  "69d00444ac69243eaf2b4f4f_istari-logo.svg": {
+    src: "/media/hackathon/partners/istari.svg",
+  },
+  "69c255cf7613b98e497cf289_OpenAI-black-wordmark(1).webp": {
+    src: "/media/hackathon/partners/openai.webp",
+  },
+  "69b2e8289e0d3b7dd0ae9529_lovable_logo.svg": {
+    src: "/media/hackathon/partners/lovable.svg",
+  },
+  "69c99a0acf960a512107bc95_Anthropic_logo.svg": {
+    src: "/media/hackathon/partners/anthropic.svg",
+  },
+  "69c256c8d3ff156cf6877066_elevenlabs-logo-black.webp": {
+    src: "/media/hackathon/partners/elevenlabs.webp",
+  },
+  "69ccf786df18a395b3fee7fd_n8n_pink%2Bblack_logo.svg": {
+    src: "/media/hackathon/partners/n8n.svg",
+  },
+  "69d40a60aa0c813fdc6344eb_featherlessai-transparent.webp": {
+    src: "/media/hackathon/partners/featherless.webp",
+  },
+  "69d675fef0b853cb5df97e4e_liveavatar_logo_vertical_dark.webp": {
+    src: "/media/hackathon/partners/liveavatar.webp",
+  },
+  "69b458c74be9d2023714bcbf_itmx_logo.webp": {
+    src: "/media/hackathon/partners/itmx.webp",
+  },
+  "69d00453416ddd4a45dad964_mlh-logo-color-dark.svg": {
+    src: "/media/hackathon/partners/mlh.svg",
+  },
+  "digitalocean-logo-horizontal-blue.svg": {
+    src: "/media/digitalocean-logo-horizontal-blue.svg",
+  },
+  "dev-logo-black.svg": { src: "/media/dev-logo-black.svg" },
+  "elevenlabs-logo-black.svg": { src: "/media/elevenlabs-logo-black.svg" },
+  // Added for the 2027 band: Media library uploads under these names.
+  "partner-sap.svg": { src: "/media/partner-sap.svg" },
+  "partner-microsoft.svg": { src: "/media/partner-microsoft.svg" },
+  "partner-ibm.svg": { src: "/media/partner-ibm.svg" },
+  // "partner-pwc.svg" is an option in the CMS already, but the file has not
+  // been uploaded yet: without an entry here the band writes the name
+  // instead of asking for a file that is not there. Add the line once the
+  // logo is in the Media library under that name.
+  "partner-le-wagon.svg": { src: "/media/partner-le-wagon.svg" },
+  "partner-ace.webp": { src: "/media/partner-ace.webp" },
+};

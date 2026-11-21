@@ -1,0 +1,82 @@
+---
+// The site header on /hackathon, in the terminal dress of that page
+// (DESIGN.md HACK-1, COMP-6): the white Q at the left, the Site Settings
+// navigation as paths ("./speakers"), an item with children as a small
+// panel, and the Tickets link at the right. Same items, same order and same
+// targets as the site header on every other page (home/HomeHeader.astro);
+// only the look is the page's own. Narrow windows move the pages into a
+// sheet under the bar, opened by the menu button (qhack.client.ts); without
+// the script the sheet opens while the bar has the focus.
+import { getSiteSettings } from "../../lib/content";
+import { TICKETS_HREF } from "../../lib/home-links";
+import { slug } from "./event-dates";
+import { ascii, esc } from "./markup";
+import "./qhack-theme.css";
+
+const { nav } = await getSiteSettings();
+
+const here = Astro.url.pathname.replace(/\/+$/, "") || "/";
+const isHere = (href: string) => {
+  const path = href.replace(/[?#].*$/, "").replace(/\/+$/, "") || "/";
+  return path !== "/" && (here === path || here.startsWith(`${path}/`));
+};
+const path = (label: string) => `./${slug(label)}`;
+---
+
+<div class="qhack">
+  <header class="top" id="site-header" data-top>
+    <a class="top__logo" href="/" aria-label="Q-Summit home">
+      <span class="top__mark" aria-hidden="true"></span>
+    </a>
+    <nav class="top__nav" id="qhack-nav" aria-label="Main">
+      {
+        nav.map((item, i) =>
+          item.children && item.children.length > 0 ? (
+            <div class="top__group" data-sub>
+              <button
+                class="top__link"
+                type="button"
+                aria-expanded="false"
+                aria-controls={`qhack-sub-${i}`}
+                set:html={`${esc(path(item.label))}<span class="top__chev" aria-hidden="true"> ▾</span>`}
+              />
+              <ul class="top__sub" id={`qhack-sub-${i}`}>
+                {item.children.map((child) => (
+                  <li>
+                    <a
+                      href={child.href}
+                      aria-current={isHere(child.href) ? "page" : undefined}
+                      set:text={child.label.toLowerCase()}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <a
+              class="top__link"
+              href={item.href}
+              aria-current={isHere(item.href) ? "page" : undefined}
+              set:text={path(item.label)}
+            />
+          ),
+        )
+      }
+    </nav>
+    <div class="top__end">
+      <a
+        class="btn-ascii btn-ascii--small"
+        href={TICKETS_HREF}
+        set:html={ascii("tickets")}
+      />
+      <button
+        class="top__menu btn-ascii btn-ascii--small"
+        type="button"
+        aria-expanded="false"
+        aria-controls="qhack-nav"
+        data-menu
+        set:html={`<span aria-hidden="true">[ </span><span data-menu-label>menu</span><span aria-hidden="true"> ]</span>`}
+      />
+    </div>
+  </header>
+</div>
