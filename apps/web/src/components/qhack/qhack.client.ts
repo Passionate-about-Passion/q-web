@@ -724,6 +724,14 @@ function initPageRain(root: HTMLElement): (value: number) => void {
   };
 }
 
+// A moment in which the page has nothing more urgent to do.
+const idle = (): Promise<void> =>
+  new Promise((resolve) => {
+    if ("requestIdleCallback" in window)
+      requestIdleCallback(() => resolve(), { timeout: 600 });
+    else setTimeout(resolve, 120);
+  });
+
 /* ------------------------------------------------------------------ boot */
 export async function initQhackPage(): Promise<void> {
   const root = $("[data-qhack]");
@@ -754,19 +762,8 @@ export async function initQhackPage(): Promise<void> {
   initStatus(root);
   initHeader();
   initFooter(root);
-  const track = $("[data-partners]", root);
-  if (track && data.partners.length) {
-    initPartners(track, data.partners, {
-      height: innerWidth < 760 ? 30 : 40,
-    }).catch((err: unknown) => console.error(err));
-  }
   initProgram();
   initTyping(root);
-  const stage = $("[data-movie]", root);
-  if (stage) {
-    initMovie(stage, { reduce });
-    initMovieFacts(stage);
-  }
   const ask = $("[data-ask]", root);
   if (ask && data.topics.length) {
     // the answers were all written out for readers without the script: the
@@ -781,9 +778,39 @@ export async function initQhackPage(): Promise<void> {
   }
   initApplyGate(data.applyOpen);
   initReveal(root);
-  const heroCanvas = $<HTMLCanvasElement>("[data-hero-canvas]", root);
-  if (heroCanvas) void initHero(heroCanvas, data.logo);
   const setRain = initPageRain(root);
+
+  // The entrance belongs to the lockup: it starts as soon as it can, and
+  // nothing heavy runs while it flies together. The partner band is light
+  // and drawn in slices beside it (it does not wait for the lockup either:
+  // a slow device still gets its logos); the film preview, the laptop and
+  // the photo roll wait until the lockup stands, or until somebody scrolls.
+  const track = $("[data-partners]", root);
+  if (track && data.partners.length) {
+    initPartners(track, data.partners, {
+      height: innerWidth < 760 ? 30 : 40,
+    }).catch((err: unknown) => console.error(err));
+  }
+  const heroCanvas = $<HTMLCanvasElement>("[data-hero-canvas]", root);
+  const hero = heroCanvas
+    ? await initHero(heroCanvas, data.logo).catch((err: unknown) => {
+        console.error(err);
+        return null;
+      })
+    : null;
+  await new Promise<void>((resolve) => {
+    void hero?.assembled.then(resolve);
+    setTimeout(resolve, !hero || scrollY > 40 ? 0 : 6000);
+    for (const type of ["scroll", "wheel", "keydown", "touchmove"])
+      addEventListener(type, () => resolve(), { once: true, passive: true });
+  });
+  await idle();
+
+  const stage = $("[data-movie]", root);
+  if (stage) {
+    initMovie(stage, { reduce });
+    initMovieFacts(stage);
+  }
 
   let hacked = false;
   const setHacked = () => {
@@ -799,9 +826,9 @@ export async function initQhackPage(): Promise<void> {
   };
 
   // The 3D pieces. Setting them up (the 3D library, studio lighting, shaders)
-  // is heavy work on a cold start, so it waits until the hero has assembled,
-  // or until somebody scrolls: the entrance must not stutter. The laptop
-  // comes first, the film roll further down after it.
+  // is heavy work on a cold start, which is why they come last: the entrance
+  // must not stutter. The laptop comes first, the film roll further down
+  // after it.
   const film = $("[data-film]", root);
   const machine = $("[data-machine]", root);
   if (reduce) {
@@ -809,11 +836,7 @@ export async function initQhackPage(): Promise<void> {
     machine?.classList.add("is-static");
     return;
   }
-  await new Promise<void>((resolve) => {
-    setTimeout(resolve, scrollY > 40 ? 0 : 3300);
-    for (const type of ["scroll", "wheel", "keydown", "touchmove"])
-      addEventListener(type, () => resolve(), { once: true, passive: true });
-  });
+  await idle();
   const laptopCanvas = machine && $<HTMLCanvasElement>("canvas", machine);
   if (machine && laptopCanvas) {
     await import("./laptop")

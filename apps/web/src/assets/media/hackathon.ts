@@ -94,5 +94,7 @@ export const partnerLogos: Record<string, { src: string; label?: boolean }> = {
   "partner-ibm.svg": { src: "/media/partner-ibm.svg" },
   "partner-pwc.svg": { src: "/media/partner-pwc.svg" },
   "partner-le-wagon.svg": { src: "/media/partner-le-wagon.svg" },
-  "partner-ace.webp": { src: "/media/partner-ace.webp" },
+  // ACE Alternatives. The key is the one the CMS option carries; the file is
+  // the company's own logo, uploaded under its full name.
+  "partner-ace.webp": { src: "/media/partner-ace-alternatives.svg" },
 };

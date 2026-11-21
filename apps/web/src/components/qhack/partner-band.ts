@@ -5,12 +5,20 @@
 //
 // A partner without a logo file is set as its name in the display face and
 // goes through the same treatment, so the band never has a hole.
+//
+// The band comes up while the hero lockup assembles, so it must not hold the
+// page: every logo is drawn once, at a size not far above the one it is shown
+// in, and the work is cut into slices of a few milliseconds.
+
+import { breathe } from "./breathe";
 
 export interface BandPartner {
   name: string;
   logo?: string;
   /** show the name beside a logo that is only a mark */
   label?: boolean;
+  /** the partner's own site; the logo links to it */
+  href?: string;
 }
 
 /** The faces the band draws with, by the names the page resolved them to. */
@@ -90,7 +98,7 @@ function maskOf(
   draw: (g: CanvasRenderingContext2D) => void,
   w: number,
   h: number,
-): HTMLCanvasElement {
+): { mask: HTMLCanvasElement; box: InkBox | null } {
   const c = document.createElement("canvas");
   c.width = w;
   c.height = h;
@@ -112,33 +120,29 @@ function maskOf(
     pale += a * white[p];
   }
   const allWhite = ink > 0 && pale / ink > 0.7;
-  for (let i = 0, p = 0; i < d.length; i += 4, p++) {
-    const a = d[i + 3] / 255;
-    d[i] = d[i + 1] = d[i + 2] = 255;
-    d[i + 3] = Math.round(255 * (allWhite ? a : a * (1 - white[p])));
-  }
-  g.putImageData(im, 0, 0);
-  return c;
-}
-
-// The box that holds all the ink of a mask.
-function inkBox(mask: HTMLCanvasElement): InkBox | null {
-  const { width: w, height: h } = mask;
-  const d = context2d(mask).getImageData(0, 0, w, h).data;
+  // the box that holds all the ink, found in the same pass
   let x0 = w,
     y0 = h,
     x1 = -1,
     y1 = -1;
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      if (d[(y * w + x) * 4 + 3] < 40) continue;
+  for (let y = 0, i = 0, p = 0; y < h; y++) {
+    for (let x = 0; x < w; x++, i += 4, p++) {
+      const a = d[i + 3] / 255;
+      const out = Math.round(255 * (allWhite ? a : a * (1 - white[p])));
+      d[i] = d[i + 1] = d[i + 2] = 255;
+      d[i + 3] = out;
+      if (out < 40) continue;
       if (x < x0) x0 = x;
       if (x > x1) x1 = x;
       if (y < y0) y0 = y;
       if (y > y1) y1 = y;
     }
   }
-  return x1 < 0 ? null : { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+  g.putImageData(im, 0, 0);
+  return {
+    mask: c,
+    box: x1 < 0 ? null : { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 },
+  };
 }
 
 function render(
@@ -147,46 +151,55 @@ function render(
   height: number,
   faces: Faces,
 ): HTMLCanvasElement {
-  // 1. the logo (or the name) large, as a mask, and where its ink is
-  const BIG = 260;
-  const font = `800 ${Math.round(BIG * 0.7)}px ${faces.display}`;
+  // 1. where the ink is: the logo (or the name) drawn small. Many files
+  // carry a margin, and the band sizes a logo by its ink, not by its file.
+  const SMALL = 72;
+  const font = `800 ${Math.round(SMALL * 0.7)}px ${faces.display}`;
   const probe = context2d(document.createElement("canvas"));
   probe.font = font;
   const textW = Math.ceil(probe.measureText(partner.name).width);
   const markW = img
-    ? Math.round((BIG * img.naturalWidth) / img.naturalHeight)
+    ? Math.round((SMALL * img.naturalWidth) / img.naturalHeight)
     : 0;
   const withName = !img || partner.label; // an icon-only logo is set beside the name
-  const gap = img && withName ? Math.round(BIG * 0.28) : 0;
-  const big = maskOf(
-    (g) => {
-      if (img) g.drawImage(img, 0, 0, markW, BIG);
-      if (withName) {
-        g.font = font;
-        g.fillStyle = "#101010";
-        g.textBaseline = "middle";
-        g.fillText(partner.name, markW + gap, BIG * 0.52);
-      }
-    },
-    markW + gap + (withName ? textW : 0) + 4,
-    BIG,
-  );
-  const box = inkBox(big) || { x: 0, y: 0, w: big.width, h: big.height };
+  const gap = img && withName ? Math.round(SMALL * 0.28) : 0;
+  const draw = (g: CanvasRenderingContext2D): void => {
+    g.imageSmoothingQuality = "high";
+    if (img) g.drawImage(img, 0, 0, markW, SMALL);
+    if (withName) {
+      g.font = font;
+      g.fillStyle = "#101010";
+      g.textBaseline = "middle";
+      g.fillText(partner.name, markW + gap, SMALL * 0.52);
+    }
+  };
+  const fullW = markW + gap + (withName ? textW : 0) + 4;
+  const box = maskOf(draw, fullW, SMALL).box || {
+    x: 0,
+    y: 0,
+    w: fullW,
+    h: SMALL,
+  };
 
   // 2. its size in the band: wide wordmarks lower, compact marks taller, so
-  // every partner carries about the same weight
+  // every partner carries about the same weight. Then the mask itself, drawn
+  // from the original at exactly that size, so it is as sharp as the file.
   const aspect = box.w / box.h;
   const H = Math.round(
     height * SCALE * Math.min(1.2, Math.max(0.46, Math.sqrt(3.4 / aspect))),
   );
   const W = Math.round(H * aspect);
   const pad = 2 * SCALE;
-  const mask = document.createElement("canvas");
-  mask.width = W + pad * 2;
-  mask.height = H + pad * 2;
-  const mg = context2d(mask);
-  mg.imageSmoothingQuality = "high";
-  mg.drawImage(big, box.x, box.y, box.w, box.h, pad, pad, W, H);
+  const k = H / box.h;
+  const { mask } = maskOf(
+    (g) => {
+      g.translate(pad - box.x * k, pad - box.y * k);
+      g.scale(k, k);
+      draw(g);
+    },
+    W + pad * 2,
+    H + pad * 2,
+  );
 
   // 3. the filling: a faint solid tone under rows of small characters
   const out = document.createElement("canvas");
@@ -238,6 +251,33 @@ function render(
   return out;
 }
 
+// A second copy of a drawn logo, for the other half of the loop.
+function copyOf(logo: HTMLCanvasElement): HTMLCanvasElement {
+  const copy = document.createElement("canvas");
+  copy.width = logo.width;
+  copy.height = logo.height;
+  context2d(copy).drawImage(logo, 0, 0);
+  copy.style.cssText = logo.style.cssText;
+  copy.className = logo.className;
+  return copy;
+}
+
+// The logo as the band shows it: a link to the partner's site when there is
+// one. The links are for the pointer only (the band is hidden from assistive
+// technology, which gets the list of names beside it).
+function item(logo: HTMLCanvasElement, partner: BandPartner): HTMLElement {
+  if (!partner.href) return logo;
+  const link = document.createElement("a");
+  link.className = "plink";
+  link.href = partner.href;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.tabIndex = -1;
+  link.title = partner.name;
+  link.append(logo);
+  return link;
+}
+
 /** Fill `track` with the partners' logos, twice over for the seamless loop. */
 export async function initPartners(
   track: HTMLElement,
@@ -259,18 +299,25 @@ export async function initPartners(
       },
     ),
   );
-  const row = (): DocumentFragment => {
-    const frag = document.createDocumentFragment();
-    for (const [partner, img] of logos)
-      frag.appendChild(render(partner, img, height, faces));
-    return frag;
-  };
+  // drawn in slices: a few milliseconds of work, then the page gets a frame
+  const drawn: [BandPartner, HTMLCanvasElement][] = [];
+  let since = performance.now();
+  for (const [partner, img] of logos) {
+    if (performance.now() - since > 5) {
+      await breathe();
+      since = performance.now();
+    }
+    drawn.push([partner, render(partner, img, height, faces)]);
+  }
+  await breathe();
   track.textContent = "";
-  track.append(row(), row());
+  for (const [partner, logo] of drawn) track.append(item(logo, partner));
   // the second half is only there for the loop
-  [...track.children]
-    .slice(logos.length)
-    .forEach((el) => el.setAttribute("aria-hidden", "true"));
+  for (const [partner, logo] of drawn) {
+    const again = item(copyOf(logo), partner);
+    again.setAttribute("aria-hidden", "true");
+    track.append(again);
+  }
   // one pace for any number of partners
   track.style.animationDuration = `${Math.max(30, logos.length * 3.4).toFixed(0)}s`;
   track.classList.add("is-ready");

@@ -108,6 +108,12 @@ const UNIFORMS = [
 ] as const;
 type Uniforms = Record<(typeof UNIFORMS)[number], WebGLUniformLocation | null>;
 
+/** What the page gets back from the hero. */
+export interface HeroHandle {
+  /** resolves when the lockup has flown together (at once without motion) */
+  assembled: Promise<void>;
+}
+
 interface Rect {
   left: number;
   top: number;
@@ -165,8 +171,12 @@ function context2d(
 export async function initHero(
   canvas: HTMLCanvasElement,
   logoSrc: string,
-): Promise<void> {
+): Promise<HeroHandle> {
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const plain = (): HeroHandle => {
+    fallback(canvas, logoSrc);
+    return { assembled: Promise.resolve() };
+  };
   const context = canvas.getContext("webgl", {
     alpha: true,
     premultipliedAlpha: true,
@@ -175,31 +185,45 @@ export async function initHero(
   const logo = new Image();
   logo.src = logoSrc;
   await logo.decode().catch(() => {});
-  if (!context || !logo.naturalWidth) return fallback(canvas, logoSrc);
+  if (!context || !logo.naturalWidth) return plain();
   const gl = context; // checked: the functions below get it without the null
 
+  // The shaders compile beside the page where the browser can do that. Asking
+  // for the result at once would make the page wait for it; this way it
+  // stays alive, and the entrance starts on a free thread.
+  const parallel = gl.getExtension("KHR_parallel_shader_compile");
   const prog = gl.createProgram();
+  const shaders: WebGLShader[] = [];
   for (const [type, src] of [
     [gl.VERTEX_SHADER, VERT],
     [gl.FRAGMENT_SHADER, FRAG],
   ] as const) {
     const s = gl.createShader(type);
-    if (!s) return fallback(canvas, logoSrc);
+    if (!s) return plain();
     gl.shaderSource(s, src);
     gl.compileShader(s);
-    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-      console.error(gl.getShaderInfoLog(s));
-      return fallback(canvas, logoSrc);
-    }
     gl.attachShader(prog, s);
+    shaders.push(s);
   }
   gl.bindAttribLocation(prog, 0, "aPos");
   gl.bindAttribLocation(prog, 1, "aHome");
   gl.bindAttribLocation(prog, 2, "aData");
   gl.linkProgram(prog);
+  if (parallel) {
+    const until = performance.now() + 4000;
+    while (
+      !gl.getProgramParameter(prog, parallel.COMPLETION_STATUS_KHR) &&
+      performance.now() < until
+    )
+      await new Promise((resolve) => setTimeout(resolve, 16));
+  }
   if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+    for (const s of shaders) {
+      const log = gl.getShaderInfoLog(s);
+      if (log) console.error(log);
+    }
     console.error(gl.getProgramInfoLog(prog));
-    return fallback(canvas, logoSrc);
+    return plain();
   }
   gl.useProgram(prog);
   const u = Object.fromEntries(
@@ -549,6 +573,20 @@ export async function initHero(
   let last = 0;
   const rot = new Float32Array(9);
 
+  // The entrance. The characters fade in while they fly home, and it counts
+  // as over after ENTRANCE seconds of their own time: the latest character
+  // has left by then (see the waits in build) and the springs have come to
+  // rest. Whoever waits for `assembled` may then load the heavy pieces.
+  const ENTRANCE = 3.1;
+  let entering = !reduce;
+  let born = 0; // the first frame
+  let flown = 0; // seconds of flight so far
+  let settle = (): void => {};
+  const assembled = new Promise<void>((resolve) => {
+    settle = resolve;
+  });
+  if (!entering) settle();
+
   function physics(dt: number, t: number, crumble: number): void {
     const held = blast.on;
     const R = held
@@ -620,10 +658,21 @@ export async function initHero(
 
   function frame(now: number): void {
     raf = 0;
-    // real time, in steps the springs can take: a slow device must not show slow motion
-    let left = Math.min(0.1, (now - (last || now)) / 1000);
+    // real time, in steps the springs can take: a slow device must not show
+    // slow motion. Only while the lockup assembles a late frame is not caught
+    // up: one jump of a tenth of a second is what reads as a hitch, a moment
+    // at a slower pace does not.
+    let left = Math.min(entering ? 1 / 30 : 0.1, (now - (last || now)) / 1000);
     last = now;
     const t = now / 1000;
+    if (!born) born = now;
+    if (entering) {
+      flown += left;
+      if (flown > ENTRANCE) {
+        entering = false;
+        settle();
+      }
+    }
 
     // how far the hero has scrolled out: the body crumbles and fades
     const r = host.getBoundingClientRect();
@@ -660,7 +709,10 @@ export async function initHero(
     gl.uniform1f(u.uHover, mouse.hover);
     gl.uniform1f(u.uLit, mouse.hover * (blast.on ? 1 : 0.6));
     gl.uniform1f(u.uTime, reduce ? 0 : t);
-    gl.uniform1f(u.uFade, 1 - smooth(0.5, 0.98, gone));
+    gl.uniform1f(
+      u.uFade,
+      (1 - smooth(0.5, 0.98, gone)) * (reduce ? 1 : smooth(0, 900, now - born)),
+    );
 
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.uniform1f(u.uPass, 1);
@@ -698,6 +750,7 @@ export async function initHero(
 
   build(!reduce);
   kick();
+  const handle: HeroHandle = { assembled };
 
   if (new URLSearchParams(location.search).has("debug")) {
     window.qhero = {
@@ -726,6 +779,7 @@ export async function initHero(
       },
     };
   }
+  return handle;
 }
 
 function fallback(canvas: HTMLCanvasElement, logoSrc: string): void {

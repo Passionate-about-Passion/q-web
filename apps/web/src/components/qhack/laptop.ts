@@ -59,6 +59,7 @@ import {
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { banner } from "./ascii";
+import { breathe } from "./breathe";
 import { rgba, token } from "./palette";
 import { QRain } from "./rain";
 
@@ -278,7 +279,11 @@ export async function initLaptop({
     uSize: { value: 4 },
     uGain: { value: 1 },
   };
+  // The set-up is cut into pieces (breathe): the hero above keeps moving
+  // while the machine is prepared, instead of standing still for it.
+  await breathe();
   const env = studio(renderer);
+  await breathe();
   scene.environment = env;
   scene.environmentIntensity = 1.15;
   const key = new DirectionalLight(0xffffff, 0.7);
@@ -393,11 +398,13 @@ export async function initLaptop({
     Array.from(line, () => Math.random()),
   );
 
+  await breathe();
   const dome = stickerDome();
   assets.stickers.forEach((s, i) => {
     const map = stickerMaps[i];
     if (map) lid.add(makeSticker(s, map, renderer, env, dome));
   });
+  await breathe();
 
   // ---- the machine condenses out of particles
   // Every material can be thinned out to a stipple (uSolid), and two point
@@ -430,10 +437,12 @@ export async function initLaptop({
   const lidCorners = cornersOf(lid, lid);
   const few = Math.min(innerWidth, innerHeight) < 600;
   const swarmMat = makeSwarmMaterial(swarm);
+  await breathe();
   const swarmBase = new Points(
     samplePoints(baseMeshes, body, few ? 1800 : 3200),
     swarmMat,
   );
+  await breathe();
   const swarmLid = new Points(
     samplePoints(lidMeshes, lid, few ? 2200 : 3800),
     swarmMat,
@@ -441,6 +450,7 @@ export async function initLaptop({
   swarmBase.frustumCulled = swarmLid.frustumCulled = false;
   body.add(swarmBase);
   lid.add(swarmLid);
+  await breathe();
 
   // ---- geometry of the display in lid space, for the camera fit
   screen.geometry.computeBoundingBox();
@@ -1077,6 +1087,7 @@ export async function initLaptop({
       requestAnimationFrame(frame);
     }
   };
+  await breathe();
   renderer.compileAsync(scene, camera).then(start, start);
   setTimeout(start, 8000); // never wait forever
 
