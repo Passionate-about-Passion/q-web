@@ -110,15 +110,23 @@ export function seoFields(pageLabel: string): Field[] {
   ];
 }
 
-/** A single string, e.g. one announcement line, feature bullet, or logo name. */
+/** A single string, e.g. one announcement line, feature bullet, or logo name.
+ * `maxRows` caps the list where the page has room for a fixed few (the
+ * hackathon laptop lines); it is validation only and adds no column. */
 export function stringArrayField(
   name: string,
-  opts?: { required?: boolean; label?: string; description?: string },
+  opts?: {
+    required?: boolean;
+    label?: string;
+    description?: string;
+    maxRows?: number;
+  },
 ): Field {
   return {
     name,
     type: "array",
     required: opts?.required,
+    ...(opts?.maxRows ? { maxRows: opts.maxRows } : {}),
     labels: opts?.label
       ? { singular: opts.label, plural: `${opts.label}s` }
       : undefined,
@@ -206,11 +214,18 @@ export function pageStatArrayField(
 
 /** AgendaItem = { date, title, description } (program/hackathon schedule rows).
  * `descriptionRequired: false` lets a row be just a time and a title (the
- * hackathon day plan); the program agenda keeps it required. */
+ * hackathon day plan); the program agenda keeps it required.
+ *
+ * `extraFields` are appended to the rows of that one array (the hackathon
+ * day heading and hack clock mark). Every array has its own table, so a
+ * caller that passes none (the program agenda) gains no column. */
 export function agendaItemsField(
   name: string,
   description?: string,
-  { descriptionRequired = true }: { descriptionRequired?: boolean } = {},
+  {
+    descriptionRequired = true,
+    extraFields = [],
+  }: { descriptionRequired?: boolean; extraFields?: Field[] } = {},
 ): Field {
   return {
     name,
@@ -232,6 +247,7 @@ export function agendaItemsField(
               },
             }),
       },
+      ...extraFields,
     ],
   };
 }

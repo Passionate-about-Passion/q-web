@@ -76,6 +76,13 @@ export const MEDIA_GLOBAL_FIELDS = [
     refs: [{ fieldPath: "audiences[].imageFile", titleField: "heading" }],
   },
   {
+    slug: "page-hackathon",
+    label: "Hackathon",
+    path: "/hackathon/",
+    // Partner logos are code-side registry keys, not uploads.
+    refs: [{ fieldPath: "impressions.photos[].image", titleField: "caption" }],
+  },
+  {
     slug: "page-kickoff",
     label: "Join Q / Kickoff",
     path: "/kickoff/",

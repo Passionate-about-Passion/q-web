@@ -80,6 +80,8 @@ export type {
   ProgramContent,
   TicketCategoriesContent,
   ContactContent,
+  HackathonAgendaItem,
+  HackathonPhoto,
   HackathonContent,
   OurTeamContent,
   PastTeamsContent,

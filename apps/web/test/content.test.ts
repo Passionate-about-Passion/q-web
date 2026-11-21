@@ -14,6 +14,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 
@@ -297,6 +298,181 @@ describe("assertTicketPage", () => {
     ).toThrow(/{discount}/);
     const { phases: _omit, ...withoutPhases } = page;
     expect(() => assertTicketPage(withoutPhases)).not.toThrow();
+  });
+});
+
+// The Q-Hack 2027 groups on page-hackathon and the FAQ topic are optional in
+// the CMS and absent from any snapshot taken before they existed. Both
+// sources must still hand the page one complete shape, so the loaders fill
+// safe empties. These run the real JSON loaders against a pinned content
+// directory (the module reads WEB_CONTENT_DIR once, at load).
+describe("hackathon 2027 content (JSON mode)", () => {
+  const fixtureDir = fileURLToPath(
+    new URL("./fixtures/ci-content/", import.meta.url),
+  );
+  const readFixture = (file: string) =>
+    JSON.parse(readFileSync(join(fixtureDir, file), "utf-8"));
+  const dirs: string[] = [];
+
+  afterEach(() => {
+    delete process.env.WEB_CONTENT_DIR;
+    vi.resetModules();
+  });
+
+  afterAll(() => {
+    for (const dir of dirs) rmSync(dir, { recursive: true, force: true });
+  });
+
+  async function loadersFor(dir: string) {
+    process.env.WEB_CONTENT_DIR = dir;
+    vi.resetModules();
+    return import("../src/lib/content");
+  }
+
+  /** A content dir holding the given files, as a snapshot would. */
+  function snapshotDir(files: Record<string, unknown>): string {
+    const dir = mkdtempSync(join(tmpdir(), "q-content-"));
+    dirs.push(dir);
+    for (const [file, data] of Object.entries(files))
+      writeFileSync(join(dir, file), JSON.stringify(data));
+    return dir;
+  }
+
+  it("reads every 2027 group of the committed fixture", async () => {
+    const { getPageContent } = await loadersFor(fixtureDir);
+    const { hackathon } = await getPageContent();
+
+    expect(Date.parse(hackathon.event.startsAt)).toBeLessThan(
+      Date.parse(hackathon.event.endsAt),
+    );
+    expect(new Date(hackathon.event.startsAt).getUTCFullYear()).toBe(2027);
+    expect(hackathon.event.location).not.toBe("");
+    expect(hackathon.application.isOpen).toBe(false);
+    expect(hackathon.application.comingSoonLabel).not.toBe("");
+    expect(hackathon.machine.lines).toHaveLength(3);
+    expect(hackathon.machine.screenLine).not.toBe("");
+    expect(hackathon.aftermovie.caption).not.toBe("");
+
+    const { items } = hackathon.schedule;
+    expect(items).toHaveLength(6);
+    expect(items.filter((item) => item.day !== "")).toHaveLength(2);
+    expect(items.filter((item) => item.mark !== "")).toHaveLength(3);
+    // Rows without a day or mark carry the empty string, never undefined.
+    expect(items.every((item) => typeof item.day === "string")).toBe(true);
+    expect(items.every((item) => typeof item.mark === "string")).toBe(true);
+
+    expect(hackathon.impressions.photos).toHaveLength(6);
+    for (const photo of hackathon.impressions.photos) {
+      expect(photo.src).toMatch(/^\/media\/[^/]+$/);
+      expect(photo.width).toBeGreaterThan(0);
+      expect(photo.height).toBeGreaterThan(0);
+    }
+    expect(hackathon.facts).toHaveLength(8);
+    expect(hackathon.partnerPitch.points).toHaveLength(3);
+    // normalizeHrefsDeep leaves a mailto: link alone.
+    expect(hackathon.partnerPitch.ctaHref).toMatch(/^mailto:/);
+  });
+
+  it("fills safe empties for a snapshot taken before the 2027 groups existed", async () => {
+    const content = readFixture("page-content.json");
+    for (const key of [
+      "event",
+      "application",
+      "machine",
+      "aftermovie",
+      "impressions",
+      "facts",
+      "partnerPitch",
+    ])
+      delete content.hackathon[key];
+    for (const item of content.hackathon.schedule.items) {
+      delete item.day;
+      delete item.mark;
+    }
+
+    const { getPageContent } = await loadersFor(
+      snapshotDir({ "page-content.json": content }),
+    );
+    const { hackathon } = await getPageContent();
+
+    expect(hackathon.event).toEqual({ startsAt: "", endsAt: "", location: "" });
+    expect(hackathon.application).toEqual({
+      isOpen: false,
+      comingSoonLabel: "Applications open soon",
+    });
+    expect(hackathon.machine).toEqual({ lines: [], hint: "", screenLine: "" });
+    expect(hackathon.aftermovie).toEqual({ heading: "", caption: "" });
+    expect(hackathon.impressions).toEqual({
+      heading: "",
+      intro: "",
+      photos: [],
+    });
+    expect(hackathon.facts).toEqual([]);
+    expect(hackathon.partnerPitch).toEqual({
+      heading: "",
+      lede: "",
+      points: [],
+      ctaLabel: "",
+      ctaHref: "",
+      contactEmail: "",
+    });
+    expect(hackathon.schedule.items[0]).toMatchObject({ day: "", mark: "" });
+    // The 2026 groups the old page reads are untouched.
+    expect(hackathon.benefits.cards.length).toBeGreaterThan(0);
+    expect(hackathon.closingCta.mailtoEmail).not.toBe("");
+  });
+
+  it("leaves out an impression photo without a file", async () => {
+    const content = readFixture("page-content.json");
+    content.hackathon.impressions.photos[0].src = "";
+
+    const { getPageContent } = await loadersFor(
+      snapshotDir({ "page-content.json": content }),
+    );
+    const { hackathon } = await getPageContent();
+    expect(hackathon.impressions.photos).toHaveLength(5);
+  });
+
+  it("groups only the hackathon questions of the fixture under a topic", async () => {
+    const { getFaqs } = await loadersFor(fixtureDir);
+    const faqs = await getFaqs();
+    const hack = faqs.filter((faq) => faq.page === "hackathon");
+    const topics = new Set(hack.map((faq) => faq.topic));
+
+    expect(hack.every((faq) => faq.topic !== "")).toBe(true);
+    expect(topics.size).toBeGreaterThanOrEqual(2);
+    expect(topics.size).toBeLessThanOrEqual(3);
+    // Other pages carry no topic: the empty string, never undefined.
+    expect(
+      faqs.filter((faq) => faq.page !== "hackathon").map((faq) => faq.topic),
+    ).toEqual(faqs.filter((faq) => faq.page !== "hackathon").map(() => ""));
+  });
+
+  it("gives a question without a topic the empty string", async () => {
+    const { getFaqs } = await loadersFor(
+      snapshotDir({
+        "faqs.json": [
+          { question: "A?", answerHtml: "<p>a</p>", page: "hackathon" },
+          {
+            question: "B?",
+            answerHtml: "<p>b</p>",
+            page: "hackathon",
+            topic: null,
+          },
+          {
+            question: "C?",
+            answerHtml: "<p>c</p>",
+            page: "hackathon",
+            topic: " Applying ",
+          },
+        ],
+      }),
+    );
+    expect((await getFaqs()).map((faq) => faq.topic)).toEqual([
+      "",
+      "",
+      "Applying",
+    ]);
   });
 });
 

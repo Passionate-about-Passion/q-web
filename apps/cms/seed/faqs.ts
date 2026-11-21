@@ -12,6 +12,8 @@ type Faq = {
   question: string;
   answerHtml: string;
   page: string;
+  /** Optional: only the hackathon entries carry one. */
+  topic?: string | null;
 };
 
 function readJson(name: string): Faq[] {
@@ -101,6 +103,7 @@ async function run() {
             question: faq.question,
             answer,
             page: page ?? "home",
+            topic: faq.topic?.trim() || null,
             order: index * 10,
             _status: "published",
           },

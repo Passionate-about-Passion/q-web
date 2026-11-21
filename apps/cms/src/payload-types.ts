@@ -434,6 +434,10 @@ export interface Faq {
    */
   page: 'home' | 'program' | 'hackathon';
   /**
+   * Optional. Groups the questions on the Hackathon page under a short topic such as Applying. Leave empty on other pages.
+   */
+  topic?: string | null;
+  /**
    * Sort position within the page's FAQ list, ascending. Lower numbers appear higher. Decimals are allowed (7.5 slots between 7 and 8), so inserting never means renumbering. New entries land after the current last one.
    */
   order: number;
@@ -718,6 +722,7 @@ export interface FaqsSelect<T extends boolean = true> {
   question?: T;
   answer?: T;
   page?: T;
+  topic?: T;
   order?: T;
   lastEditedBy?: T;
   lastEditedAt?: T;
@@ -1641,6 +1646,9 @@ export interface PageHackathon {
   hero: {
     headline: string;
     tagline: string;
+    /**
+     * The apply button. Its link is where every apply button on the page leads while applications are open.
+     */
     cta: {
       label: string;
       /**
@@ -1648,6 +1656,49 @@ export interface PageHackathon {
        */
       href: string;
     };
+  };
+  event?: {
+    /**
+     * Day and time the hack starts. The countdown runs to this moment.
+     */
+    startsAt?: string | null;
+    /**
+     * Day and time the hack ends.
+     */
+    endsAt?: string | null;
+    /**
+     * Where the hack takes place, e.g. "University of Mannheim".
+     */
+    location?: string | null;
+  };
+  application?: {
+    /**
+     * When off, every apply button opens a short "not open yet" window instead of a link. When on, the buttons open the Hero button's link.
+     */
+    isOpen?: boolean | null;
+    /**
+     * Status line shown while applications are closed.
+     */
+    comingSoonLabel?: string | null;
+  };
+  machine?: {
+    /**
+     * Up to three short lines shown beside the laptop, one per row.
+     */
+    lines?:
+      | {
+          text: string;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Optional. Small hint shown with the laptop, e.g. "Keep scrolling".
+     */
+    hint?: string | null;
+    /**
+     * Optional. The line typed on the laptop screen under the logo.
+     */
+    screenLine?: string | null;
   };
   partners: {
     heading: string;
@@ -1660,7 +1711,7 @@ export interface PageHackathon {
         name: string;
         href: string;
         /**
-         * Logo asset registered in code (HackPartners.astro's logoAssets), not an uploaded file. Ask IT to register a new logo before it can appear in this list.
+         * Logo file registered for the page, not an uploaded file. Ask IT to register a new logo before it can appear in this list.
          */
         logoFile:
           | '69bfc230ceecbebceff708fc_new-logo.webp'
@@ -1679,7 +1730,13 @@ export interface PageHackathon {
           | '69d00453416ddd4a45dad964_mlh-logo-color-dark.svg'
           | 'digitalocean-logo-horizontal-blue.svg'
           | 'dev-logo-black.svg'
-          | 'elevenlabs-logo-black.svg';
+          | 'elevenlabs-logo-black.svg'
+          | 'partner-sap.svg'
+          | 'partner-microsoft.svg'
+          | 'partner-ibm.svg'
+          | 'partner-pwc.svg'
+          | 'partner-le-wagon.svg'
+          | 'partner-ace.webp';
         /**
          * Optional footnote, e.g. "Challenge to be announced".
          */
@@ -1688,6 +1745,106 @@ export interface PageHackathon {
       }[];
       id?: string | null;
     }[];
+  };
+  schedule: {
+    heading: string;
+    intro: string;
+    items?:
+      | {
+          date: string;
+          title: string;
+          /**
+           * Optional. Leave empty for a time and a title only.
+           */
+          description?: string | null;
+          /**
+           * Optional. Starts a new day and is shown as a heading above this row, e.g. "Day 1, Wednesday".
+           */
+          day?: string | null;
+          /**
+           * Optional hack clock mark such as T+00:00.
+           */
+          mark?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  aftermovie?: {
+    /**
+     * Heading of the aftermovie section.
+     */
+    heading?: string | null;
+    /**
+     * The title line of the film, e.g. "Q-Summit Hackathon 2026".
+     */
+    caption?: string | null;
+  };
+  impressions?: {
+    heading?: string | null;
+    intro?: string | null;
+    /**
+     * The photos, in display order.
+     */
+    photos?:
+      | {
+          /**
+           * Photo from an earlier hack. Upload the sharp original.
+           */
+          image: number | Media;
+          /**
+           * Short description of the photo for screen readers.
+           */
+          alt?: string | null;
+          /**
+           * Optional. Short line shown with the photo, e.g. "The hacking hall".
+           */
+          caption?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  faqSection: {
+    heading: string;
+    intro: string;
+  };
+  /**
+   * Short facts about the hack, one per row. Title is the short label, e.g. "team"; Description is its value, e.g. "up to 4, solo welcome".
+   */
+  facts?:
+    | {
+        title: string;
+        description: string;
+        id?: string | null;
+      }[]
+    | null;
+  partnerPitch?: {
+    heading?: string | null;
+    /**
+     * Short text under the heading.
+     */
+    lede?: string | null;
+    /**
+     * Reasons to become a partner, one per row, in display order.
+     */
+    points?:
+      | {
+          title: string;
+          description: string;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Text of the button, e.g. "Become a partner".
+     */
+    ctaLabel?: string | null;
+    /**
+     * Where the button leads: a full URL (https://...), a mailto: address or an internal path (e.g. "/partner"). Leave empty to show no button.
+     */
+    ctaHref?: string | null;
+    /**
+     * Optional. Email address companies can write to about a partnership.
+     */
+    contactEmail?: string | null;
   };
   benefits: {
     heading: string;
@@ -1701,25 +1858,6 @@ export interface PageHackathon {
           id?: string | null;
         }[]
       | null;
-  };
-  schedule: {
-    heading: string;
-    intro: string;
-    items?:
-      | {
-          date: string;
-          title: string;
-          /**
-           * Optional. Leave empty for a time and a title only.
-           */
-          description?: string | null;
-          id?: string | null;
-        }[]
-      | null;
-  };
-  faqSection: {
-    heading: string;
-    intro: string;
   };
   closingCta: {
     heading: string;
@@ -2870,6 +3008,31 @@ export interface PageHackathonSelect<T extends boolean = true> {
               href?: T;
             };
       };
+  event?:
+    | T
+    | {
+        startsAt?: T;
+        endsAt?: T;
+        location?: T;
+      };
+  application?:
+    | T
+    | {
+        isOpen?: T;
+        comingSoonLabel?: T;
+      };
+  machine?:
+    | T
+    | {
+        lines?:
+          | T
+          | {
+              text?: T;
+              id?: T;
+            };
+        hint?: T;
+        screenLine?: T;
+      };
   partners?:
     | T
     | {
@@ -2890,18 +3053,6 @@ export interface PageHackathonSelect<T extends boolean = true> {
               id?: T;
             };
       };
-  benefits?:
-    | T
-    | {
-        heading?: T;
-        cards?:
-          | T
-          | {
-              title?: T;
-              description?: T;
-              id?: T;
-            };
-      };
   schedule?:
     | T
     | {
@@ -2913,6 +3064,28 @@ export interface PageHackathonSelect<T extends boolean = true> {
               date?: T;
               title?: T;
               description?: T;
+              day?: T;
+              mark?: T;
+              id?: T;
+            };
+      };
+  aftermovie?:
+    | T
+    | {
+        heading?: T;
+        caption?: T;
+      };
+  impressions?:
+    | T
+    | {
+        heading?: T;
+        intro?: T;
+        photos?:
+          | T
+          | {
+              image?: T;
+              alt?: T;
+              caption?: T;
               id?: T;
             };
       };
@@ -2921,6 +3094,41 @@ export interface PageHackathonSelect<T extends boolean = true> {
     | {
         heading?: T;
         intro?: T;
+      };
+  facts?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        id?: T;
+      };
+  partnerPitch?:
+    | T
+    | {
+        heading?: T;
+        lede?: T;
+        points?:
+          | T
+          | {
+              title?: T;
+              description?: T;
+              id?: T;
+            };
+        ctaLabel?: T;
+        ctaHref?: T;
+        contactEmail?: T;
+      };
+  benefits?:
+    | T
+    | {
+        heading?: T;
+        cards?:
+          | T
+          | {
+              title?: T;
+              description?: T;
+              id?: T;
+            };
       };
   closingCta?:
     | T

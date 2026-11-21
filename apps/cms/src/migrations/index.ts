@@ -12,6 +12,7 @@ import * as migration_20261109_195959_ticket_phases from './20261109_195959_tick
 import * as migration_20261111_104849_home_2027 from './20261111_104849_home_2027';
 import * as migration_20261116_221744_home_aftermovie from './20261116_221744_home_aftermovie';
 import * as migration_20261117_140507_ticket_phase_ends from './20261117_140507_ticket_phase_ends';
+import * as migration_20261121_003544_qhack_2027 from './20261121_003544_qhack_2027';
 
 export const migrations = [
   {
@@ -82,6 +83,11 @@ export const migrations = [
   {
     up: migration_20261117_140507_ticket_phase_ends.up,
     down: migration_20261117_140507_ticket_phase_ends.down,
-    name: '20261117_140507_ticket_phase_ends'
+    name: '20261117_140507_ticket_phase_ends',
+  },
+  {
+    up: migration_20261121_003544_qhack_2027.up,
+    down: migration_20261121_003544_qhack_2027.down,
+    name: '20261121_003544_qhack_2027'
   },
 ];
