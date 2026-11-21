@@ -782,8 +782,15 @@ export async function initQhackPage(): Promise<void> {
 
   // The entrance belongs to the lockup: it starts as soon as it can, and
   // nothing heavy runs while it flies together. The partner band is light
-  // and drawn in slices beside it; the film preview, the laptop and the
-  // photo roll wait until the lockup stands (or until somebody scrolls on).
+  // and drawn in slices beside it (it does not wait for the lockup either:
+  // a slow device still gets its logos); the film preview, the laptop and
+  // the photo roll wait until the lockup stands, or until somebody scrolls.
+  const track = $("[data-partners]", root);
+  if (track && data.partners.length) {
+    initPartners(track, data.partners, {
+      height: innerWidth < 760 ? 30 : 40,
+    }).catch((err: unknown) => console.error(err));
+  }
   const heroCanvas = $<HTMLCanvasElement>("[data-hero-canvas]", root);
   const hero = heroCanvas
     ? await initHero(heroCanvas, data.logo).catch((err: unknown) => {
@@ -791,12 +798,6 @@ export async function initQhackPage(): Promise<void> {
         return null;
       })
     : null;
-  const track = $("[data-partners]", root);
-  if (track && data.partners.length) {
-    initPartners(track, data.partners, {
-      height: innerWidth < 760 ? 30 : 40,
-    }).catch((err: unknown) => console.error(err));
-  }
   await new Promise<void>((resolve) => {
     void hero?.assembled.then(resolve);
     setTimeout(resolve, !hero || scrollY > 40 ? 0 : 6000);
