@@ -20,8 +20,10 @@
 // for copies at their drawn size once the page is idle (home.client.ts);
 // the strip stops on hover and while a logo has keyboard focus, and off
 // screen (there is no separate pause control: the team asked for the
-// strip without one; reduced motion stops it for good). The repeats are
-// decorative, so each partner is met once by keyboard and screen reader.
+// strip without one; reduced motion stops it for good). Every copy of a
+// logo links to the partner's site, since the pointer meets whichever copy
+// is passing; the repeats are hidden and out of the tab order, so each
+// partner is met once by keyboard and screen reader.
 // Reduced motion shows plain rows that scroll sideways by hand.
 import "./home-theme.css";
 
@@ -183,21 +185,20 @@ const split = heading ? /^(.*\bof)\s+(.+)$/i.exec(heading) : null;
                               );
                               return (
                                 <li>
-                                  {real ? (
-                                    <a
-                                      class="pl-carrier"
-                                      href={logo.href}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      aria-label={`${logo.name} (opens in a new tab)`}
-                                    >
-                                      <span class="pl-plate">{image}</span>
-                                    </a>
-                                  ) : (
-                                    <span class="pl-carrier" tabindex="-1">
-                                      <span class="pl-plate">{image}</span>
-                                    </span>
-                                  )}
+                                  <a
+                                    class="pl-carrier"
+                                    href={logo.href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label={
+                                      real
+                                        ? `${logo.name} (opens in a new tab)`
+                                        : undefined
+                                    }
+                                    tabindex={real ? undefined : "-1"}
+                                  >
+                                    <span class="pl-plate">{image}</span>
+                                  </a>
                                 </li>
                               );
                             })}
