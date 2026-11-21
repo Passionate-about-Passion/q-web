@@ -52,46 +52,55 @@
   {
     "question": "What is a hackathon?",
     "answerHtml": "<p>A hackathon is a time-limited event where individuals or teams collaborate intensively to solve problems or create innovative projects, often in the realm of technology. These events encourage creativity, teamwork, and quick problem-solving, and typically involve coding, designing, and presenting solutions within a set timeframe, which can range from a few hours to several days.<br/></p>",
-    "page": "hackathon"
+    "page": "hackathon",
+    "topic": "Basics"
   },
   {
     "question": "How do I participate?",
     "answerHtml": "<p>To participate in the Q-Summit hackathon, you need to register through our website. Once registered, you will receive updates about the event and team formation. You will even get a free ticket for the Q-Summit conference which is worth 74€.<br/></p>",
-    "page": "hackathon"
+    "page": "hackathon",
+    "topic": "Applying"
   },
   {
     "question": "Who can join?",
     "answerHtml": "<p>The hackathon is open to anyone with a passion for technology and problem-solving. Whether you're a student, a professional, or an enthusiast, you are welcome to join. Teams can be formed prior to the event or on-site.</p>",
-    "page": "hackathon"
+    "page": "hackathon",
+    "topic": "Applying"
   },
   {
     "question": "What is the required team size, and what happens if we don’t have enough team members?",
     "answerHtml": "<p>Each team should consist of 5 participants. If you're applying with a smaller group or as an individual, don’t worry, we will match you with other participants to form a complete team.<br/></p>",
-    "page": "hackathon"
+    "page": "hackathon",
+    "topic": "Applying"
   },
   {
     "question": "What are the prizes?",
     "answerHtml": "<p>Prizes for the top teams include cash rewards, mentorship opportunities, and tech gadgets. Additionally, winners may receive recognition from our partner companies, enhancing their professional profiles. It's a fantastic opportunity to gain exposure and rewards for your hard work. Each challenge has its own prizes for their challenge. Additonally there will be an overall prize pool for the best teams, which will get the chance to present their result infront of the Q-Summit Mainstage.</p>",
-    "page": "hackathon"
+    "page": "hackathon",
+    "topic": "Basics"
   },
   {
     "question": "When will I find out whether I can take part or not?",
     "answerHtml": "<p>You’ll receive updates on your application status every so often, typically two weeks after submitting it. Just a heads-up, once accepted, you’ll be asked to confirm your attendance closer to the event as we send out notifications for that.<br/></p>",
-    "page": "hackathon"
+    "page": "hackathon",
+    "topic": "Applying"
   },
   {
     "question": "Do I need to know how to code?",
     "answerHtml": "<p>Not necessarily; however, spots for participants without prior coding experience can be limited.<br/></p>",
-    "page": "hackathon"
+    "page": "hackathon",
+    "topic": "Basics"
   },
   {
     "question": "I don't live in Mannheim, where can I stay during the hackathon?",
     "answerHtml": "<p>You can indicate within the application form that you will need accommodation during the Hackathon and we will organise a place to stay for you.<br/></p>",
-    "page": "hackathon"
+    "page": "hackathon",
+    "topic": "On site"
   },
   {
     "question": "What is the Code of Conduct?",
     "answerHtml": "<p>To ensure a safe, inclusive, and welcoming environment for everyone, all attendees must abide by the <a class=\"link-2\" href=\"https://github.com/MLH/mlh-policies/blob/main/code-of-conduct.md\" target=\"_blank\">MLH Code of Conduct.</a><br/></p>",
-    "page": "hackathon"
+    "page": "hackathon",
+    "topic": "On site"
   }
 ]

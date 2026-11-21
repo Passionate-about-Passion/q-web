@@ -11,6 +11,11 @@ export interface Faq {
   question: string;
   answerHtml: string;
   page: FaqPage;
+  /**
+   * Optional topic the hackathon page groups its questions under, e.g.
+   * "Applying". Empty string when unset (every page but the hackathon).
+   */
+  topic: string;
 }
 
 // page select values (Faqs.ts) -> the FaqPage literals this module exports
@@ -26,6 +31,8 @@ interface CmsFaqDoc {
   question: string;
   answer: unknown;
   page: string;
+  /** Optional in Payload, and absent until the CMS has the column. */
+  topic?: string | null;
   order: number;
 }
 
@@ -47,13 +54,25 @@ async function cmsGetFaqs(): Promise<Faq[]> {
       question: doc.question,
       answerHtml: lexicalToHtml(doc.answer),
       page,
+      topic: doc.topic?.trim() ?? "",
     });
   }
   return faqs;
 }
 
+/**
+ * JSON mode reads the snapshot unmapped: only the hackathon entries carry a
+ * topic, and a snapshot taken before the field existed has none at all.
+ */
+type JsonFaq = Omit<Faq, "topic"> & { topic?: string | null };
+
+async function jsonGetFaqs(): Promise<Faq[]> {
+  const faqs = await readJson<JsonFaq[]>("faqs.json");
+  return faqs.map((faq) => ({ ...faq, topic: faq.topic?.trim() ?? "" }));
+}
+
 export function getFaqs(): Promise<Faq[]> {
   return CONTENT_SOURCE === "cms"
     ? memoizeCms("faqs", cmsGetFaqs)
-    : readJson<Faq[]>("faqs.json");
+    : jsonGetFaqs();
 }

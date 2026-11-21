@@ -461,15 +461,54 @@ async function run() {
     console.log("page-contact: updated and published");
   }
 
-  // page-hackathon
+  // page-hackathon. The Q-Hack 2027 groups (event, application, machine,
+  // aftermovie, impressions, facts, partnerPitch, and day / mark on the
+  // schedule rows) are optional in the fixture and in the schema. A field
+  // the fixture does not carry is written as empty rather than skipped, so a
+  // re-seed always ends on exactly what the fixture says.
   {
     const h = content.hackathon;
+
+    // JSON carries a photo as "/media/<filename>" (HackathonPhoto.src); the
+    // CMS field is the upload `image`, which a row requires. A photo whose
+    // file is not on disk is left out instead of failing the whole seed.
+    const photos = [];
+    for (const photo of h.impressions?.photos ?? []) {
+      const image = await ensureMedia(
+        payload,
+        photo.src,
+        photo.alt,
+        "hackathon impression",
+      );
+      if (image === null) continue;
+      photos.push({
+        image,
+        alt: photo.alt || null,
+        caption: photo.caption || null,
+      });
+    }
+
     await payload.updateGlobal({
       slug: "page-hackathon",
       data: {
         title: h.title,
         metaDescription: h.metaDescription,
         hero: h.hero,
+        event: {
+          startsAt: h.event?.startsAt || null,
+          endsAt: h.event?.endsAt || null,
+          location: h.event?.location || null,
+        },
+        application: {
+          isOpen: h.application?.isOpen ?? false,
+          comingSoonLabel:
+            h.application?.comingSoonLabel || "Applications open soon",
+        },
+        machine: {
+          lines: toTextRows(h.machine?.lines ?? []),
+          hint: h.machine?.hint || null,
+          screenLine: h.machine?.screenLine || null,
+        },
         partners: {
           heading: h.partners.heading,
           groups: h.partners.groups.map((group: any) => ({
@@ -483,15 +522,45 @@ async function run() {
           })),
         },
         benefits: h.benefits,
-        schedule: h.schedule,
+        schedule: {
+          heading: h.schedule.heading,
+          intro: h.schedule.intro,
+          items: h.schedule.items.map((item: any) => ({
+            date: item.date,
+            title: item.title,
+            description: item.description || null,
+            day: item.day || null,
+            mark: item.mark || null,
+          })),
+        },
+        aftermovie: {
+          heading: h.aftermovie?.heading || null,
+          caption: h.aftermovie?.caption || null,
+        },
+        impressions: {
+          heading: h.impressions?.heading || null,
+          intro: h.impressions?.intro || null,
+          photos,
+        },
         faqSection: h.faqSection,
+        facts: h.facts ?? [],
+        partnerPitch: {
+          heading: h.partnerPitch?.heading || null,
+          lede: h.partnerPitch?.lede || null,
+          points: h.partnerPitch?.points ?? [],
+          ctaLabel: h.partnerPitch?.ctaLabel || null,
+          ctaHref: h.partnerPitch?.ctaHref || null,
+          contactEmail: h.partnerPitch?.contactEmail || null,
+        },
         closingCta: h.closingCta,
         _status: "published",
       },
       user: seedUser,
       overrideAccess: true,
     });
-    console.log("page-hackathon: updated and published");
+    console.log(
+      `page-hackathon: updated and published (${photos.length} impression photos)`,
+    );
   }
 
   // page-our-team

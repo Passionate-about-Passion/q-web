@@ -12,6 +12,7 @@
 | [0006](../decisions/0006-content-source-required.md) | `CONTENT_SOURCE` is required and validated | Accepted |
 | [0007](../decisions/0007-visual-regression-testing.md) | Git-native visual regression testing | Accepted |
 | [0008](../decisions/0008-three-gsap-home-pass.md) | Three.js and GSAP for the 2027 homepage pass and intro | Proposed |
+| [0009](../decisions/0009-three-qhack-page.md) | Three.js and a second typeface for the Q-Hack page | Proposed |
 
 > **ADR-0002 scope note:** ADR-0002's context describes access "scoped per collection and per field." The delivered model is per collection and per page global (see [section 8](08-concepts.md)); "per field" names a Payload capability, not what shipped. ADR-0002 stays accepted as written; this note reconciles it with the built system.
 >

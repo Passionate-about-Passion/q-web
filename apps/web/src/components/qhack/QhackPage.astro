@@ -1,0 +1,906 @@
+---
+// Q-Hack 2027: the body of the /hackathon page (DESIGN.md HACK-1).
+//
+// A terminal that somebody else is typing into. In order: the Q-hack lockup
+// as a body of characters with the partner band; a laptop that forms out of
+// particles, opens, and gets taken over; the programme as a log on one lit
+// line; the aftermovie as a live picture of characters; a roll of photos;
+// the questions as a terminal conversation beside the facts; the pitch to
+// partner companies. A status line stays at the bottom edge.
+//
+// All of it is HTML first. Copy, dates, programme, photos, questions and
+// partners come from the page-hackathon global and the FAQs (see
+// pages/hackathon.astro); the strings written here are the terminal's own
+// chrome (prompts, window titles, the takeover). Without the script the
+// laptop is a short text block, the photos a plain grid and every answer
+// is written out. The script (qhack.client.ts) reads what it needs from the
+// JSON block at the end, so no content is repeated in code.
+import { EVENTS } from "../../lib/analytics/events";
+import {
+  partnerLogos,
+  qHackAftermovie,
+  qHackLogoWhite,
+} from "../../assets/media/hackathon";
+import type { Faq, HackathonContent } from "../../lib/content";
+import { eventDates, slug } from "./event-dates";
+import { ascii, esc, fact, out, prompt } from "./markup";
+import { LAPTOP_MODEL, STICKERS } from "./qhack-assets";
+import type { QhackData } from "./qhack.client";
+import "./qhack-theme.css";
+
+interface Props {
+  content: HackathonContent;
+  /** The questions of this page, in their order. */
+  faqs: Faq[];
+}
+
+const { content, faqs } = Astro.props;
+const { hero, event, application, machine, partners, schedule } = content;
+const { aftermovie, impressions, faqSection, facts, partnerPitch } = content;
+
+const dates = eventDates(event.startsAt, event.endsAt);
+const place = event.location.trim();
+const home = dates ? `~/q-hack/${dates.year}` : "~/q-hack";
+
+// Applications: while they are closed every apply button stays, and opens
+// the "not open yet" window instead of a link (qhack.client.ts). Once they
+// are open the buttons are plain links to the Hero button's target.
+const applyOpen = application.isOpen && hero.cta.href.trim() !== "";
+const applyHref = applyOpen ? hero.cta.href : "#ask";
+const applyExternal = /^https?:/i.test(applyHref);
+const applyLabel = hero.cta.label.trim().toLowerCase() || "apply now";
+const applyAttrs = (placement: string) => ({
+  href: applyHref,
+  ...(applyOpen
+    ? applyExternal
+      ? { target: "_blank", rel: "noopener" }
+      : {}
+    : { "data-apply": "" }),
+  "data-ph-event": EVENTS.hackathon_apply_clicked,
+  "data-ph-prop-cta-placement": placement,
+  "data-ph-prop-cta-href": applyHref,
+});
+const statusLabel = (
+  applyOpen ? "applications open" : application.comingSoonLabel
+).toLowerCase();
+
+// The band: every partner once, in the order of the groups.
+const band = partners.groups
+  .flatMap((group) => group.partners)
+  .map((partner) => {
+    const logo = partnerLogos[partner.logoFile];
+    return {
+      name: partner.name,
+      ...(logo ? { logo: logo.src } : {}),
+      ...(logo?.label ? { label: true } : {}),
+    };
+  });
+
+// The programme: entries alternate left and right of the line on wide
+// screens (the grid row of each one is set here), a day heading starts on
+// the left again.
+type Row =
+  | { kind: "day"; row: number; text: string }
+  | {
+      kind: "item";
+      row: number;
+      side: "is-left" | "is-right";
+      time: string;
+      mark: string;
+      title: string;
+      text: string;
+    };
+const rows: Row[] = [];
+{
+  let side = 0;
+  let row = 1;
+  let afterItem = false;
+  for (const item of schedule.items) {
+    if (item.day.trim()) {
+      if (afterItem) row += 1; // the entry before it reaches one row further down
+      rows.push({
+        kind: "day",
+        row: row++,
+        text: item.day.trim().toLowerCase(),
+      });
+      side = 0;
+    }
+    rows.push({
+      kind: "item",
+      row: row++,
+      side: side++ % 2 ? "is-right" : "is-left",
+      time: item.date.trim(),
+      mark: item.mark.trim(),
+      title: item.title,
+      text: item.description,
+    });
+    afterItem = true;
+  }
+}
+const firstItem = rows.find((r) => r.kind === "item");
+const firstClock =
+  firstItem && firstItem.kind === "item"
+    ? firstItem.mark || firstItem.time
+    : "";
+
+// The questions by topic, in the order the topics first appear.
+const topics: QhackData["topics"] = [];
+for (const faq of faqs) {
+  const label = (faq.topic || "general").trim().toLowerCase();
+  let topic = topics.find((t) => t.label === label);
+  if (!topic) {
+    topic = { id: slug(label) || "general", label, items: [] };
+    topics.push(topic);
+  }
+  topic.items.push({ question: faq.question, answerHtml: faq.answerHtml });
+}
+
+const contactEmail = partnerPitch.contactEmail.trim();
+const factWidth = Math.max(0, ...facts.map((f) => f.title.length)) + 2;
+const lines = machine.lines.filter((line) => line.trim());
+const screenLine = machine.screenLine.trim();
+
+const hasMovie = aftermovie.heading.trim() !== "";
+const hasPhotos = impressions.photos.length > 0;
+const hasAsk = faqs.length > 0 || facts.length > 0;
+const hasPitch = partnerPitch.heading.trim() !== "";
+
+// The windows of the status line, in page order.
+const wins = [
+  { id: "boot", name: "boot" },
+  { id: "machine", name: "machine" },
+  ...(schedule.items.length ? [{ id: "program", name: "program" }] : []),
+  ...(hasMovie ? [{ id: "aftermovie", name: "aftermovie" }] : []),
+  ...(hasPhotos ? [{ id: "impressions", name: "impressions" }] : []),
+  ...(hasAsk ? [{ id: "ask", name: "ask" }] : []),
+  ...(hasPitch ? [{ id: "partner", name: "partner" }] : []),
+];
+
+const data: QhackData = {
+  startsAt: dates ? event.startsAt : "",
+  applyOpen,
+  logo: qHackLogoWhite.src,
+  partners: band,
+  photos: impressions.photos.map((photo, i) => ({
+    src: photo.src,
+    caption: photo.caption.trim().toLowerCase() || `photo ${i + 1}`,
+  })),
+  topics,
+  contactEmail,
+  laptop: {
+    model: LAPTOP_MODEL,
+    stickers: STICKERS,
+    texts: {
+      prompt: `guest@q-hack:~$ ./boot${dates ? ` --year ${dates.year}` : ""}`,
+      title: "Q-Hack",
+      line: screenLine ? `> ${screenLine}` : "",
+      meta: [
+        dates?.shortYear,
+        dates?.hours ? `${dates.hours}h` : "",
+        place.toLowerCase(),
+      ]
+        .filter(Boolean)
+        .join(" · "),
+      hack: [
+        "$ ssh root@your-laptop",
+        "> access granted.",
+        "> rm -rf ./excuses",
+        "> deploying q-rain ...",
+      ],
+      apply: `press enter to ${applyLabel.split(" ")[0]}`,
+      applyBanner: applyLabel.split(" ")[0],
+    },
+  },
+  hackedMessage: applyOpen
+    ? "!! this page has been taken over. your seat is waiting →"
+    : `!! this page has been taken over. ${statusLabel}.`,
+};
+// "<" never appears raw inside the JSON block, so no value can close it
+const json = JSON.stringify(data).replace(/</g, "\\u003c");
+---
+
+<div class="qhack" data-qhack>
+  {
+    /* Before the first paint: tells the styles that the script is on its
+       way, so nothing that the script takes over flashes in its plain
+       form. If the script never arrives the flag is taken back and the
+       page stays the plain one. Not in the visual regression gallery,
+       which shows the page without the script. */
+  }
+  <script is:inline>
+    (() => {
+      const root = document.documentElement;
+      if (root.hasAttribute("data-vrt")) return;
+      root.classList.add("qhack-js");
+      setTimeout(() => {
+        if (!root.hasAttribute("data-qhack-ready"))
+          root.classList.remove("qhack-js");
+      }, 8000);
+    })();
+  </script>
+
+  <!-- 0: boot. The Q-hack lockup as a body of characters, and the partner band. -->
+  <section class="hero" id="boot" data-win="boot">
+    <canvas class="hero__ascii" data-hero-canvas aria-hidden="true"></canvas>
+    <h1 class="sr-only">{hero.headline}</h1>
+
+    <div class="hero__status" aria-label="Status">
+      <p>
+        <span
+          class:list={["dot", { "dot--soon": !applyOpen }]}
+          aria-hidden="true"></span>{statusLabel}
+      </p>
+      <p class="hero__status-strong">{hero.headline.toLowerCase()}</p>
+      {dates && <p class="hero__status-strong">{dates.short}</p>}
+      {dates && <p data-countdown>T-000d 00:00:00</p>}
+    </div>
+
+    <div class="hero__foot">
+      <p class="hero__hint" aria-hidden="true">
+        // press and hold the logo to break it
+      </p>
+      <p
+        class="hero__tag"
+        data-type
+        data-type-delay="1700"
+        data-type-caret="keep"
+        set:html={out(hero.tagline)}
+      />
+      <p class="hero__cta">
+        <a
+          class="btn-ascii"
+          {...applyAttrs("hero")}
+          set:html={ascii(applyLabel)}
+        />
+        <a
+          class="link-ascii"
+          href="#machine"
+          set:html={`scroll to boot the machine <span aria-hidden="true">↓</span>`}
+        />
+      </p>
+    </div>
+
+    {
+      band.length > 0 && (
+        <div class="partners" aria-label={partners.heading}>
+          <p class="partners__label">// {partners.heading.toLowerCase()}</p>
+          <ul class="sr-only">
+            {band.map((partner) => (
+              <li>{partner.name}</li>
+            ))}
+          </ul>
+          <div class="partners__viewport" aria-hidden="true">
+            <div class="partners__track" data-partners />
+          </div>
+        </div>
+      )
+    }
+  </section>
+
+  <!-- 1: machine. Scroll-driven laptop: back view, opens and turns, the screen gets taken over. -->
+  <section class="machine" id="machine" data-win="machine" data-machine>
+    <div class="machine__pin">
+      <canvas class="machine__canvas" aria-hidden="true"></canvas>
+
+      <div class="machine__copy" data-stage="intro">
+        {
+          dates && (
+            <p
+              class="eyebrow"
+              set:text={`// ${[dates.long, place.toLowerCase()].filter(Boolean).join(" · ")}`}
+            />
+          )
+        }
+        {
+          lines.length > 0 && (
+            <h2 class="machine__title">
+              {lines.map((line, i) => (
+                <span
+                  data-type
+                  data-type-delay={i ? String(i * 600 - 100) : undefined}
+                  data-type-caret={i === lines.length - 1 ? "keep" : undefined}
+                  set:text={line}
+                />
+              ))}
+            </h2>
+          )
+        }
+        {machine.hint.trim() && <p class="machine__hint">{machine.hint}</p>}
+      </div>
+
+      <p class="machine__alert" data-stage="hack" aria-hidden="true">
+        !! intrusion detected
+      </p>
+
+      <a
+        class="machine__apply"
+        {...applyAttrs("screen")}
+        data-screen-apply
+        tabindex="-1"
+      >
+        <span class="sr-only">{hero.cta.label}</span>
+      </a>
+      <p class="machine__fallback">
+        <strong>Q-Hack</strong>
+        {screenLine && <br />}
+        {screenLine && <Fragment set:text={`> ${screenLine}_`} />}
+        <br />
+        <a
+          class="btn-ascii"
+          {...applyAttrs("machine")}
+          set:html={ascii(applyLabel)}
+        />
+      </p>
+    </div>
+  </section>
+
+  <!-- 2: program. One line, a diamond per entry. -->
+  {
+    schedule.items.length > 0 && (
+      <section class="program" id="program" data-win="program">
+        <div class="horizon" aria-hidden="true" />
+        <div class="wrap">
+          <header class="sec-head">
+            <p
+              class="sec-path"
+              data-type
+              set:text={`${home} $ cat program.log`}
+            />
+            <h2 class="sec-title">{schedule.heading}</h2>
+            {schedule.intro.trim() && (
+              <p class="sec-lede" data-type data-type-speed="8">
+                {schedule.intro}
+              </p>
+            )}
+          </header>
+
+          <div class="term term--log" data-reveal>
+            <div class="term__bar">
+              <span class="term__dots" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+              </span>
+              <span class="term__title">program.log · q-hack</span>
+              <span class="term__meta" data-clock>
+                {firstClock}
+              </span>
+            </div>
+            <ol class="log" data-program>
+              {rows.map((row) =>
+                row.kind === "day" ? (
+                  <li
+                    class="log__day"
+                    style={`--row: ${row.row}`}
+                    set:text={`── ${row.text} ──`}
+                  />
+                ) : (
+                  <li
+                    class:list={["log__item", row.side]}
+                    style={`--row: ${row.row}`}
+                    data-clock={row.mark || row.time}
+                  >
+                    <i class="log__node" aria-hidden="true" />
+                    <p
+                      class="log__time"
+                      set:html={`[${esc(row.time)}]${row.mark ? ` <b>${esc(row.mark)}</b>` : ""}`}
+                    />
+                    <h3
+                      class="log__title"
+                      data-type
+                      data-type-speed="16"
+                      set:text={row.title}
+                    />
+                    {row.text.trim() && (
+                      <p
+                        class="log__text"
+                        data-type
+                        data-type-speed="5"
+                        set:text={row.text}
+                      />
+                    )}
+                  </li>
+                ),
+              )}
+            </ol>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- 3: aftermovie. A live picture of characters; the button plays the real film. -->
+  {
+    hasMovie && (
+      <section class="movie" id="aftermovie" data-win="aftermovie">
+        <div class="wrap">
+          <header class="sec-head">
+            <p class="sec-path" data-type>
+              ~/q-hack $ mpv aftermovie.mp4
+            </p>
+            <h2 class="sec-title">{aftermovie.heading}</h2>
+          </header>
+
+          <div class="term term--movie" data-reveal>
+            <div class="term__bar">
+              <span class="term__dots" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+              </span>
+              <span
+                class="term__title"
+                set:text={[
+                  "aftermovie.mp4",
+                  aftermovie.caption.trim().toLowerCase(),
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              />
+              <span class="term__meta" data-movie-state>
+                ascii preview
+              </span>
+            </div>
+            <div class="movie__stage" data-movie>
+              <video
+                class="movie__video"
+                src={qHackAftermovie.src}
+                poster={qHackAftermovie.poster}
+                width={qHackAftermovie.width}
+                height={qHackAftermovie.height}
+                preload="metadata"
+                playsinline
+                muted
+                loop
+              />
+              <canvas class="movie__canvas" aria-hidden="true" />
+              <button
+                class="movie__play"
+                type="button"
+                aria-label="Watch the aftermovie: the real film, with sound"
+              >
+                <span class="movie__play-icon" aria-hidden="true" />
+                <span class="movie__play-text">
+                  <strong>watch the aftermovie</strong>
+                  <small>
+                    the real film · sound on
+                    <span data-movie-length />
+                  </small>
+                </span>
+              </button>
+            </div>
+            <p
+              class="movie__note"
+              aria-hidden="true"
+              set:html={`<span class="p">//</span> what you see is a live preview drawn from characters. press play for the real film.`}
+            />
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- 4: impressions. A real film roll: runs by itself, drag or click to browse. -->
+  {
+    hasPhotos && (
+      <section class="film" id="impressions" data-win="impressions" data-film>
+        <div class="wrap">
+          <header class="sec-head">
+            <p class="sec-path" data-type>
+              ~/q-hack $ ls ./impressions
+            </p>
+            <h2 class="sec-title">{impressions.heading || "Impressions"}</h2>
+            {impressions.intro.trim() && (
+              <p class="sec-lede" data-type data-type-speed="8">
+                {impressions.intro}
+              </p>
+            )}
+          </header>
+        </div>
+        <div class="film__stage" data-reveal>
+          <canvas
+            class="film__canvas"
+            role="img"
+            aria-label="A roll of film with the photos listed after it"
+          />
+          <div class="film__ui">
+            <button
+              class="btn-ascii btn-ascii--small"
+              type="button"
+              data-film-prev
+              aria-label="Previous photo"
+              set:text="[ < ]"
+            />
+            <p
+              class="film__caption"
+              data-film-caption
+              aria-live="polite"
+              set:text={`> 01/${String(impressions.photos.length).padStart(2, "0")}`}
+            />
+            <button
+              class="btn-ascii btn-ascii--small"
+              type="button"
+              data-film-next
+              aria-label="Next photo"
+              set:text="[ > ]"
+            />
+          </div>
+        </div>
+        <ul class="film__grid" data-film-grid>
+          {impressions.photos.map((photo) => (
+            <li>
+              <img
+                src={photo.src}
+                width={photo.width}
+                height={photo.height}
+                loading="lazy"
+                decoding="async"
+                alt={photo.alt || photo.caption}
+              />
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  <!-- 5: ask. The questions as a terminal conversation, and the facts at a glance. -->
+  {
+    hasAsk && (
+      <section class="apply" id="ask" data-win="ask">
+        <div class="wrap">
+          <header class="sec-head">
+            <p class="sec-path" data-type set:text={`${home} $ q-hack --ask`} />
+            <h2 class="sec-title">{faqSection.heading}</h2>
+            {faqSection.intro.trim() && (
+              <p class="sec-lede" data-type data-type-speed="8">
+                {faqSection.intro}
+              </p>
+            )}
+          </header>
+
+          <div class="apply__grid">
+            {faqs.length > 0 && (
+              <div class="term term--ask" data-reveal data-ask>
+                <div class="term__bar">
+                  <span class="term__dots" aria-hidden="true">
+                    <i />
+                    <i />
+                    <i />
+                  </span>
+                  <span class="term__title">ask-q-hack · zsh</span>
+                  <span
+                    class="term__meta"
+                    data-chat-count
+                    set:text={`${faqs.length} answers`}
+                  />
+                </div>
+                <div class="term__body">
+                  {/* first the picker: topics, the field, the questions */}
+                  <p data-type set:html={prompt("q-hack --ask")} />
+                  <p
+                    class="chat__hello"
+                    data-type
+                    data-type-speed="8"
+                    set:html={out(
+                      "pick a topic, then a question. or just type. the answer lands below.",
+                    )}
+                  />
+                  <div
+                    class="chat__topics"
+                    data-chat-topics
+                    aria-label="Topics"
+                  />
+                  <form class="ask" data-chat novalidate>
+                    <label
+                      class="ask__label"
+                      for="ask-q"
+                      set:html={`<span class="q">?</span> your question <span aria-hidden="true">›</span>`}
+                    />
+                    <input
+                      class="ask__input"
+                      id="ask-q"
+                      type="text"
+                      role="combobox"
+                      aria-expanded="true"
+                      aria-controls="ask-list"
+                      aria-autocomplete="list"
+                      autocomplete="off"
+                      autocapitalize="off"
+                      spellcheck="false"
+                      maxlength="140"
+                      placeholder="type or pick below"
+                    />
+                    <button
+                      class="ask__enter"
+                      type="submit"
+                      set:html={`enter <span aria-hidden="true">↵</span>`}
+                    />
+                  </form>
+                  <ul
+                    class="chat__list"
+                    id="ask-list"
+                    role="listbox"
+                    aria-label="Questions"
+                    data-chat-list
+                  />
+
+                  {/* then the conversation: asking a question scrolls here */}
+                  <div class="chat__out" data-chat-out>
+                    <p class="chat__rule">
+                      <span>// answers</span>
+                      <button
+                        class="chat__again"
+                        type="button"
+                        data-chat-again
+                        hidden
+                        set:html={`<span aria-hidden="true">↑ </span>ask another`}
+                      />
+                    </p>
+                    <div
+                      class="chat__log"
+                      data-chat-log
+                      aria-live="polite"
+                      tabindex="0"
+                      aria-label="Answers"
+                    >
+                      <p
+                        class="chat__empty"
+                        data-chat-empty
+                        hidden
+                        set:html={out(
+                          "nothing asked yet. your answer shows up here.",
+                        )}
+                      />
+                      {
+                        /* Every answer, written out for readers without the
+                           script; the script clears them and types the one
+                           that is asked for. */
+                        faqs.map((faq) => (
+                          <div class="chat__turn" data-chat-static>
+                            <p
+                              class="chat__q"
+                              set:html={`<span class="q">?</span> ${esc(faq.question)}`}
+                            />
+                            <div class="chat__a" set:html={faq.answerHtml} />
+                          </div>
+                        ))
+                      }
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {facts.length > 0 && (
+              <div class="term" data-reveal>
+                <div class="term__bar">
+                  <span class="term__dots" aria-hidden="true">
+                    <i />
+                    <i />
+                    <i />
+                  </span>
+                  <span class="term__title">q-hack · zsh</span>
+                </div>
+                <div class="term__body" data-type-seq>
+                  <p data-type set:html={prompt("q-hack --info")} />
+                  {facts.map((item) => (
+                    <p
+                      data-type
+                      data-type-speed="6"
+                      set:html={fact(
+                        item.title.toLowerCase(),
+                        item.description,
+                        factWidth,
+                      )}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- 6: partner. The pitch to companies, and the way to the partner form. -->
+  {
+    hasPitch && (
+      <section class="partner" id="partner" data-win="partner">
+        <div class="wrap">
+          <header class="sec-head">
+            <p
+              class="sec-path"
+              data-type
+              set:text={`${home} $ ./become-a-partner`}
+            />
+            <h2 class="sec-title">{partnerPitch.heading}</h2>
+          </header>
+
+          <div class="term term--partner" data-reveal>
+            <div class="term__bar">
+              <span class="term__dots" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+              </span>
+              <span class="term__title">partner.md · q-hack</span>
+              {dates && <span class="term__meta">{dates.year}</span>}
+            </div>
+            <div class="term__body partner__body">
+              <div class="partner__pitch">
+                {partnerPitch.lede.trim() && (
+                  <p class="partner__lede">{partnerPitch.lede}</p>
+                )}
+                {partnerPitch.points.length > 0 && (
+                  <ul class="partner__points">
+                    {partnerPitch.points.map((point) => (
+                      <li
+                        set:html={`<span class="k">&gt; ${esc(point.title.toLowerCase())}</span> ${esc(point.description)}`}
+                      />
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div class="partner__action">
+                {partnerPitch.ctaHref.trim() && (
+                  <p
+                    class="partner__prompt"
+                    set:html={`<span class="q">?</span> ready to set a challenge <span aria-hidden="true">›</span>`}
+                  />
+                )}
+                {partnerPitch.ctaHref.trim() && (
+                  <a
+                    class="btn-ascii btn-ascii--big"
+                    href={partnerPitch.ctaHref}
+                    data-ph-event={EVENTS.hackathon_contact_clicked}
+                    data-ph-prop-cta-href={partnerPitch.ctaHref}
+                    set:html={ascii(
+                      `${(partnerPitch.ctaLabel.trim() || partnerPitch.heading).toLowerCase()} →`,
+                    )}
+                  />
+                )}
+                {contactEmail && (
+                  <p class="partner__small">
+                    Or write to{" "}
+                    <a
+                      href={`mailto:${contactEmail}`}
+                      data-ph-event={EVENTS.hackathon_contact_clicked}
+                      data-ph-prop-cta-href={`mailto:${contactEmail}`}
+                    >
+                      {contactEmail}
+                    </a>
+                    .
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <div class="eof">
+    <pre
+      aria-hidden="true">── EOF ─────────────────────────────────────────────────────────────────</pre>
+    <p>
+      q-hack is the hackathon of <a href="/">q-summit</a>{
+        place && `, ${place.toLowerCase()}`
+      }{contactEmail && " · "}{
+        contactEmail && <span class="sel">{contactEmail}</span>
+      }
+    </p>
+  </div>
+
+  {
+    /* Into the footer: the page runs up into the footer's white, as the other pages do. */
+  }
+  <div class="page-fade" aria-hidden="true"></div>
+
+  {
+    /* The Q rain that leaves the laptop and becomes the page ground for a moment. */
+  }
+  <canvas class="rain-bg" data-rain aria-hidden="true"></canvas>
+
+  {
+    /* Applications are closed: every apply button opens this instead. The
+       lines are typed by the script; they sit in templates so their wording
+       lives with the rest of the page's text. */
+    !applyOpen && (
+      <dialog class="denied" data-denied aria-labelledby="denied-title">
+        <canvas class="denied__rain" aria-hidden="true" />
+        <div class="denied__tear" aria-hidden="true" />
+        <div class="term denied__panel">
+          <div class="term__bar">
+            <span class="term__dots" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+            </span>
+            <span class="term__title" id="denied-title">
+              applications · access denied
+            </span>
+            <span class="term__meta">403</span>
+          </div>
+          <div class="term__body">
+            <template data-denied-line set:html={prompt("q-hack --apply")} />
+            <template
+              data-denied-line
+              set:html={out("reaching the application server ...")}
+            />
+            <template
+              data-denied-line
+              set:html={`<span class="k">&gt;</span> <span class="q">403</span> nice try. applications are not open yet.`}
+            />
+            <template
+              data-denied-line
+              set:html={out(`${statusLabel}. this page will know first.`)}
+            />
+            <div class="denied__log" data-denied-log aria-live="polite" />
+            <pre
+              class="denied__art"
+              data-denied-art
+              data-words="open soon|soon"
+              aria-hidden="true"
+            />
+            <div class="denied__actions">
+              <button
+                class="btn-ascii"
+                type="button"
+                data-denied-close
+                set:html={ascii("ok, i'll wait")}
+              />
+              {hasAsk && (
+                <a
+                  class="link-ascii"
+                  href="#ask"
+                  data-denied-details
+                  set:html={`questions? ask q-hack <span aria-hidden="true">↓</span>`}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      </dialog>
+    )
+  }
+
+  {
+    /* A status line as in tmux: where you are, the countdown, and the way to apply. */
+  }
+  <nav class="status" aria-label="Page status">
+    <span class="status__session">[q-hack]</span>
+    <ol class="status__wins" data-wins>
+      {
+        wins.map((win, i) => (
+          <li>
+            <a href={`#${win.id}`} set:text={`${i}:${win.name}`} />
+          </li>
+        ))
+      }
+    </ol>
+    <span class="status__msg" data-status-msg></span>
+    {
+      dates && (
+        <span class="status__clock" data-countdown>
+          T-000d 00:00:00
+        </span>
+      )
+    }
+    <a
+      class="status__apply"
+      {...applyAttrs("status")}
+      set:text={`${applyLabel.split(" ")[0]} ↵`}
+    />
+  </nav>
+
+  <script is:inline type="application/json" data-qhack-data set:html={json} />
+</div>
+
+<script>
+  import { initQhackPage } from "./qhack.client";
+
+  void initQhackPage();
+</script>

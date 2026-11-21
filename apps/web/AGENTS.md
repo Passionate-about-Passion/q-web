@@ -57,6 +57,20 @@ after the hero and before the kickoff panel) open
 `application.applicationUrl` whenever it is filled;
 `application.isOpen` only switches Coming Soon to Apply now. Never embed the form.
 
+`/hackathon` is the Q-Hack terminal page (DESIGN.md HACK-1,
+[ADR-0009](../../docs/decisions/0009-three-qhack-page.md)). Do not restyle it
+onto conference primitives. Every rule lives in
+`components/qhack/qhack-theme.css` under the `.qhack` wrapper class (much of
+the markup is written by script, where scoped styles do not reach), so new
+rules go there, prefixed with `.qhack`, and use tokens like any other file.
+Terminal lines and bracket buttons are `white-space: pre`: write them with
+`set:html` / `set:text` through `components/qhack/markup.ts`, never as markup
+a formatter may wrap. Three.js enters only through the dynamic imports in
+`qhack.client.ts` (laptop, film roll); the hero and the aftermovie are plain
+WebGL. Copy comes from `page-hackathon` and the FAQs; only the terminal's own
+chrome (prompts, window titles) is written in the components. Apply buttons
+follow `application.isOpen`, with `hero.cta` as the link.
+
 ### UI primitives (`components/ui/`)
 
 Two kinds live here. **Shells** (`Section`, `Container`, `SectionHeader`,
@@ -112,8 +126,8 @@ Every known styling gap is either fixed or written into
 [`DESIGN.md`](DESIGN.md) as a rule; there is no separate debt list. So an
 inconsistency you find is either covered by a rule, carries a code comment
 citing the rule it deviates from, or is a genuine bug worth fixing. Seven of the
-literal rules are machine-enforced, and the two remaining allowed literals are
-listed in `design-baseline.json`.
+literal rules are machine-enforced, and no allowed literal remains:
+`design-baseline.json` is empty and stays empty.
 
 ## Content and Worker
 

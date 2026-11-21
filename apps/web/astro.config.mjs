@@ -136,5 +136,26 @@ export default defineConfig({
         ],
       },
     },
+    // The second face, for /hackathon only (DESIGN.md HACK-1, ADR-0009):
+    // the same local() route, so no CDN at build time or in the browser.
+    // Only pages/hackathon.astro renders its <Font>, so no other page
+    // downloads the file.
+    {
+      provider: fontProviders.local(),
+      name: "JetBrains Mono Variable",
+      cssVariable: "--font-jetbrains-mono",
+      fallbacks: ["ui-monospace", "SFMono-Regular", "Consolas", "monospace"],
+      options: {
+        variants: [
+          {
+            weight: "100 800",
+            style: "normal",
+            src: [
+              "@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2",
+            ],
+          },
+        ],
+      },
+    },
   ],
 });

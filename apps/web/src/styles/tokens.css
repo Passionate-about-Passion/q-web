@@ -80,26 +80,26 @@
      (its brightest zone) and ticket-midnight (its deepest). */
   --color-home-ground: #0b115e;
 
-  /* Q-Hack x Hacktoberfest campaign, /hackathon only (DESIGN.md HACK-1).
-     The Hack CI ships a background artwork, not a palette: the violet
-     ramp is sampled from that artwork (the Hack 2027 CI reference), the
-     accents are the Hacktoberfest 2026 brand-kit accents the campaign
-     poster uses. Derived, not official hex values. */
+  /* Q-Hack 2027, /hackathon only (DESIGN.md HACK-1). The Hack CI ships a
+     background artwork, not a palette: the violet ramp is sampled from
+     that artwork (the Hack 2027 CI reference). Derived, not official hex
+     values. --color-hack-night is the page ground, the artwork's violet
+     taken almost to black, so the page reads as a terminal at night. */
+  --color-hack-night: #0a0318;
   --color-hack-ink: #22004d;
   --color-hack-deep: #36026e;
   --color-hack-violet: #5c1cae;
   --color-hack-mid: #6923c1;
   --color-hack-glow: #843ce6;
-  --color-hack-yellow: #f5b726;
-  --color-hack-red: #e53927;
-  --color-hack-coral: #e97b77;
-  --color-hack-sky: #8bb2de;
-  --color-hack-ember: #671912;
   /* The two bright lilac steps are not in the artwork either: they are the
-     ring glow (#843ce6) tinted 40% and 88% toward white, for light crests,
-     LED edges and the soft glow on the white surface. */
+     ring glow (#843ce6) tinted 40% and 88% toward white, for links, light
+     edges and the body text on the dark ground. */
   --color-hack-haze: #b58af0;
   --color-hack-mist: #f0e8fc;
+  /* The terminal's two accents: pink for the prompt and for whatever the
+     other side types, mint for "done". */
+  --color-hack-pink: #ff8fd6;
+  --color-hack-mint: #5eead4;
 
   /* Typography. Single family on the live site; self-hosted variable font
      (wght 100-900 declared, 300-900 used) via astro.config.mjs's `fonts`
@@ -111,6 +111,10 @@
      case --font-montserrat is ever unset (e.g. a component rendered
      outside Base.astro in a test). */
   --font-primary: var(--font-montserrat, sans-serif);
+  /* The second face, /hackathon only (DESIGN.md HACK-1): JetBrains Mono,
+     self-hosted the same way and loaded by that page alone
+     (--font-jetbrains-mono comes from its own <Font>). */
+  --font-mono: var(--font-jetbrains-mono, ui-monospace, monospace);
   --text-body-size: 1rem;
   --text-body-line-height: 1.5;
   /* Body scale (DESIGN.md TYPE-2): no bare rem font-size that duplicates a step. */
@@ -229,22 +233,23 @@
   --duration-ticket-drift: 14s;
   --duration-ticket-drift-alt: 19s;
   --duration-ticket-enter: 460ms;
-  --duration-ticket-stagger: 18ms; /* Hack campaign motion (DESIGN.md HACK-1). Ambient loops (falling
-     fragments, the light seen through the white surface) run slowly and
-     can be paused on the page; the reveal and the logo light pass are one
-     shot. Per-fragment speeds multiply --duration-hack-fall. The photo
-     band turns along its own cylinder on a symmetric, unhurried curve
-     (--*-hack-turn), so a change of photo never jerks or overshoots. */
-  --duration-hack-fall: 26s;
-  --duration-hack-sway: 9s;
-  --duration-hack-light: 22s;
-  --duration-hack-shimmer: 3.2s;
-  --duration-hack-sweep: 1.4s;
-  --duration-hack-reveal: 900ms;
-  --duration-hack-turn: 1100ms;
-  --ease-hack-fall: cubic-bezier(0.42, 0, 0.78, 1);
-  --ease-hack-sway: cubic-bezier(0.37, 0, 0.63, 1);
-  --ease-hack-turn: cubic-bezier(0.45, 0, 0.2, 1);
+  --duration-ticket-stagger: 18ms;
+  /* Q-Hack motion (DESIGN.md HACK-1). The loops are small and slow: the
+     caret blinks, the status dot and the play button pulse, the partner
+     band passes once in --duration-hack-band, a light line breathes. The
+     rest is one shot: blocks coming in (--duration-hack-reveal), a
+     programme diamond lighting up with a slight overshoot
+     (--duration-hack-node on --ease-hack-pop), the hero hint appearing
+     after --duration-hack-hint. */
+  --duration-hack-blink: 1s;
+  --duration-hack-pulse: 2.5s;
+  --duration-hack-band: 54s;
+  --duration-hack-horizon: 5s;
+  --duration-hack-reveal: 800ms;
+  --duration-hack-node: 650ms;
+  --duration-hack-hint: 3.2s;
+  --ease-hack-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-hack-pop: cubic-bezier(0.2, 0.9, 0.3, 1.3);
 
   /* Elevation (DESIGN.md DEPTH-1). Five steps, not the twelve one-off values
      the Webflow port shipped. The five steps were chosen to sit ON those
@@ -303,14 +308,8 @@
   --radius-ticket-tile: 22px;
   --radius-ticket-pill: 999px;
 
-  /* Hack campaign radius (DESIGN.md HACK-1): the poster-style apply
-     button. */
+  /* Q-Hack radius (DESIGN.md HACK-1): the terminal windows. */
   --radius-hack-cta: 16px;
-  /* The drawn laptop in HackFilm: elliptical radii relative to the device,
-     so its corners keep their proportion at every size. */
-  --radius-hack-lid: 2.1% / 3.2%;
-  --radius-hack-bezel: 1.8% / 2.8%;
-  --radius-hack-base: 0 0 50% 50% / 0 0 100% 100%;
 }
 
 /* Breakpoints (from the Webflow stylesheet):

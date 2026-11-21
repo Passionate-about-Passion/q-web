@@ -54,6 +54,17 @@ export const Faqs: CollectionConfig = draftCollection({
         description: "Which page's FAQ section this entry appears in.",
       },
     },
+    {
+      // Not part of the identity (question+page): regrouping a question must
+      // not turn it into a new entry. Faq.topic in apps/web faqs.ts.
+      name: "topic",
+      type: "text",
+      admin: {
+        position: "sidebar",
+        description:
+          "Optional. Groups the questions on the Hackathon page under a short topic such as Applying. Leave empty on other pages.",
+      },
+    },
     orderField({
       collection: "faqs",
       scope: "within the page's FAQ list",

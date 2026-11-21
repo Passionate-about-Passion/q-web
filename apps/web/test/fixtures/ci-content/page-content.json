@@ -784,17 +784,22 @@
         {
           "date": "8th April",
           "title": "Opening",
-          "description": "The event kicks off with an introduction to the Q-Summit Hackathon, setting the stage for two days of challenges and creativity. Participants will receive an overview of the schedule and expectations."
+          "description": "The event kicks off with an introduction to the Q-Summit Hackathon, setting the stage for two days of challenges and creativity. Participants will receive an overview of the schedule and expectations.",
+          "day": "Fixture day 1",
+          "mark": "T+00:00"
         },
         {
           "date": "8th April",
           "title": "Hacking Start",
-          "description": "Teams dive into the challenges, with a detailed explanation provided in advance. Participants begin brainstorming and working on their solutions."
+          "description": "Teams dive into the challenges, with a detailed explanation provided in advance. Participants begin brainstorming and working on their solutions.",
+          "mark": "T+01:00"
         },
         {
           "date": "9th April",
           "title": "Challenge Submission",
-          "description": "Teams finalize their projects and submit their solutions for evaluation based on creativity, impact, and execution."
+          "description": "Teams finalize their projects and submit their solutions for evaluation based on creativity, impact, and execution.",
+          "day": "Fixture day 2",
+          "mark": "T+24:00"
         },
         {
           "date": "9th April",
@@ -805,6 +810,11 @@
           "date": "9th April",
           "title": "Finalist Pitchbattle",
           "description": "The top teams present their final solutions in a high-energy pitch on the main stage, competing for exclusive prizes ."
+        },
+        {
+          "date": "9th April",
+          "title": "Fixture award ceremony",
+          "description": ""
         }
       ]
     },
@@ -817,6 +827,131 @@
       "text": "Collaborate, innovate, and win amazing prizes!",
       "mailtoLabel": "Contact the team",
       "mailtoEmail": "hackathon@q-summit.com"
+    },
+    "event": {
+      "startsAt": "2027-03-31T16:00:00.000Z",
+      "endsAt": "2027-04-01T16:00:00.000Z",
+      "location": "Fixture campus, Mannheim"
+    },
+    "application": {
+      "isOpen": false,
+      "comingSoonLabel": "Fixture applications open soon"
+    },
+    "machine": {
+      "lines": [
+        "Fixture line one: boot.",
+        "Fixture line two: build.",
+        "Fixture line three: ship."
+      ],
+      "hint": "Fixture hint: keep scrolling",
+      "screenLine": "fixture@q-hack:~$ ./start --year 2027"
+    },
+    "aftermovie": {
+      "heading": "Fixture aftermovie heading",
+      "caption": "Fixture Hackathon 2026"
+    },
+    "impressions": {
+      "heading": "Fixture impressions",
+      "intro": "Sample copy for the impressions section used in CI builds.",
+      "photos": [
+        {
+          "src": "/media/q-hack-hall-projection-p-1536.webp",
+          "alt": "Fixture photo 1: sample description of a hall",
+          "caption": "Fixture caption 1",
+          "width": 1536,
+          "height": 1024
+        },
+        {
+          "src": "/media/q-hack-hall-overview-p-1536.webp",
+          "alt": "Fixture photo 2: sample description of teams at work",
+          "caption": "Fixture caption 2",
+          "width": 1536,
+          "height": 1024
+        },
+        {
+          "src": "/media/q-hack-prize-confetti-p-1536.webp",
+          "alt": "Fixture photo 3: sample description of a stage",
+          "caption": "Fixture caption 3",
+          "width": 1536,
+          "height": 1024
+        },
+        {
+          "src": "/media/q-hack-laptop-work-p-1536.webp",
+          "alt": "Fixture photo 4: sample description of two people at a laptop",
+          "caption": "Fixture caption 4",
+          "width": 1536,
+          "height": 1024
+        },
+        {
+          "src": "/media/q-hack-audience-p-1536.webp",
+          "alt": "Fixture photo 5: sample description of an audience",
+          "caption": "",
+          "width": 1536,
+          "height": 1023
+        },
+        {
+          "src": "/media/hack-poster.jpg",
+          "alt": "Fixture photo 6: sample description of a poster",
+          "caption": "Fixture caption 6",
+          "width": 1600,
+          "height": 900
+        }
+      ]
+    },
+    "facts": [
+      {
+        "title": "team",
+        "description": "up to 4 fixture hackers, solo welcome"
+      },
+      {
+        "title": "duration",
+        "description": "24 fixture hours"
+      },
+      {
+        "title": "where",
+        "description": "fixture campus"
+      },
+      {
+        "title": "cost",
+        "description": "free for fixture participants"
+      },
+      {
+        "title": "food",
+        "description": "fixture meals and drinks included"
+      },
+      {
+        "title": "prizes",
+        "description": "one fixture prize per challenge"
+      },
+      {
+        "title": "ticket",
+        "description": "fixture conference ticket included"
+      },
+      {
+        "title": "language",
+        "description": "English"
+      }
+    ],
+    "partnerPitch": {
+      "heading": "Fixture partner pitch",
+      "lede": "Sample copy inviting companies to become a hackathon partner, used in CI builds.",
+      "points": [
+        {
+          "title": "Fixture point A",
+          "description": "Sample reason a for becoming a partner, used in CI builds."
+        },
+        {
+          "title": "Fixture point B",
+          "description": "Sample reason b for becoming a partner, used in CI builds."
+        },
+        {
+          "title": "Fixture point C",
+          "description": "Sample reason c for becoming a partner, used in CI builds."
+        }
+      ],
+      "ctaLabel": "Become a fixture partner",
+      "ctaHref": "mailto:partners@example.com",
+      "contactEmail": "partners@example.com"
     }
   },
   "ourTeam": {

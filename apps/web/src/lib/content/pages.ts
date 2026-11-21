@@ -9,6 +9,7 @@ import { fetchGlobal, fetchGlobalOptional, memoizeCms } from "./cms";
 import {
   resolveOptionalUploadFilename,
   resolveWhyqImageBase,
+  uploadDimensions,
   type CmsMediaRef,
 } from "./media";
 import {
@@ -408,18 +409,45 @@ export interface ContactContent {
   };
 }
 
+/** A hackathon schedule row: an agenda item with an optional day and mark. */
+export interface HackathonAgendaItem extends AgendaItem {
+  /** Starts a new day: shown as a heading above this row. Empty when unset. */
+  day: string;
+  /** Hack clock mark such as "T+00:00". Empty when unset. */
+  mark: string;
+}
+
+/** One photo of the hackathon impressions (a Media upload in the CMS). */
+export interface HackathonPhoto {
+  /** "/media/<filename>". */
+  src: string;
+  alt: string;
+  caption: string;
+  /** Intrinsic size in pixels; 0 when the content source carries none. */
+  width: number;
+  height: number;
+}
+
+/**
+ * The hackathon page. The groups from `event` down were added for Q-Hack
+ * 2027 and are optional in the CMS: a document published before they existed
+ * (or an older JSON snapshot) maps to the safe empties noted on each field,
+ * so every one of them is always present here.
+ */
 export interface HackathonContent {
   title: string;
   metaDescription: string;
   hero: {
     headline: string;
     tagline: string;
+    /** The apply link: every apply button opens it while applications are open. */
     cta: PageLink;
   };
   partners: {
     heading: string;
     groups: PartnerGroup[];
   };
+  /** 2026 archive: stored, no longer shown on the 2027 page. */
   benefits: {
     heading: string;
     cards: FeatureCard[];
@@ -427,17 +455,67 @@ export interface HackathonContent {
   schedule: {
     heading: string;
     intro: string;
-    items: AgendaItem[];
+    items: HackathonAgendaItem[];
   };
   faqSection: {
     heading: string;
     intro: string;
   };
+  /** 2026 archive: stored, no longer shown on the 2027 page. */
   closingCta: {
     heading: string;
     text: string;
     mailtoLabel: string;
     mailtoEmail: string;
+  };
+  /** When and where the hack runs; drives the countdown and every date. */
+  event: {
+    /** ISO date-time, or "" when unset. */
+    startsAt: string;
+    /** ISO date-time, or "" when unset. */
+    endsAt: string;
+    /** e.g. "University of Mannheim". Empty when unset. */
+    location: string;
+  };
+  application: {
+    /**
+     * Open: apply buttons lead to `hero.cta`. Closed (the default): they
+     * open a "not open yet" window instead of a link.
+     */
+    isOpen: boolean;
+    /** Status line while closed. Falls back to "Applications open soon". */
+    comingSoonLabel: string;
+  };
+  /** The laptop scroll sequence. */
+  machine: {
+    /** Up to three short lines beside the laptop. */
+    lines: string[];
+    hint: string;
+    /** The line typed on the laptop screen under the logo. */
+    screenLine: string;
+  };
+  /** Wording only: the film is the site's own stream, not an upload. */
+  aftermovie: {
+    heading: string;
+    /** The film's title line, e.g. "Q-Summit Hackathon 2026". */
+    caption: string;
+  };
+  impressions: {
+    heading: string;
+    intro: string;
+    photos: HackathonPhoto[];
+  };
+  /** `title` is the fact's short label, `description` its value. */
+  facts: FeatureCard[];
+  /** The section that invites companies to become a hackathon partner. */
+  partnerPitch: {
+    heading: string;
+    lede: string;
+    points: FeatureCard[];
+    ctaLabel: string;
+    /** A URL, a mailto: address or an internal path. Empty: no button. */
+    ctaHref: string;
+    contactEmail: string;
   };
 }
 
@@ -1194,7 +1272,7 @@ interface CmsHackathonDoc {
   schedule: {
     heading: string;
     intro: string;
-    items: AgendaItem[];
+    items: (AgendaItem & { day?: string | null; mark?: string | null })[];
   };
   faqSection: { heading: string; intro: string };
   closingCta: {
@@ -1203,10 +1281,83 @@ interface CmsHackathonDoc {
     mailtoLabel: string;
     mailtoEmail: string;
   };
+  // Everything below was added for Q-Hack 2027 and is optional in Payload.
+  // Until the migration has run and the page has been published again, the
+  // CMS answers without these groups (or with null), so every one of them
+  // may be missing here.
+  event?: {
+    startsAt?: string | null;
+    endsAt?: string | null;
+    location?: string | null;
+  } | null;
+  application?: {
+    isOpen?: boolean | null;
+    comingSoonLabel?: string | null;
+  } | null;
+  machine?: {
+    lines?: { text: string }[] | null;
+    hint?: string | null;
+    screenLine?: string | null;
+  } | null;
+  aftermovie?: {
+    heading?: string | null;
+    caption?: string | null;
+  } | null;
+  impressions?: {
+    heading?: string | null;
+    intro?: string | null;
+    photos?:
+      | {
+          image?: CmsMediaRef | number | string | null;
+          alt?: string | null;
+          caption?: string | null;
+        }[]
+      | null;
+  } | null;
+  facts?: FeatureCard[] | null;
+  partnerPitch?: {
+    heading?: string | null;
+    lede?: string | null;
+    points?: FeatureCard[] | null;
+    ctaLabel?: string | null;
+    ctaHref?: string | null;
+    contactEmail?: string | null;
+  } | null;
 }
+
+/** Shown while applications are closed and no status line is set. */
+const HACKATHON_COMING_SOON = "Applications open soon";
+
+const toFeatureCards = (
+  cards: FeatureCard[] | null | undefined,
+): FeatureCard[] =>
+  (cards ?? []).map((card) => ({
+    title: card.title,
+    description: card.description ?? "",
+  }));
 
 async function cmsGetHackathon(): Promise<HackathonContent> {
   const doc = await fetchGlobal<CmsHackathonDoc>("page-hackathon");
+
+  // A photo row requires its image; one whose file cannot be resolved is
+  // left out rather than rendered as a broken frame.
+  const photos: HackathonPhoto[] = [];
+  for (const photo of doc.impressions?.photos ?? []) {
+    const filename = await resolveOptionalUploadFilename(
+      photo.image,
+      `hackathon impression ${photo.caption ?? photo.alt ?? ""}`.trim(),
+    );
+    if (!filename) continue;
+    const size = uploadDimensions(photo.image);
+    photos.push({
+      src: mediaHref(filename),
+      alt: photo.alt ?? "",
+      caption: photo.caption ?? "",
+      width: size?.width ?? 0,
+      height: size?.height ?? 0,
+    });
+  }
+
   return {
     title: doc.title,
     metaDescription: doc.metaDescription ?? "",
@@ -1237,10 +1388,114 @@ async function cmsGetHackathon(): Promise<HackathonContent> {
     schedule: {
       heading: doc.schedule.heading,
       intro: doc.schedule.intro,
-      items: doc.schedule.items.map(toAgendaItem),
+      items: doc.schedule.items.map((item) => ({
+        ...toAgendaItem(item),
+        day: item.day ?? "",
+        mark: item.mark ?? "",
+      })),
     },
     faqSection: doc.faqSection,
     closingCta: doc.closingCta,
+    event: {
+      startsAt: doc.event?.startsAt ?? "",
+      endsAt: doc.event?.endsAt ?? "",
+      location: doc.event?.location ?? "",
+    },
+    application: {
+      isOpen: Boolean(doc.application?.isOpen),
+      comingSoonLabel:
+        doc.application?.comingSoonLabel?.trim() || HACKATHON_COMING_SOON,
+    },
+    machine: {
+      lines: fromTextRows(doc.machine?.lines),
+      hint: doc.machine?.hint ?? "",
+      screenLine: doc.machine?.screenLine ?? "",
+    },
+    aftermovie: {
+      heading: doc.aftermovie?.heading ?? "",
+      caption: doc.aftermovie?.caption ?? "",
+    },
+    impressions: {
+      heading: doc.impressions?.heading ?? "",
+      intro: doc.impressions?.intro ?? "",
+      photos,
+    },
+    facts: toFeatureCards(doc.facts),
+    partnerPitch: {
+      heading: doc.partnerPitch?.heading ?? "",
+      lede: doc.partnerPitch?.lede ?? "",
+      points: toFeatureCards(doc.partnerPitch?.points),
+      ctaLabel: doc.partnerPitch?.ctaLabel ?? "",
+      ctaHref: doc.partnerPitch?.ctaHref ?? "",
+      contactEmail: doc.partnerPitch?.contactEmail ?? "",
+    },
+  };
+}
+
+/**
+ * JSON mode reads the snapshot unmapped, and a snapshot taken before the
+ * Q-Hack 2027 groups existed (the emergency-restored content dir) lacks
+ * them. Fill the same safe empties cmsGetHackathon() returns, so both
+ * sources hand the page one shape. Present values pass through untouched.
+ */
+function normalizeHackathon(content: HackathonContent): HackathonContent {
+  // The snapshot is unchecked JSON: whatever the type says, any 2027 group,
+  // and any field inside one, may be missing. Hence the optional chaining on
+  // values the type calls required.
+  const { event, application, machine, aftermovie, impressions, partnerPitch } =
+    content;
+  return {
+    ...content,
+    schedule: {
+      ...content.schedule,
+      items: content.schedule.items.map((item) => ({
+        ...item,
+        day: item.day ?? "",
+        mark: item.mark ?? "",
+      })),
+    },
+    event: {
+      startsAt: event?.startsAt ?? "",
+      endsAt: event?.endsAt ?? "",
+      location: event?.location ?? "",
+    },
+    application: {
+      isOpen: Boolean(application?.isOpen),
+      comingSoonLabel:
+        application?.comingSoonLabel?.trim() || HACKATHON_COMING_SOON,
+    },
+    machine: {
+      lines: machine?.lines ?? [],
+      hint: machine?.hint ?? "",
+      screenLine: machine?.screenLine ?? "",
+    },
+    aftermovie: {
+      heading: aftermovie?.heading ?? "",
+      caption: aftermovie?.caption ?? "",
+    },
+    impressions: {
+      heading: impressions?.heading ?? "",
+      intro: impressions?.intro ?? "",
+      // Same rule as CMS mode: a row without a file is left out.
+      photos: (impressions?.photos ?? [])
+        .filter((photo) => Boolean(photo?.src))
+        .map((photo) => ({
+          src: photo.src,
+          alt: photo.alt ?? "",
+          caption: photo.caption ?? "",
+          width: photo.width ?? 0,
+          height: photo.height ?? 0,
+        })),
+    },
+    facts: toFeatureCards(content.facts),
+    partnerPitch: {
+      heading: partnerPitch?.heading ?? "",
+      lede: partnerPitch?.lede ?? "",
+      points: toFeatureCards(partnerPitch?.points),
+      ctaLabel: partnerPitch?.ctaLabel ?? "",
+      ctaHref: partnerPitch?.ctaHref ?? "",
+      contactEmail: partnerPitch?.contactEmail ?? "",
+    },
   };
 }
 
@@ -1917,6 +2172,7 @@ export async function getPageContent(): Promise<PageContent> {
       : readJson<PageContent>("page-content.json");
   const resolved = normalizeHrefsDeep(await content);
   resolved.kickoff = normalizeKickoff(resolved.kickoff);
+  resolved.hackathon = normalizeHackathon(resolved.hackathon);
   assertTicketPage(resolved.ticketCategories);
   assertEventDates(resolved.home?.event);
   return resolved;
