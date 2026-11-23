@@ -560,32 +560,12 @@ html:has(.qhack) {
   grid-row: 3;
   padding: 0 var(--gutter) clamp(var(--space-sm), 3vh, var(--space-lg));
 }
-.qhack .hero__hint {
-  margin: 0 0 0.6rem;
-  font-size: var(--text-size-tiny);
-  color: var(--dim);
-  opacity: 0;
-  animation: qh-hint-in var(--duration-hack-reveal) var(--duration-hack-hint)
-    ease-out forwards;
-}
-@keyframes qh-hint-in {
-  to {
-    opacity: 0.85;
-  }
-}
 .qhack .hero__tag {
-  margin: 0 0 var(--space-sm);
+  margin: 0;
   font-size: clamp(1rem, 0.6rem + 1.4vw, 1.5rem);
   font-weight: var(--font-weight-medium);
   color: var(--color-white);
   text-shadow: 0 0 1.2rem color-mix(in srgb, var(--ink) 90%, transparent);
-}
-.qhack .hero__cta {
-  margin: 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-xs) var(--space-md);
 }
 .qhack .partners {
   grid-row: 4;
@@ -681,7 +661,7 @@ html:has(.qhack) {
 /* ---------------------------------------------------------------- machine */
 .qhack .machine {
   position: relative;
-  height: 560vh;
+  height: 360vh;
   background: var(--ink);
 }
 .qhack .machine__pin {
@@ -707,11 +687,6 @@ html:has(.qhack) {
   max-width: 34rem;
   will-change: opacity;
   pointer-events: none;
-}
-.qhack .eyebrow {
-  margin: 0 0 var(--space-xs);
-  font-size: calc(var(--text-size-small) * 0.93);
-  color: var(--haze);
 }
 .qhack .machine__title {
   margin: 0;
@@ -797,13 +772,10 @@ html:has(.qhack) {
   .qhack .machine__hint {
     display: none;
   }
-  .qhack .eyebrow {
-    margin-bottom: 0.35rem;
-  }
 }
 @media (max-width: 760px) {
   .qhack .machine {
-    height: 480vh;
+    height: 320vh;
   }
   .qhack .machine__apply {
     width: 72vw;
@@ -1368,13 +1340,6 @@ html:has(.qhack) {
         color-mix(in srgb, var(--color-black) 80%, transparent);
   }
 }
-.qhack .movie__note {
-  margin: 0;
-  padding: 0.6rem var(--space-sm);
-  font-size: var(--text-size-tiny);
-  color: var(--dim);
-  border-top: 1px solid var(--line);
-}
 @media (max-width: 560px) {
   .qhack .movie__play {
     gap: 0.6rem;
@@ -1480,24 +1445,36 @@ html:has(.qhack) {
     grid-template-columns: minmax(0, 1fr);
   }
 }
-/* The answers, below the picker. Asking a question scrolls the window here
-   (see reveal in js/ask.js), and the newest turn is marked. */
-.qhack .chat__out {
+/* One thing at a time under the field (ask.ts): the picker, then the answer
+   in its place. */
+.qhack .chat__pick,
+.qhack .chat__log {
   margin-top: 1.1rem;
   padding-top: 0.85rem;
   border-top: 1px dashed var(--line-strong);
 }
-.qhack .term__body .chat__rule {
+.qhack .chat__pick[hidden],
+.qhack .chat__log[hidden] {
+  display: none;
+}
+.qhack .chat__pick {
+  animation: qh-chat-open var(--duration-open) ease-out;
+}
+@keyframes qh-chat-open {
+  from {
+    opacity: 0;
+    transform: translateY(-0.3rem);
+  }
+}
+/* where the picker is: "pick a topic", or the way back and the topic */
+.qhack .term__body .chat__crumb {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-sm);
   min-height: 2.25rem;
-  margin-bottom: 0.35rem;
   font-size: calc(var(--text-size-small) * 0.93);
   color: var(--dim);
 }
-.qhack .chat__again {
+.qhack .chat__back {
   min-height: 2.25rem;
   padding: 0.4rem 0.7rem;
   font-family: var(--mono);
@@ -1511,37 +1488,24 @@ html:has(.qhack) {
   cursor: pointer;
   white-space: nowrap;
 }
-.qhack .chat__again:hover {
+.qhack .chat__back:hover {
   color: var(--color-white);
   border-color: var(--line-strong);
 }
-.qhack .chat__log {
-  min-height: 6.5rem;
-  max-height: min(19rem, 46vh);
-  overflow-y: auto;
-  padding-right: var(--space-2xs);
-  scrollbar-width: thin;
-  scrollbar-color: var(--violet) transparent;
+.qhack .chat__here {
+  color: var(--color-white);
+  white-space: pre;
 }
-.qhack .chat__empty {
-  color: var(--dim);
+/* under an answer: the way back to the topics */
+.qhack .term__body .chat__more {
+  margin-top: var(--space-sm);
 }
 .qhack .chat__turn {
-  margin-top: 0.9rem;
   padding-left: 0.8rem;
-  border-left: 2px solid var(--line);
-  opacity: 0.55;
-  transition:
-    opacity var(--duration-open),
-    border-color var(--duration-open);
-}
-.qhack .chat__turn:first-child {
-  margin-top: 0.2rem;
+  border-left: 2px solid var(--pink);
 }
 /* the one just asked */
 .qhack .chat__turn.is-new {
-  opacity: 1;
-  border-left-color: var(--pink);
   animation: qh-chat-in calc(var(--duration-reveal) * 2.2) ease-out;
 }
 @keyframes qh-chat-in {
@@ -1576,6 +1540,13 @@ html:has(.qhack) {
 }
 .qhack .ask__label span[aria-hidden] {
   color: var(--dim);
+}
+/* the words of the label in the display face, like the headings */
+.qhack .ask__words {
+  font-family: var(--font-primary);
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
 }
 .qhack .ask__input {
   flex: 1 1 9rem;
@@ -1617,41 +1588,25 @@ html:has(.qhack) {
 .qhack .ask__enter:hover {
   background: color-mix(in srgb, var(--pink) 16%, transparent);
 }
-/* topics, and the questions of the chosen one (or what matches the typing) */
-.qhack .chat__topics {
+/* the list of the picker: the topics as a row of keys, or questions */
+.qhack .chat__list {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+}
+.qhack .chat__list.is-topics {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem var(--space-2xs);
-  margin-top: var(--space-sm);
+  gap: var(--space-2xs);
 }
-.qhack .chat__topic {
-  padding: 0.45rem 0.35rem;
-  font-family: var(--mono);
+.qhack .chat__opt--topic {
+  padding: 0.7rem 0.6rem;
   font-weight: var(--font-weight-semibold);
   font-size: calc(var(--text-size-small) * 0.93);
   line-height: 1;
-  color: var(--dim);
+  color: var(--haze);
   white-space: pre;
-  background: none;
   border: 1px solid var(--line);
-  border-radius: var(--radius-button);
-  cursor: pointer;
-}
-.qhack .chat__topic:hover {
-  color: var(--color-white);
-  border-color: var(--line-strong);
-}
-.qhack .chat__topic[aria-pressed="true"] {
-  color: var(--color-white);
-  background: color-mix(in srgb, var(--glow) 40%, transparent);
-  border-color: var(--haze);
-}
-.qhack .chat__list {
-  list-style: none;
-  margin: var(--space-xs) 0 0;
-  padding: 0;
-  min-height: 9.9rem;
-  /* four questions: the answers below stay where they are for most topics */
 }
 .qhack .chat__opt {
   display: flex;
@@ -1664,6 +1619,9 @@ html:has(.qhack) {
 .qhack .chat__opt[aria-selected="true"] {
   color: var(--color-white);
   background: color-mix(in srgb, var(--glow) 28%, transparent);
+}
+.qhack .chat__opt--topic[aria-selected="true"] {
+  border-color: var(--haze);
 }
 .qhack .chat__opt.is-asked {
   color: var(--dim);
@@ -1994,12 +1952,6 @@ body:has(.qhack) .site-footer .footer-inner.is-coming {
   white-space: nowrap;
   transition: background-color calc(var(--duration-close) * 2);
 }
-.qhack .status__session {
-  padding: 0.35rem var(--space-2xs);
-  background: var(--haze);
-  color: var(--ink);
-  font-weight: var(--heading-weight);
-}
 .qhack .status__wins {
   list-style: none;
   display: flex;
@@ -2007,7 +1959,12 @@ body:has(.qhack) .site-footer .footer-inner.is-coming {
   margin: 0;
   padding: 0;
   min-width: 0;
-  overflow: hidden;
+  /* wider than a phone: the line scrolls sideways, without a bar */
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.qhack .status__wins::-webkit-scrollbar {
+  display: none;
 }
 .qhack .status__wins a {
   display: block;
@@ -2022,54 +1979,8 @@ body:has(.qhack) .site-footer .footer-inner.is-coming {
   color: var(--color-white);
   background: color-mix(in srgb, var(--glow) 50%, transparent);
 }
-.qhack .status__msg {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--pink);
-  font-weight: var(--font-weight-semibold);
-}
-.qhack .status__clock {
-  font-variant-numeric: tabular-nums;
-  color: var(--haze);
-}
-.qhack .status__apply {
-  margin-left: auto;
-  padding: 0.35rem var(--space-xs);
-  background: var(--glow);
-  color: var(--color-white);
-  font-weight: var(--heading-weight);
-  text-decoration: none;
-}
-.qhack .status__apply:hover {
-  background: var(--glow-hi);
-}
 .qhack .status.is-hacked {
   background: var(--panel-lit);
-}
-.qhack .status.is-hacked .status__apply {
-  background: var(--pink);
-  color: var(--ink);
-  animation: qh-nudge calc(var(--duration-hack-reveal) * 2) ease-in-out 3;
-}
-@keyframes qh-nudge {
-  50% {
-    box-shadow: 0 0 0 0.35rem color-mix(in srgb, var(--pink) 25%, transparent);
-  }
-}
-@media (max-width: 900px) {
-  .qhack .status__wins li:not(.is-current) {
-    display: none;
-  }
-  .qhack .status__clock {
-    display: none;
-  }
-}
-@media (max-width: 600px) {
-  .qhack .status__msg {
-    display: none;
-  }
 }
 /* ---------------------------------------------------------------- motion */
 @media (prefers-reduced-motion: reduce) {
@@ -2079,16 +1990,11 @@ body:has(.qhack) .site-footer .footer-inner.is-coming {
     animation: none;
   }
   .qhack .partners__track,
-  .qhack .dot,
-  .qhack .status.is-hacked .status__apply {
+  .qhack .dot {
     animation: none !important;
   }
   .qhack [data-type] .t-done::after {
     animation: none;
-  }
-  .qhack .hero__hint {
-    animation: none;
-    opacity: 0.85;
   }
   .qhack .movie__play,
   .qhack .horizon::after,
@@ -2170,14 +2076,19 @@ html:not(.qhack-js) .qhack :is(.movie__canvas, .movie__play) {
 html:not(.qhack-js) .qhack .movie__video {
   opacity: 1;
 }
-html:not(.qhack-js) .qhack :is(.ask, .chat__topics, .chat__list, .chat__again) {
+html:not(.qhack-js) .qhack :is(.ask, .chat__pick, .chat__hello) {
   display: none;
 }
-html:not(.qhack-js) .qhack .chat__log {
-  max-height: none;
+html:not(.qhack-js) .qhack .chat__turn + .chat__turn {
+  margin-top: 0.9rem;
 }
 html:not(.qhack-js) .qhack .chat__turn {
-  opacity: 1;
+  border-left-color: var(--line);
+}
+/* With the script the answers wait until one is asked for (ask.ts takes the
+   written-out ones away when it starts). */
+.qhack-js .qhack [data-chat-static] {
+  display: none;
 }
 @media (max-width: 960px) {
   html:not(.qhack-js) .qhack .top:focus-within .top__nav {

@@ -1,19 +1,25 @@
-// Ask Q-Hack: the FAQ as a terminal conversation.
+// Ask Q-Hack: the FAQ as a terminal conversation, in one window that shows
+// one thing at a time under its field.
 //
-//   [ about ] [ skills ] [ teams ] ...                   topics first
-//   ? your question >  [type here]                       enter
-//   > What is Q-Hack?                                    the questions of a topic,
-//     When and where does Q-Hack take place?             or what matches the typing
-//   - - - - - - - - - - - - - - - - - - - - - - - - -
-//   // answers                          [ ask another ]  the conversation, below
-//   ? Who can apply?
-//   > Everyone. ...
+//   ? your question >  [type or pick below]        enter   the field, always there
 //
-// Picking a question (click, tap, or arrow keys and enter) writes it into the
-// answers below the picker, types the answer under it like a chat, and scrolls
-// the window down to it, so it is plain where the answer is. Typing filters
-// all questions at once; a question nobody has an answer for gets the contact
-// address instead.
+//   // pick a topic                                        1. tap the field: the topics
+//   [ about ] [ skills ] [ teams ] ...
+//
+//   < topics / about                                       2. a topic: its questions
+//   > What is Q-Hack?
+//     When and where does Q-Hack take place?
+//
+//   ? Who can apply?                                       3. a question: it stands on
+//   > Everyone. ...                                           top, the answer is typed
+//
+// Nothing is open at first. Tapping the field brings the topics, a topic its
+// questions, a question the answer in the same place; tapping the field again
+// starts over, and so does the button under an answer. Typing skips the
+// topics and filters all questions at once; a question nobody has an answer
+// for gets the contact address instead. Arrow keys and enter walk the same
+// steps, escape goes one step back. The enter key works like the enter
+// button beside the field, also while the field does not have the focus.
 //
 // Topics, questions and answers come from the page (the CMS), and so does the
 // contact address.
@@ -47,10 +53,14 @@ interface Entry {
   qkeys: Set<string>;
 }
 
+/** Where the window is: nothing open, a step of the picker, or an answer. */
+type Mode = "closed" | "topics" | "questions" | "search" | "answer";
+
 /** What `?debug` exposes to the test tools as `window.qask`. */
 interface AskDebug {
   search: (text: string) => string[];
   readonly shown: string[];
+  readonly mode: Mode;
 }
 
 declare global {
@@ -145,10 +155,10 @@ function need<T extends Element>(root: ParentNode, selector: string): T {
 }
 
 /**
- * The ask terminal inside `root`. It expects the picker (`[data-chat]` with
- * its `.ask__input`, `[data-chat-topics]`, `[data-chat-list]`,
- * `[data-chat-count]`) and the answers (`[data-chat-out]`, `[data-chat-log]`,
- * `[data-chat-again]`, optionally `[data-chat-empty]`).
+ * The ask terminal inside `root`. It expects the field (`[data-chat]` with
+ * its `.ask__input`), the picker (`[data-chat-pick]` with `[data-chat-crumb]`
+ * and `[data-chat-list]`), the answer (`[data-chat-log]`) and the counter
+ * (`[data-chat-count]`).
  */
 export function initAsk(
   root: HTMLElement,
@@ -156,13 +166,17 @@ export function initAsk(
 ): void {
   const form = need<HTMLFormElement>(root, "[data-chat]");
   const input = need<HTMLInputElement>(form, ".ask__input");
-  const log = need<HTMLElement>(root, "[data-chat-log]");
+  const picker = need<HTMLElement>(root, "[data-chat-pick]");
+  const crumb = need<HTMLElement>(root, "[data-chat-crumb]");
   const list = need<HTMLElement>(root, "[data-chat-list]");
-  const topics = need<HTMLElement>(root, "[data-chat-topics]");
+  const log = need<HTMLElement>(root, "[data-chat-log]");
   const count = need<HTMLElement>(root, "[data-chat-count]");
-  const out = need<HTMLElement>(root, "[data-chat-out]");
-  const again = need<HTMLElement>(root, "[data-chat-again]");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // A phone: the first tap on the field must bring the topics, not the
+  // keyboard over them. The field takes no keyboard until it is tapped again.
+  const touch = matchMedia("(hover: none)").matches;
+  const idle = input.placeholder;
+  let typing = false;
 
   const all: Entry[] = faq.flatMap((t) =>
     t.items.map(({ question: q, answerHtml: a }) => ({
@@ -174,17 +188,11 @@ export function initAsk(
       qkeys: new Set(words(q)),
     })),
   );
+  let mode: Mode = "closed";
   let topic = faq[0]?.id ?? "";
   let shown: Entry[] = [];
   let active = 0;
-  let busy: Promise<void> = Promise.resolve();
-
-  topics.innerHTML = faq
-    .map(
-      (t) =>
-        `<button type="button" class="chat__topic" data-topic="${esc(t.id)}" aria-pressed="${t.id === topic}"><span aria-hidden="true">[ </span>${esc(t.label)}<span aria-hidden="true"> ]</span></button>`,
-    )
-    .join("");
+  let answered = false;
 
   // Best matches for what was typed: every word that occurs counts, words in
   // the question itself count double, and the start of a word is enough.
@@ -222,27 +230,57 @@ export function initAsk(
     ? `no entry for that yet. write to <a href="mailto:${esc(contactEmail)}">${esc(contactEmail)}</a> and a human answers.`
     : "no entry for that yet.";
 
+  const picking = (): boolean =>
+    mode === "topics" || mode === "questions" || mode === "search";
+  /** how many things the list offers right now */
+  const offered = (): number => (mode === "topics" ? faq.length : shown.length);
+  const mark = (i: number): string =>
+    `<span class="chat__mark" aria-hidden="true">${i === active ? "❯" : " "}</span>`;
+
   function render(): void {
-    const text = input.value.trim();
-    shown = text ? search(text) : all.filter((i) => i.topic === topic);
-    active = Math.min(active, Math.max(0, shown.length - 1));
-    list.innerHTML = shown.length
-      ? shown
-          .map(
-            (item, i) =>
-              `<li role="option" id="ask-opt-${i}" aria-selected="${i === active}" class="chat__opt${item.asked ? " is-asked" : ""}" data-i="${i}"><span class="chat__mark" aria-hidden="true">${i === active ? "❯" : " "}</span><span>${esc(item.q)}</span>${item.asked ? '<span class="chat__done" aria-hidden="true">✓</span>' : ""}</li>`,
-          )
-          .join("")
-      : `<li class="chat__none">${none}</li>`;
+    const open = picking();
+    picker.hidden = !open;
+    log.hidden = mode !== "answer";
+    input.setAttribute("aria-expanded", String(open));
+    if (touch) {
+      if (!open) typing = false;
+      input.inputMode = typing ? "text" : "none";
+      input.placeholder = open && !typing ? "tap again to type" : idle;
+    }
+    list.classList.toggle("is-topics", mode === "topics");
+    if (mode === "topics") {
+      active = Math.min(active, Math.max(0, faq.length - 1));
+      crumb.innerHTML = `<span class="p">//</span> pick a topic`;
+      list.innerHTML = faq
+        .map(
+          (t, i) =>
+            `<li role="option" id="ask-opt-${i}" aria-selected="${i === active}" class="chat__opt chat__opt--topic" data-i="${i}"><span aria-hidden="true">[ </span>${esc(t.label)}<span aria-hidden="true"> ]</span></li>`,
+        )
+        .join("");
+    } else if (open) {
+      shown =
+        mode === "search"
+          ? search(input.value.trim())
+          : all.filter((i) => i.topic === topic);
+      active = Math.min(active, Math.max(0, shown.length - 1));
+      const here =
+        mode === "search"
+          ? "matches"
+          : (faq.find((t) => t.id === topic)?.label ?? "");
+      crumb.innerHTML = `<button type="button" class="chat__back" data-chat-back><span aria-hidden="true">‹ </span>topics</button><span class="chat__here"><span aria-hidden="true"> / </span>${esc(here)}</span>`;
+      list.innerHTML = shown.length
+        ? shown
+            .map(
+              (item, i) =>
+                `<li role="option" id="ask-opt-${i}" aria-selected="${i === active}" class="chat__opt${item.asked ? " is-asked" : ""}" data-i="${i}">${mark(i)}<span>${esc(item.q)}</span>${item.asked ? '<span class="chat__done" aria-hidden="true">✓</span>' : ""}</li>`,
+            )
+            .join("")
+        : `<li class="chat__none">${none}</li>`;
+    }
     input.setAttribute(
       "aria-activedescendant",
-      shown.length ? `ask-opt-${active}` : "",
+      open && offered() ? `ask-opt-${active}` : "",
     );
-    for (const b of topics.children as HTMLCollectionOf<HTMLElement>)
-      b.setAttribute(
-        "aria-pressed",
-        String(!text && b.dataset.topic === topic),
-      );
     const left = all.filter((i) => !i.asked).length;
     count.textContent =
       left === all.length
@@ -250,88 +288,121 @@ export function initAsk(
         : `${all.length - left}/${all.length} read`;
   }
 
-  // The answers sit below the picker. Asking moves the window down to them,
-  // so it is plain where the answer is being typed: centered between the header
-  // and the status line, or from their top edge when they are taller than that.
-  // (The page's header is `[data-top]`, its status line `.status`.)
+  // Whatever just opened under the field must be in view: the window moves
+  // down as far as needed, but never so far that the field leaves it. (The
+  // page's header is `[data-top]`, its status line `.status`.)
   function reveal(): void {
-    const box = out.getBoundingClientRect();
-    const top =
-      (document.querySelector<HTMLElement>("[data-top]")?.offsetHeight || 60) +
-      12;
-    const bottom =
-      innerHeight -
-      (document.querySelector<HTMLElement>(".status")?.offsetHeight || 36) -
-      12;
-    const free = bottom - top;
-    // nothing to do when they are in full view and not down at the edge of the window
-    if (
-      box.top >= top &&
-      box.bottom <= bottom &&
-      (box.top + box.bottom) / 2 <= top + free * 0.62
-    )
-      return;
-    const want = box.height < free ? top + (free - box.height) / 2 : top;
-    scrollBy({ top: box.top - want, behavior: reduce ? "auto" : "smooth" });
+    // a timer, not an animation frame: those pause while the window is covered
+    setTimeout(() => {
+      const top =
+        (document.querySelector<HTMLElement>("[data-top]")?.offsetHeight ||
+          60) + 12;
+      const bottom =
+        innerHeight -
+        (document.querySelector<HTMLElement>(".status")?.offsetHeight || 36) -
+        12;
+      const field = form.getBoundingClientRect().top;
+      const end = root.getBoundingClientRect().bottom;
+      const by =
+        field < top ? field - top : Math.min(end - bottom, field - top);
+      if (field < top || by > 0)
+        scrollBy({ top: by, behavior: reduce ? "auto" : "smooth" });
+    }, 30);
   }
 
-  // one turn of the conversation: the question, then the answer typed out
+  function show(next: Mode): void {
+    mode = next;
+    active = 0;
+    render();
+    reveal();
+  }
+
+  // the field was tapped, or somebody starts over from an answer
+  function open(): void {
+    if (picking()) return;
+    show(input.value.trim() ? "search" : "topics");
+  }
+
+  // the answer takes the picker's place: the question on top, the answer
+  // typed out under it
   function say(question: string, answerHtml: string): void {
-    root.querySelector("[data-chat-empty]")?.remove();
-    for (const old of log.children) old.classList.remove("is-new");
     const turn = document.createElement("div");
     turn.className = "chat__turn is-new";
     turn.innerHTML = `<p class="chat__q"><span class="q">?</span> ${esc(question)}</p>`;
     const answer = answerEl(answerHtml);
     turn.append(answer);
-    log.appendChild(turn);
-    log.scrollTop = log.scrollHeight;
-    again.hidden = false;
-    setTimeout(reveal, 30); // a timer, not an animation frame: those pause while the window is covered
-    // answers queue up, so two quick picks do not type over each other
-    busy = busy.then(async () => {
-      const follow = window.setInterval(
-        () => (log.scrollTop = log.scrollHeight),
-        120,
-      );
-      await typeEl(answer);
-      window.clearInterval(follow);
-    });
+    // the way back, said plainly: without it nobody knows how to ask again
+    const more = document.createElement("p");
+    more.className = "chat__more";
+    more.innerHTML = `<button type="button" class="chat__back" data-chat-back><span aria-hidden="true">‹ </span>back to topics</button>`;
+    log.replaceChildren(turn, more);
+    answered = true;
+    input.value = "";
+    if (touch) input.blur(); // the keyboard leaves, the answer has the screen
+    show("answer");
+    void typeEl(answer).then(reveal);
   }
 
   function pick(item: Entry): void {
     item.asked = true;
-    say(item.q, item.a);
-    input.value = "";
     topic = item.topic;
-    active = 0;
-    render();
+    say(item.q, item.a);
+  }
+
+  // one step on: a topic opens its questions, a question is answered
+  function choose(i: number): void {
+    if (mode === "topics") {
+      topic = faq[i]?.id ?? topic;
+      show("questions");
+    } else if (shown[i]) pick(shown[i]);
   }
 
   form.addEventListener("submit", (ev) => {
     ev.preventDefault();
     const text = input.value.trim();
+    if (!picking()) {
+      if (!text) return open();
+      mode = "search";
+      shown = search(text);
+    }
+    if (mode === "topics") return choose(active);
     if (shown.length) return pick(shown[active]);
-    if (!text) return;
-    say(text.slice(0, 140), noEntry);
-    input.value = "";
-    render();
+    if (text) say(text.slice(0, 140), noEntry);
+  });
+  input.addEventListener("focus", open);
+  input.addEventListener("pointerdown", () => {
+    // on a phone the second tap is the one that wants to type
+    if (touch && picking() && !typing) {
+      typing = true;
+      render();
+      if (document.activeElement === input) {
+        // the keyboard only follows a fresh focus
+        input.blur();
+        input.focus({ preventScroll: true });
+      }
+      return;
+    }
+    open();
   });
   input.addEventListener("input", () => {
-    active = 0;
-    render();
+    show(input.value.trim() ? "search" : "topics");
   });
   input.addEventListener("keydown", (ev) => {
     if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
-      if (!shown.length) return;
       ev.preventDefault();
-      active =
-        (active + (ev.key === "ArrowDown" ? 1 : shown.length - 1)) %
-        shown.length;
+      if (!picking()) return open();
+      const n = offered();
+      if (!n) return;
+      active = (active + (ev.key === "ArrowDown" ? 1 : n - 1)) % n;
       render();
-    } else if (ev.key === "Escape") {
-      input.value = "";
-      render();
+    } else if (ev.key === "Escape" && picking()) {
+      // one step back: typing and questions to the topics, the topics to the
+      // answer that was there (or to the closed window)
+      if (mode === "topics") show(answered ? "answer" : "closed");
+      else {
+        input.value = "";
+        show("topics");
+      }
     }
   });
   const optionAt = (ev: Event): HTMLElement | null =>
@@ -340,7 +411,12 @@ export function initAsk(
       : null;
   list.addEventListener("click", (ev) => {
     const li = optionAt(ev);
-    if (li) pick(shown[Number(li.dataset.i)]);
+    if (!li) return;
+    const topics = mode === "topics";
+    choose(Number(li.dataset.i));
+    // after a topic the field keeps the keys (arrows, enter, typing); on a
+    // phone that would only call the keyboard
+    if (topics && !touch) input.focus({ preventScroll: true });
   });
   list.addEventListener("pointermove", (ev) => {
     const li = optionAt(ev);
@@ -349,33 +425,40 @@ export function initAsk(
     for (const el of list.children as HTMLCollectionOf<HTMLElement>) {
       const on = Number(el.dataset.i) === active;
       el.setAttribute("aria-selected", String(on));
-      if (el.firstElementChild)
-        el.firstElementChild.textContent = on ? "❯" : " ";
+      const first = el.firstElementChild;
+      if (first?.classList.contains("chat__mark"))
+        first.textContent = on ? "❯" : " ";
     }
   });
-  // back up to the picker for the next question
-  again.addEventListener("click", () => {
-    const top =
-      (document.querySelector<HTMLElement>("[data-top]")?.offsetHeight || 60) +
-      16;
-    scrollBy({
-      top: root.getBoundingClientRect().top - top,
-      behavior: reduce ? "auto" : "smooth",
-    });
-    if (matchMedia("(hover: hover)").matches)
-      input.focus({ preventScroll: true }); // on a phone this would only pop the keyboard
-  });
-  topics.addEventListener("click", (ev) => {
-    const b =
-      ev.target instanceof Element
-        ? ev.target.closest<HTMLElement>("[data-topic]")
-        : null;
-    if (!b) return;
-    topic = b.dataset.topic ?? "";
+  // back to the topics: from the questions, and from under an answer
+  root.addEventListener("click", (ev) => {
+    if (!(
+      ev.target instanceof Element && ev.target.closest("[data-chat-back]")
+    ))
+      return;
     input.value = "";
-    active = 0;
-    render();
+    show("topics");
   });
+  // The enter button beside the field shows the enter sign, so the key does
+  // the same wherever the focus is not on something of its own: one step on
+  // (the topics, the marked topic, the marked question). Only while this
+  // window is the one in view.
+  document.addEventListener(
+    "keydown",
+    (ev) => {
+      if (ev.key !== "Enter" || ev.repeat) return;
+      if (ev.ctrlKey || ev.metaKey || ev.altKey || ev.shiftKey) return;
+      const at = ev.target instanceof Element ? ev.target : null;
+      if (at?.closest("a, button, input, textarea, select, summary, dialog"))
+        return;
+      if (document.querySelector("dialog[open]")) return;
+      const box = root.getBoundingClientRect();
+      if (box.top > innerHeight * 0.6 || box.bottom < innerHeight * 0.4) return;
+      ev.preventDefault();
+      form.requestSubmit();
+    },
+    true,
+  );
 
   render();
   if (new URLSearchParams(location.search).has("debug"))
@@ -383,6 +466,9 @@ export function initAsk(
       search: (t) => search(t).map((i) => i.q),
       get shown() {
         return shown.map((i) => i.q);
+      },
+      get mode() {
+        return mode;
       },
     };
 }
