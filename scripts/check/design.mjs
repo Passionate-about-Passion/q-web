@@ -376,7 +376,6 @@ const UNMAPPED_TOKENS = new Map([
   ["--duration-hack-horizon", "see --duration-hack-blink"],
   ["--duration-hack-reveal", "see --duration-hack-blink"],
   ["--duration-hack-node", "see --duration-hack-blink"],
-  ["--duration-hack-hint", "see --duration-hack-blink"],
   ["--ease-hack-out", "see --duration-hack-blink"],
   ["--ease-hack-pop", "see --duration-hack-blink"],
 ]);

@@ -195,9 +195,6 @@ const data: QhackData = {
       applyBanner: applyLabel.split(" ")[0],
     },
   },
-  hackedMessage: applyOpen
-    ? "!! this page has been taken over. your seat is waiting →"
-    : `!! this page has been taken over. ${statusLabel}.`,
 };
 // "<" never appears raw inside the JSON block, so no value can close it
 const json = JSON.stringify(data).replace(/</g, "\\u003c");
@@ -240,9 +237,6 @@ const json = JSON.stringify(data).replace(/</g, "\\u003c");
     </div>
 
     <div class="hero__foot">
-      <p class="hero__hint" aria-hidden="true">
-        // press and hold the logo to break it
-      </p>
       <p
         class="hero__tag"
         data-type
@@ -250,18 +244,6 @@ const json = JSON.stringify(data).replace(/</g, "\\u003c");
         data-type-caret="keep"
         set:html={out(hero.tagline)}
       />
-      <p class="hero__cta">
-        <a
-          class="btn-ascii"
-          {...applyAttrs("hero")}
-          set:html={ascii(applyLabel)}
-        />
-        <a
-          class="link-ascii"
-          href="#machine"
-          set:html={`scroll to boot the machine <span aria-hidden="true">↓</span>`}
-        />
-      </p>
     </div>
 
     {
@@ -299,14 +281,6 @@ const json = JSON.stringify(data).replace(/</g, "\\u003c");
       <canvas class="machine__canvas" aria-hidden="true"></canvas>
 
       <div class="machine__copy" data-stage="intro">
-        {
-          dates && (
-            <p
-              class="eyebrow"
-              set:text={`// ${[dates.long, place.toLowerCase()].filter(Boolean).join(" · ")}`}
-            />
-          )
-        }
         {
           lines.length > 0 && (
             <h2 class="machine__title">
@@ -363,11 +337,7 @@ const json = JSON.stringify(data).replace(/</g, "\\u003c");
               set:text={`${home} $ cat program.log`}
             />
             <h2 class="sec-title">{schedule.heading}</h2>
-            {schedule.intro.trim() && (
-              <p class="sec-lede" data-type data-type-speed="8">
-                {schedule.intro}
-              </p>
-            )}
+            {schedule.intro.trim() && <p class="sec-lede">{schedule.intro}</p>}
           </header>
 
           <div class="term term--log" data-reveal>
@@ -401,19 +371,9 @@ const json = JSON.stringify(data).replace(/</g, "\\u003c");
                       class="log__time"
                       set:html={`[${esc(row.time)}]${row.mark ? ` <b>${esc(row.mark)}</b>` : ""}`}
                     />
-                    <h3
-                      class="log__title"
-                      data-type
-                      data-type-speed="16"
-                      set:text={row.title}
-                    />
+                    <h3 class="log__title" set:text={row.title} />
                     {row.text.trim() && (
-                      <p
-                        class="log__text"
-                        data-type
-                        data-type-speed="5"
-                        set:text={row.text}
-                      />
+                      <p class="log__text" set:text={row.text} />
                     )}
                   </li>
                 ),
@@ -485,11 +445,6 @@ const json = JSON.stringify(data).replace(/</g, "\\u003c");
                 </span>
               </button>
             </div>
-            <p
-              class="movie__note"
-              aria-hidden="true"
-              set:html={`<span class="p">//</span> what you see is a live preview drawn from characters. press play for the real film.`}
-            />
           </div>
         </div>
       </section>
@@ -507,9 +462,7 @@ const json = JSON.stringify(data).replace(/</g, "\\u003c");
             </p>
             <h2 class="sec-title">{impressions.heading || "Impressions"}</h2>
             {impressions.intro.trim() && (
-              <p class="sec-lede" data-type data-type-speed="8">
-                {impressions.intro}
-              </p>
+              <p class="sec-lede">{impressions.intro}</p>
             )}
           </header>
         </div>
@@ -569,9 +522,7 @@ const json = JSON.stringify(data).replace(/</g, "\\u003c");
             <p class="sec-path" data-type set:text={`${home} $ q-hack --ask`} />
             <h2 class="sec-title">{faqSection.heading}</h2>
             {faqSection.intro.trim() && (
-              <p class="sec-lede" data-type data-type-speed="8">
-                {faqSection.intro}
-              </p>
+              <p class="sec-lede">{faqSection.intro}</p>
             )}
           </header>
 
@@ -592,33 +543,27 @@ const json = JSON.stringify(data).replace(/</g, "\\u003c");
                   />
                 </div>
                 <div class="term__body">
-                  {/* first the picker: topics, the field, the questions */}
+                  {/* One window, one thing at a time under the field: the
+                      topics, a topic's questions, or the answer (ask.ts). */}
                   <p data-type set:html={prompt("q-hack --ask")} />
                   <p
                     class="chat__hello"
-                    data-type
-                    data-type-speed="8"
                     set:html={out(
                       "pick a topic, then a question. or just type. the answer lands below.",
                     )}
-                  />
-                  <div
-                    class="chat__topics"
-                    data-chat-topics
-                    aria-label="Topics"
                   />
                   <form class="ask" data-chat novalidate>
                     <label
                       class="ask__label"
                       for="ask-q"
-                      set:html={`<span class="q">?</span> your question <span aria-hidden="true">›</span>`}
+                      set:html={`<span class="q">?</span> <span class="ask__words">your question</span> <span aria-hidden="true">›</span>`}
                     />
                     <input
                       class="ask__input"
                       id="ask-q"
                       type="text"
                       role="combobox"
-                      aria-expanded="true"
+                      aria-expanded="false"
                       aria-controls="ask-list"
                       aria-autocomplete="list"
                       autocomplete="off"
@@ -633,56 +578,36 @@ const json = JSON.stringify(data).replace(/</g, "\\u003c");
                       set:html={`enter <span aria-hidden="true">↵</span>`}
                     />
                   </form>
-                  <ul
-                    class="chat__list"
-                    id="ask-list"
-                    role="listbox"
-                    aria-label="Questions"
-                    data-chat-list
-                  />
-
-                  {/* then the conversation: asking a question scrolls here */}
-                  <div class="chat__out" data-chat-out>
-                    <p class="chat__rule">
-                      <span>// answers</span>
-                      <button
-                        class="chat__again"
-                        type="button"
-                        data-chat-again
-                        hidden
-                        set:html={`<span aria-hidden="true">↑ </span>ask another`}
-                      />
-                    </p>
-                    <div
-                      class="chat__log"
-                      data-chat-log
-                      aria-live="polite"
-                      tabindex="0"
-                      aria-label="Answers"
-                    >
-                      <p
-                        class="chat__empty"
-                        data-chat-empty
-                        hidden
-                        set:html={out(
-                          "nothing asked yet. your answer shows up here.",
-                        )}
-                      />
-                      {
-                        /* Every answer, written out for readers without the
-                           script; the script clears them and types the one
-                           that is asked for. */
-                        faqs.map((faq) => (
-                          <div class="chat__turn" data-chat-static>
-                            <p
-                              class="chat__q"
-                              set:html={`<span class="q">?</span> ${esc(faq.question)}`}
-                            />
-                            <div class="chat__a" set:html={faq.answerHtml} />
-                          </div>
-                        ))
-                      }
-                    </div>
+                  <div class="chat__pick" data-chat-pick hidden>
+                    <p class="chat__crumb" data-chat-crumb />
+                    <ul
+                      class="chat__list"
+                      id="ask-list"
+                      role="listbox"
+                      aria-label="Topics and questions"
+                      data-chat-list
+                    />
+                  </div>
+                  <div
+                    class="chat__log"
+                    data-chat-log
+                    aria-live="polite"
+                    aria-label="Answer"
+                  >
+                    {
+                      /* Every answer, written out for readers without the
+                         script; the script clears them and types the one
+                         that is asked for. */
+                      faqs.map((faq) => (
+                        <div class="chat__turn" data-chat-static>
+                          <p
+                            class="chat__q"
+                            set:html={`<span class="q">?</span> ${esc(faq.question)}`}
+                          />
+                          <div class="chat__a" set:html={faq.answerHtml} />
+                        </div>
+                      ))
+                    }
                   </div>
                 </div>
               </div>
@@ -884,10 +809,9 @@ const json = JSON.stringify(data).replace(/</g, "\\u003c");
   }
 
   {
-    /* A status line as in tmux: where you are, the countdown, and the way to apply. */
+    /* A status line as in tmux, for getting around: the page's windows, the one in view marked. */
   }
-  <nav class="status" aria-label="Page status">
-    <span class="status__session">[q-hack]</span>
+  <nav class="status" aria-label="Sections of this page">
     <ol class="status__wins" data-wins>
       {
         wins.map((win, i) => (
@@ -897,19 +821,6 @@ const json = JSON.stringify(data).replace(/</g, "\\u003c");
         ))
       }
     </ol>
-    <span class="status__msg" data-status-msg></span>
-    {
-      dates && (
-        <span class="status__clock" data-countdown>
-          T-000d 00:00:00
-        </span>
-      )
-    }
-    <a
-      class="status__apply"
-      {...applyAttrs("status")}
-      set:text={`${applyLabel.split(" ")[0]} ↵`}
-    />
   </nav>
 
   <script is:inline type="application/json" data-qhack-data set:html={json} />

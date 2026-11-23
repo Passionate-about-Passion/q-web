@@ -239,15 +239,13 @@
      band passes once in --duration-hack-band, a light line breathes. The
      rest is one shot: blocks coming in (--duration-hack-reveal), a
      programme diamond lighting up with a slight overshoot
-     (--duration-hack-node on --ease-hack-pop), the hero hint appearing
-     after --duration-hack-hint. */
+     (--duration-hack-node on --ease-hack-pop). */
   --duration-hack-blink: 1s;
   --duration-hack-pulse: 2.5s;
   --duration-hack-band: 54s;
   --duration-hack-horizon: 5s;
   --duration-hack-reveal: 800ms;
   --duration-hack-node: 650ms;
-  --duration-hack-hint: 3.2s;
   --ease-hack-out: cubic-bezier(0.2, 0.7, 0.2, 1);
   --ease-hack-pop: cubic-bezier(0.2, 0.9, 0.3, 1.3);
 

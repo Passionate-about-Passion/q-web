@@ -30,8 +30,6 @@ export interface QhackData {
   topics: AskTopic[];
   contactEmail: string;
   laptop: { model: string; stickers: LaptopSticker[]; texts: LaptopTexts };
-  /** The status line once the laptop has been taken over. */
-  hackedMessage: string;
 }
 
 const $ = <T extends Element = HTMLElement>(
@@ -222,13 +220,12 @@ function initCountdown(startsAt: string): void {
 // One straight line runs down the programme; every entry has a diamond on it.
 // The line is lit as far as the page is scrolled, with a bright point at its
 // tip. When the point reaches a diamond it sinks into it, the diamond lights
-// up with a small burst and its entry is typed; further down the point comes
-// out again. Small signals keep running along the lit part.
+// up with a small burst and its entry comes up from dim to full; further
+// down the point comes out again. Small signals keep running along the lit
+// part. The entries themselves are plain text, there from the start.
 function initProgram(): void {
   const list = $("[data-program]");
   if (!list) return;
-  $$("[data-type]", list).forEach(prepareType);
-
   // the line lives in an SVG under the list
   const SVG = "http://www.w3.org/2000/svg";
   const wrap = document.createElement("div");
@@ -348,11 +345,7 @@ function initProgram(): void {
       if (on !== n.on) {
         n.on = on;
         n.el.classList.toggle("is-on", on);
-        if (on && !n.el.classList.contains("is-seen")) {
-          n.el.classList.add("is-seen");
-          const [title, text] = $$("[data-type]", n.el);
-          if (title) void typeEl(title).then(() => text && typeEl(text));
-        }
+        if (on) n.el.classList.add("is-seen");
       }
       const d = Math.abs(drawn - n.at);
       if (d < gap) {
@@ -674,11 +667,23 @@ function initStatus(root: HTMLElement): void {
     sections.forEach((s, i) => {
       if (s.getBoundingClientRect().top <= mid) current = i;
     });
+    if (current === shown) return;
+    shown = current;
     links.forEach((a, i) => {
       a.setAttribute("aria-current", i === current ? "true" : "false");
       a.parentElement?.classList.toggle("is-current", i === current);
     });
+    // on a phone the line is wider than the window: the window in view is
+    // brought into it (the line scrolls sideways, the page does not)
+    const li = links[current]?.parentElement;
+    const row = li?.parentElement;
+    if (li && row && row.scrollWidth > row.clientWidth)
+      row.scrollTo({
+        left: li.offsetLeft - (row.clientWidth - li.offsetWidth) / 2,
+        behavior: reduce ? "auto" : "smooth",
+      });
   };
+  let shown = -1;
   addEventListener("scroll", onScroll, { passive: true });
   onScroll();
 }
@@ -769,7 +774,6 @@ export async function initQhackPage(): Promise<void> {
     // the answers were all written out for readers without the script: the
     // terminal starts empty and types them on request
     $$("[data-chat-static]", ask).forEach((el) => el.remove());
-    $("[data-chat-empty]", ask)?.removeAttribute("hidden");
     initAsk(ask, {
       topics: data.topics,
       typeEl,
@@ -817,12 +821,6 @@ export async function initQhackPage(): Promise<void> {
     if (hacked) return;
     hacked = true;
     $(".status", root)?.classList.add("is-hacked");
-    const msg = $("[data-status-msg]", root);
-    if (!msg) return;
-    msg.dataset.type = "";
-    msg.dataset.typeSpeed = "18";
-    msg.textContent = data.hackedMessage;
-    void typeEl(msg);
   };
 
   // The 3D pieces. Setting them up (the 3D library, studio lighting, shaders)
