@@ -27,7 +27,7 @@ Do **not** invent a second description per page "just for AI."
 | `/llms.txt` / `/llms-full.txt` | AI surfaces ([details](llms.md)) |
 | Homepage structured data | Organization, website, and next event |
 
-Default share image: `/media/hero-poster.jpg`. Hackathon uses `/media/hack-poster.jpg`. Keep share images wide and under about 300 KB so WhatsApp previews stay reliable.
+Default share image on every page: `/media/og-q-summit-2027.jpg`, so any shared link shows the same Q-Summit 2027 card as the homepage. The page title and description still change per page. Hackathon uses `/media/og-q-hack-2027.jpg`; Kickoff uses its hero image. Keep share images wide and under about 300 KB so WhatsApp previews stay reliable.
 
 ## Tips for strong WhatsApp and LinkedIn cards
 

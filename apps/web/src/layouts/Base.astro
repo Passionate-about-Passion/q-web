@@ -39,10 +39,12 @@ interface Props {
   preloadImageSizes?: string;
   preloadImageType?: string;
   /** Social-share card image, root-relative path under public/. Defaults to
-   * the hero poster. Every share image must be a 1600x900 JPEG of at most
-   * 300 KB (the rule in apps/web/AGENTS.md, enforced by the "share-images"
-   * check in scripts/check/budgets.mjs) so WhatsApp and other chat previews
-   * stay reliable. */
+   * the Q-Summit 2027 card (DEFAULT_OG_IMAGE), so every page shares with the
+   * same preview as the homepage unless it passes its own. Every share
+   * image must be a 1600x900 JPEG of at most 300 KB (the rule in
+   * apps/web/AGENTS.md, enforced by the "share-images" check in
+   * scripts/check/budgets.mjs) so WhatsApp and other chat previews stay
+   * reliable. */
   ogImage?: string;
   /** Pixel width of ogImage. Defaults to 1600. Share images must be 1600x900
    * (apps/web/AGENTS.md, scripts/check/budgets.mjs); any other size fails
@@ -51,7 +53,8 @@ interface Props {
   /** Pixel height of ogImage. Defaults to 900. Same 1600x900 rule as
    * ogImageWidth; a deviation fails scripts/check/budgets.mjs. */
   ogImageHeight?: number;
-  /** Accessible alt for og/twitter images. Defaults to the resolved OG title. */
+  /** Accessible alt for og/twitter images. Defaults to the default card's
+   * alt when ogImage is not set, otherwise to the resolved OG title. */
   ogImageAlt?: string;
   /** Override the og:title / twitter:title without changing the page <title>.
    * Useful when the social card copy differs from the browser tab (e.g. the
@@ -89,7 +92,7 @@ const {
   preloadImageSrcset,
   preloadImageSizes,
   preloadImageType,
-  ogImage = "/media/hero-poster.jpg",
+  ogImage: ogImageProp,
   ogImageWidth = 1600,
   ogImageHeight = 900,
   ogImageAlt,
@@ -100,6 +103,12 @@ const {
   livePreviewGlobal,
   pageEvent,
 } = Astro.props;
+// Site-wide share card: every page without its own ogImage previews with
+// this image (R2 key og-q-summit-2027.jpg), matching the homepage card.
+const DEFAULT_OG_IMAGE = "/media/og-q-summit-2027.jpg";
+const DEFAULT_OG_IMAGE_ALT =
+  "Q Summit, University of Mannheim: April 1-2, 2027, Mannheim Palace";
+const ogImage = ogImageProp ?? DEFAULT_OG_IMAGE;
 const { siteTitle, footer } = await getSiteSettings();
 // Empty page meta falls back to the site tagline (real site copy).
 const resolvedDescription = description || footer.tagline;
@@ -112,7 +121,8 @@ const resolvedOgTitle = ogTitleProp ?? composedOgTitle;
 const resolvedOgDescription = ogDescriptionProp ?? resolvedDescription;
 // og/twitter images must be absolute; resolve against the configured site.
 const ogImageUrl = new URL(ogImage, Astro.site).href;
-const resolvedOgImageAlt = ogImageAlt ?? resolvedOgTitle;
+const resolvedOgImageAlt =
+  ogImageAlt ?? (ogImageProp ? resolvedOgTitle : DEFAULT_OG_IMAGE_ALT);
 // og:locale mirrors the page language; only en and de are used on this site.
 const ogLocale = lang === "de" ? "de_DE" : "en_US";
 // Analytics page-event marks for lib/analytics/dom.ts: taxonomy prop keys
