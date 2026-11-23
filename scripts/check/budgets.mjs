@@ -37,8 +37,8 @@
  *  B. share-images  Every Open Graph share image the built HTML points at is
  *                   exactly 1600x900 and at most 300 KB. The set is discovered
  *                   from the rendered `og:image` meta tags (Base.astro's default
- *                   /media/hero-poster.jpg plus per-page overrides such as
- *                   /hackathon's /media/hack-poster.jpg), so a new page override
+ *                   /media/og-q-summit-2027.jpg plus per-page overrides such as
+ *                   /hackathon's /media/og-q-hack-2027.jpg), so a new page override
  *                   is covered automatically. Dimensions come from the JPEG SOF
  *                   marker, parsed here with no dependency; Base.astro hardcodes
  *                   og:image:type=image/jpeg and 1600x900, so a non-JPEG or a

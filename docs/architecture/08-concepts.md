@@ -49,7 +49,7 @@ Hybrid model: **identity is curated in CMS; pages stay the source for blurbs and
 
 | Surface | Implementation | Content source |
 | --- | --- | --- |
-| HTML meta + Open Graph + Twitter | `apps/web/src/layouts/Base.astro` | Page `title` / `metaDescription`; site `siteTitle` / footer `tagline`; default OG image `/media/hero-poster.jpg` |
+| HTML meta + Open Graph + Twitter | `apps/web/src/layouts/Base.astro` | Page `title` / `metaDescription`; site `siteTitle` / footer `tagline`; default OG image `/media/og-q-summit-2027.jpg` on every page without its own |
 | Sitemap | `@astrojs/sitemap` (`astro.config.mjs` `site`) | All prerendered routes |
 | `robots.txt` | `apps/web/public/robots.txt` | Static allow-all + named AI bots; points at sitemap |
 | `/llms.txt` identity | `apps/web/src/lib/llms.ts` | **Site Settings → `llms`** (`summary`, `pitch`, `keyFacts`, `lastReviewed`); empty `summary`/`pitch` fall back to footer tagline / home hero tagline |
