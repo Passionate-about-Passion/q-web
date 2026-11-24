@@ -305,6 +305,8 @@
   --radius-ticket-button: 10px;
   --radius-ticket-tile: 22px;
   --radius-ticket-pill: 999px;
+  /* The job text's sheet of white glass (DESIGN.md NAVY-1). */
+  --radius-ticket-sheet: 28px;
 
   /* Q-Hack radius (DESIGN.md HACK-1): the terminal windows. */
   --radius-hack-cta: 16px;
