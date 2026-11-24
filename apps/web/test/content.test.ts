@@ -541,14 +541,14 @@ describe("whyq audience pages", () => {
     });
   });
 
-  it("every page in the registry has a submenu entry and an audience in the fixture", () => {
+  it("every page in the registry has a submenu entry and a page row in the fixture", () => {
     const children = settings.nav.flatMap((item) => item.children ?? []);
-    const audienceIds = content.whyq.audiences.map((audience) => audience.id);
-    for (const { slug, audienceId } of WHYQ_AUDIENCE_PAGES) {
+    const rows = (content.whyq.pages ?? []).map((page) => page.audience);
+    for (const { slug } of WHYQ_AUDIENCE_PAGES) {
       expect(children.map((child) => child.href)).toContain(
         whyqAudiencePath(slug),
       );
-      expect(audienceIds).toContain(audienceId);
+      expect(rows).toContain(slug);
     }
   });
 
@@ -569,15 +569,15 @@ describe("whyq audience pages", () => {
       siteSettings: settings,
       pageContent: content,
     });
-    for (const { slug, audienceId } of WHYQ_AUDIENCE_PAGES) {
+    for (const { slug } of WHYQ_AUDIENCE_PAGES) {
       expect(full).toContain(
         `Source: https://q-summit.com${whyqAudiencePath(slug)}`,
       );
-      const audience = content.whyq.audiences.find(
-        (entry) => entry.id === audienceId,
-      );
-      expect(full).toContain(audience!.heading);
+      const page = content.whyq.pages?.find((entry) => entry.audience === slug);
+      expect(full).toContain(page!.hero.heading);
     }
+    // A price token never reaches the corpus (prices change between builds).
+    expect(full).not.toMatch(/\{(?:price|regular):/);
   });
 });
 

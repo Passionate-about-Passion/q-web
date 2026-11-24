@@ -288,6 +288,89 @@ export interface WhyqContent {
   heading: string;
   intro: string;
   audiences: WhyqAudience[];
+  /** The line on the pill under every audience hero. */
+  eventLine?: string;
+  /** The four pages under /whyq/ (pages/whyq/[audience].astro); a page
+   * without an entry is not built. */
+  pages?: WhyqAudiencePage[];
+}
+
+/** Slug of an audience page: it lives at /whyq/<slug>/. */
+export type WhyqAudienceSlug =
+  "students" | "startups" | "corporates" | "investors";
+
+/** A photo on an audience page: a /media filename and its alt text. */
+export interface WhyqPhoto {
+  file: string;
+  alt: string;
+  width?: number;
+  height?: number;
+}
+
+/** One logo of a highlight's logo wall; without a file the name shows. */
+export interface WhyqLogoEntry {
+  name: string;
+  href?: string;
+  file?: string;
+  width?: number;
+  height?: number;
+}
+
+export interface WhyqAudiencePage {
+  audience: WhyqAudienceSlug;
+  /** Breadcrumb label, e.g. "For Startups". */
+  crumb: string;
+  metaDescription: string;
+  hero: { heading: string; intro: string; ctaLabel: string };
+  stats: { value: string; label: string }[];
+  activities: {
+    heading: string;
+    intro?: string;
+    items: {
+      title: string;
+      text: string;
+      kind: "included" | "apply";
+      image?: WhyqPhoto;
+    }[];
+  };
+  highlight: {
+    layout: "cards" | "winner" | "logos" | "qube";
+    eyebrow: string;
+    heading: string;
+    intro?: string;
+    cards?: {
+      kicker: string;
+      title: string;
+      text: string;
+      image?: WhyqPhoto;
+    }[];
+    winnerLabel?: string;
+    winnerName?: string;
+    winnerLine?: string;
+    image?: WhyqPhoto;
+    moments?: { alt: string; image?: WhyqPhoto }[];
+    logosEyebrow?: string;
+    logosHeading?: string;
+    logos?: WhyqLogoEntry[];
+  };
+  ticket: {
+    heading: string;
+    intro?: string;
+    keys: TicketKey[];
+    side?: { title: string; text: string; status: string }[];
+    includesHeading?: string;
+    includes?: string[];
+    partnerPanel?: {
+      eyebrow: string;
+      heading: string;
+      text: string;
+      perks: string[];
+      linkLabel: string;
+      href: string;
+    };
+  };
+  /** Answers may hold `{price:<key>}` / `{regular:<key>}` tokens. */
+  faq: { heading: string; items: { question: string; answer: string }[] };
 }
 
 export interface ProgramContent {
@@ -1012,12 +1095,213 @@ interface CmsWhyqAudienceDoc {
   imageLeft?: boolean | null;
 }
 
+type CmsUpload = CmsMediaRef | number | string | null | undefined;
+type CmsText = string | null | undefined;
+
+interface CmsWhyqPhotoDoc {
+  image?: CmsUpload;
+  imageAlt?: CmsText;
+}
+
+interface CmsWhyqPageDoc {
+  audience: WhyqAudienceSlug;
+  crumb: string;
+  metaDescription: string;
+  hero: { heading: string; intro: string; ctaLabel: string };
+  stats?: { value: string; label: string }[] | null;
+  activities: {
+    heading: string;
+    intro?: CmsText;
+    items?:
+      | ({
+          title: string;
+          text: string;
+          kind: "included" | "apply";
+        } & CmsWhyqPhotoDoc)[]
+      | null;
+  };
+  highlight: {
+    layout: WhyqAudiencePage["highlight"]["layout"];
+    eyebrow: string;
+    heading: string;
+    intro?: CmsText;
+    cards?:
+      | ({ kicker: string; title: string; text: string } & CmsWhyqPhotoDoc)[]
+      | null;
+    winnerLabel?: CmsText;
+    winnerName?: CmsText;
+    winnerLine?: CmsText;
+    image?: CmsUpload;
+    imageAlt?: CmsText;
+    moments?: CmsWhyqPhotoDoc[] | null;
+    logosEyebrow?: CmsText;
+    logosHeading?: CmsText;
+    logos?: { name: string; websiteUrl?: CmsText; logo?: CmsUpload }[] | null;
+  };
+  ticket: {
+    heading: string;
+    intro?: CmsText;
+    keys: TicketKey[];
+    side?: { title: string; text: string; status: string }[] | null;
+    includesHeading?: CmsText;
+    includes?: { text: string }[] | null;
+    partnerPanel?: {
+      eyebrow?: CmsText;
+      heading?: CmsText;
+      text?: CmsText;
+      perks?: { text: string }[] | null;
+      linkLabel?: CmsText;
+      href?: CmsText;
+    } | null;
+  };
+  faq: {
+    heading: string;
+    items?: { question: string; answer: string }[] | null;
+  };
+}
+
 interface CmsWhyqDoc {
   title: string;
   metaDescription?: string | null;
   heading: string;
   intro: string;
   audiences: CmsWhyqAudienceDoc[];
+  eventLine?: CmsText;
+  pages?: CmsWhyqPageDoc[] | null;
+}
+
+/** An optional photo: its /media filename, alt and size, when it is set. */
+async function cmsWhyqPhoto(
+  image: CmsUpload,
+  alt: CmsText,
+  label: string,
+): Promise<WhyqPhoto | undefined> {
+  const file = await resolveOptionalUploadFilename(image, label);
+  if (!file) return undefined;
+  return { file, alt: alt ?? "", ...uploadDimensions(image) };
+}
+
+async function cmsGetWhyqPage(page: CmsWhyqPageDoc): Promise<WhyqAudiencePage> {
+  const at = (part: string) => `whyq ${page.audience} ${part}`;
+  const { highlight: hl, ticket } = page;
+  const panel = ticket.partnerPanel;
+  return {
+    audience: page.audience,
+    crumb: page.crumb,
+    metaDescription: page.metaDescription,
+    hero: page.hero,
+    stats: (page.stats ?? []).map(({ value, label }) => ({ value, label })),
+    activities: {
+      heading: page.activities.heading,
+      ...(optionalText(page.activities.intro)
+        ? { intro: page.activities.intro! }
+        : {}),
+      items: await Promise.all(
+        (page.activities.items ?? []).map(async (item) => {
+          const image = await cmsWhyqPhoto(
+            item.image,
+            item.imageAlt,
+            at(`activity ${item.title}`),
+          );
+          return {
+            title: item.title,
+            text: item.text,
+            kind: item.kind,
+            ...(image ? { image } : {}),
+          };
+        }),
+      ),
+    },
+    highlight: {
+      layout: hl.layout,
+      eyebrow: hl.eyebrow,
+      heading: hl.heading,
+      ...(optionalText(hl.intro) ? { intro: hl.intro! } : {}),
+      cards: await Promise.all(
+        (hl.cards ?? []).map(async (card) => {
+          const image = await cmsWhyqPhoto(
+            card.image,
+            card.imageAlt,
+            at(`card ${card.title}`),
+          );
+          return {
+            kicker: card.kicker,
+            title: card.title,
+            text: card.text,
+            ...(image ? { image } : {}),
+          };
+        }),
+      ),
+      ...(optionalText(hl.winnerLabel) ? { winnerLabel: hl.winnerLabel! } : {}),
+      ...(optionalText(hl.winnerName) ? { winnerName: hl.winnerName! } : {}),
+      ...(optionalText(hl.winnerLine) ? { winnerLine: hl.winnerLine! } : {}),
+      image: await cmsWhyqPhoto(hl.image, hl.imageAlt, at("highlight photo")),
+      moments: await Promise.all(
+        (hl.moments ?? []).map(async (moment, i) => {
+          const image = await cmsWhyqPhoto(
+            moment.image,
+            moment.imageAlt,
+            at(`moment ${i + 1}`),
+          );
+          return { alt: moment.imageAlt ?? "", ...(image ? { image } : {}) };
+        }),
+      ),
+      ...(optionalText(hl.logosEyebrow)
+        ? { logosEyebrow: hl.logosEyebrow! }
+        : {}),
+      ...(optionalText(hl.logosHeading)
+        ? { logosHeading: hl.logosHeading! }
+        : {}),
+      logos: await Promise.all(
+        (hl.logos ?? []).map(async (logo) => {
+          const file = await resolveOptionalUploadFilename(
+            logo.logo,
+            at(`logo ${logo.name}`),
+          );
+          return {
+            name: logo.name,
+            ...(optionalText(logo.websiteUrl)
+              ? { href: logo.websiteUrl! }
+              : {}),
+            ...(file ? { file, ...uploadDimensions(logo.logo) } : {}),
+          };
+        }),
+      ),
+    },
+    ticket: {
+      heading: ticket.heading,
+      ...(optionalText(ticket.intro) ? { intro: ticket.intro! } : {}),
+      keys: ticket.keys ?? [],
+      side: (ticket.side ?? []).map(({ title, text, status }) => ({
+        title,
+        text,
+        status,
+      })),
+      ...(optionalText(ticket.includesHeading)
+        ? { includesHeading: ticket.includesHeading! }
+        : {}),
+      includes: (ticket.includes ?? []).map((row) => row.text),
+      ...(panel && optionalText(panel.heading)
+        ? {
+            partnerPanel: {
+              eyebrow: panel.eyebrow ?? "",
+              heading: panel.heading!,
+              text: panel.text ?? "",
+              perks: (panel.perks ?? []).map((row) => row.text),
+              linkLabel: panel.linkLabel ?? "",
+              href: panel.href ?? "",
+            },
+          }
+        : {}),
+    },
+    faq: {
+      heading: page.faq.heading,
+      items: (page.faq.items ?? []).map(({ question, answer }) => ({
+        question,
+        answer,
+      })),
+    },
+  };
 }
 
 async function cmsGetWhyq(): Promise<WhyqContent> {
@@ -1050,6 +1334,8 @@ async function cmsGetWhyq(): Promise<WhyqContent> {
     heading: doc.heading,
     intro: doc.intro,
     audiences,
+    ...(optionalText(doc.eventLine) ? { eventLine: doc.eventLine! } : {}),
+    pages: await Promise.all((doc.pages ?? []).map(cmsGetWhyqPage)),
   };
 }
 

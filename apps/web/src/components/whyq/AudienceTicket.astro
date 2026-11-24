@@ -24,13 +24,16 @@ import IconCheck from "../icons/IconCheck.astro";
 import TicketStatus from "../tickets/TicketStatus.astro";
 import {
   euro,
-  fillLabel,
   isPositive,
   savings,
   statusLabel,
   statusOf,
 } from "../tickets/ticket-model";
-import { brandHtml, type WhyqPageCopy } from "../../lib/whyq-pages";
+import {
+  brandHtml,
+  siteSpelling,
+  type WhyqPageCopy,
+} from "../../lib/whyq-pages";
 
 interface Props {
   id: string;
@@ -77,6 +80,9 @@ const saleNote = active
   ? `${active.label}${until ? ` until ${until}` : ""}`
   : undefined;
 const pair = tickets.length > 1;
+// The button reads as on the rest of the site ("Buy now"); the ticket page's
+// own label names the ticket, which the card already does above it.
+const buyLabel = "Buy now";
 ---
 
 <section
@@ -111,9 +117,11 @@ const pair = tickets.length > 1;
               <div class="t-detail-top">
                 <div class="t-detail-id">
                   <h3 class="t-detail-name" id={`${id}-${ticket.key}`}>
-                    {ticket.name}
+                    {siteSpelling(ticket.name)}
                   </h3>
-                  <p class="t-detail-desc">{ticket.description}</p>
+                  <p class="t-detail-desc">
+                    {siteSpelling(ticket.description)}
+                  </p>
                 </div>
                 <div class="t-detail-price">
                   <p class="t-detail-now">
@@ -135,7 +143,7 @@ const pair = tickets.length > 1;
                 </div>
               </div>
               {ticket.note ? (
-                <p class="t-detail-note">{ticket.note}</p>
+                <p class="t-detail-note">{siteSpelling(ticket.note)}</p>
               ) : (
                 pair && <span class="t-detail-note-slot" aria-hidden="true" />
               )}
@@ -147,7 +155,7 @@ const pair = tickets.length > 1;
                 data-ph-prop-placement="ticket"
                 data-ph-prop-tier-name={ticket.name}
               >
-                {fillLabel(included.ticketBuyLabel, { ticket: ticket.name })}
+                {buyLabel}
                 <span class="t-btn-arrow" aria-hidden="true">
                   <IconArrowRight />
                 </span>
@@ -156,7 +164,7 @@ const pair = tickets.length > 1;
               <div class="t-benefits">
                 {included.groups.map((group) => (
                   <section class="t-group">
-                    <h4 class="t-group-title">{group.heading}</h4>
+                    <h4 class="t-group-title">{siteSpelling(group.heading)}</h4>
                     <ul class="t-rows" role="list">
                       {group.rows.map((row) => {
                         const status = statusOf(group, row, ticket.key);
@@ -166,7 +174,9 @@ const pair = tickets.length > 1;
                               positive={isPositive(status)}
                               label={statusLabel(status, included)}
                             />
-                            <span class="t-row-label">{row.label}</span>
+                            <span class="t-row-label">
+                              {siteSpelling(row.label)}
+                            </span>
                           </li>
                         );
                       })}
@@ -312,17 +322,18 @@ const pair = tickets.length > 1;
     list-style: none;
   }
 
+  /* The status always sits under the text, at its left edge, on every
+     card and at every width, so the cards read as one column and none
+     changes its layout with the length of its line. */
   .wq-tk-item {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-sm) var(--space-md);
-    padding: clamp(var(--space-md), 2.6vw, var(--space-lg));
+    display: grid;
+    justify-items: start;
+    align-content: start;
+    gap: var(--space-sm);
+    padding: var(--space-md) clamp(var(--space-md), 2.4vw, var(--space-lg));
   }
 
   .wq-tk-item > div {
-    flex: 1 1 14rem;
     min-width: 0;
   }
 

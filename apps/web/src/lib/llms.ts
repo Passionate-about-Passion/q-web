@@ -54,13 +54,21 @@ export function buildRouteTable(
   settings?: SiteSettings,
 ): LlmsRouteTable {
   // "Why Q?" is the four audience pages under /whyq/ (there is no overview
-  // page; /whyq/ redirects to the homepage, astro.config.mjs). They share
-  // the page-whyq blurb; their names come from the nav.
-  const audiencePages: LlmsLink[] = WHYQ_AUDIENCE_PAGES.map(({ slug }) => ({
-    slug: whyqAudiencePath(slug),
-    label: whyqAudienceTitle(slug, settings),
-    description: content.whyq.metaDescription,
-  }));
+  // page; /whyq/ redirects to the homepage, astro.config.mjs). Each one is
+  // listed while page-whyq has its entry (a page without one is not built),
+  // with that entry's own description; their names come from the nav.
+  const audiencePages: LlmsLink[] = WHYQ_AUDIENCE_PAGES.flatMap(({ slug }) => {
+    const page = content.whyq.pages?.find((entry) => entry.audience === slug);
+    return page
+      ? [
+          {
+            slug: whyqAudiencePath(slug),
+            label: whyqAudienceTitle(slug, settings),
+            description: page.metaDescription,
+          },
+        ]
+      : [];
+  });
 
   const mainPages: LlmsLink[] = [
     { slug: "/", label: "Home", description: content.home.metaDescription },
@@ -265,30 +273,48 @@ export function buildLlmsFullTxt(opts: {
       "---",
       "",
     ],
-    // One block per audience page, as the site shows them: the page-whyq
-    // intro and that audience's section. An audience an editor removed
-    // leaves its page without a section, and its block without one.
-    ...WHYQ_AUDIENCE_PAGES.map(({ slug, audienceId }) => {
-      const audience = whyq.audiences.find((entry) => entry.id === audienceId);
+    // One block per audience page, as the site shows them: its row of the
+    // page-whyq Audience pages (hero, activities, highlight, questions). A
+    // page without a row is not built, so it gets no block either. FAQ
+    // answers keep their price tokens out: prices change, the corpus is
+    // rebuilt only on deploy, and the ticket page carries the real ones.
+    ...WHYQ_AUDIENCE_PAGES.flatMap(({ slug }) => {
+      const page = whyq.pages?.find((entry) => entry.audience === slug);
+      if (!page) return [];
+      const noPrices = (text: string) => !/\{(?:price|regular):/.test(text);
       return [
-        ...pageHeader(
-          site,
-          whyqAudiencePath(slug),
-          whyqAudienceTitle(slug, siteSettings),
-          whyq.metaDescription,
-        ),
-        whyq.intro,
-        "",
-        ...(audience
-          ? section(audience.heading, [
-              audience.intro,
-              ...audience.items.map((item) =>
-                bullet(item.title, item.description),
-              ),
-            ])
-          : []),
-        "---",
-        "",
+        [
+          ...pageHeader(
+            site,
+            whyqAudiencePath(slug),
+            whyqAudienceTitle(slug, siteSettings),
+            page.metaDescription,
+          ),
+          page.hero.heading,
+          "",
+          page.hero.intro,
+          "",
+          ...section(page.activities.heading, [
+            page.activities.intro ?? "",
+            ...page.activities.items.map((item) =>
+              bullet(item.title, item.text),
+            ),
+          ]),
+          ...section(page.highlight.heading, [
+            page.highlight.intro ?? "",
+            ...(page.highlight.cards ?? []).map((card) =>
+              bullet(card.title, card.text),
+            ),
+          ]),
+          ...section(
+            page.faq.heading,
+            page.faq.items
+              .filter((item) => noPrices(item.answer))
+              .map((item) => bullet(item.question, item.answer)),
+          ),
+          "---",
+          "",
+        ],
       ];
     }),
     [

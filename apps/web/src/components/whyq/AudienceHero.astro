@@ -64,7 +64,13 @@ const headAccent = words.slice(-accentCount).join(" ");
 
     <p class="wq-lead" data-wq-in>{intro}</p>
 
-    <p class="wq-event h-glass" data-wq-in>{eventLine}</p>
+    {
+      eventLine && (
+        <p class="wq-event h-glass" data-wq-in>
+          {eventLine}
+        </p>
+      )
+    }
 
     <div class="wq-actions" data-wq-in>
       <a

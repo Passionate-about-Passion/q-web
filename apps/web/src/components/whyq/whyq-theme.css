@@ -7,6 +7,17 @@
  * recipe, restated for these sections' own classes).
  */
 
+/*
+ * One tighter rhythm between the sections. The homepage's sections are
+ * full screens with room around them (up to 8.5rem above and below,
+ * .h-section); these pages are a run of short sections, where that left
+ * up to 300px of empty night between one section's last card and the
+ * next section's eyebrow. Here the gap is about half of that.
+ */
+.whyq-page .h-section {
+  padding-block: clamp(var(--space-xl), 6vw, calc(2 * var(--space-xl)));
+}
+
 /* --- Section opener: eyebrow, title with an ice accent, intro --- */
 .wq-head {
   display: flex;

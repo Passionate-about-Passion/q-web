@@ -10,10 +10,12 @@
 // short FAQ) and is drawn in the 2027 homepage's system (DESIGN.md WHYQ-1,
 // HOME-1): its navy night, type, liquid glass and reveals; the ticket card
 // is the ticket page's. The registry of routes lives in
-// lib/whyq-audiences.ts and the pages' copy in lib/whyq-pages.ts; the
+// lib/whyq-audiences.ts. Everything on a page is content: its copy,
+// figures, photos and logos are its entry in the page-whyq "Audience pages"
+// (shaped for the components by lib/whyq-pages.ts toWhyqPageCopy), the
 // page's name and the breadcrumb's first step come from the site-settings
-// nav, and tickets, prices and the sale phase from page-tickets, the
-// source of /ticket-categories/.
+// nav, and tickets, prices and the sale phase from page-tickets, the source
+// of /ticket-categories/. A route without an entry is not built.
 import Base from "../../layouts/Base.astro";
 import AudienceHero from "../../components/whyq/AudienceHero.astro";
 import AudienceStats from "../../components/whyq/AudienceStats.astro";
@@ -22,48 +24,55 @@ import AudienceHighlight from "../../components/whyq/AudienceHighlight.astro";
 import AudienceTicket from "../../components/whyq/AudienceTicket.astro";
 import AudienceFaq from "../../components/whyq/AudienceFaq.astro";
 import { euro, salePriceLabel } from "../../components/tickets/ticket-model";
-import {
-  getPageContent,
-  getPartners,
-  getSiteSettings,
-} from "../../lib/content";
+import { getPageContent, getSiteSettings } from "../../lib/content";
 import logoManifest from "../../components/partner/logo-manifest.json";
 import {
   resolvePartnerLogoDisplay,
   type PartnerLogoMeta,
 } from "../../lib/partner-logos";
 import type { WhyqLogo } from "../../components/whyq/AudienceHighlight.astro";
-import type { Faq, TicketOffer } from "../../lib/content";
+import type {
+  Faq,
+  TicketOffer,
+  WhyqAudiencePageContent,
+} from "../../lib/content";
 import { EVENTS } from "../../lib/analytics/events";
 import {
   WHYQ_AUDIENCE_PAGES,
   whyqAudienceNames,
 } from "../../lib/whyq-audiences";
 import {
-  WHYQ_PAGE_COPY,
   WHYQ_SHARED,
   fillTicketTokens,
+  toWhyqPageCopy,
 } from "../../lib/whyq-pages";
 import JsonLd from "../../components/seo/JsonLd.astro";
 import { breadcrumbLd } from "../../lib/seo";
 
-export function getStaticPaths() {
-  return WHYQ_AUDIENCE_PAGES.map(({ slug, audienceId }) => ({
-    params: { audience: slug },
-    props: { slug, audienceId },
-  }));
+export async function getStaticPaths() {
+  const { whyq } = await getPageContent();
+  return WHYQ_AUDIENCE_PAGES.flatMap(({ slug }) => {
+    const page = whyq.pages?.find((entry) => entry.audience === slug);
+    if (!page) {
+      console.warn(
+        `[whyq] no "${slug}" entry in page-whyq Audience pages; /whyq/${slug}/ is not built`,
+      );
+      return [];
+    }
+    return [{ params: { audience: slug }, props: { slug, page } }];
+  });
 }
 
-const { slug } = Astro.props as { slug: string };
-const copy = WHYQ_PAGE_COPY[slug];
-if (!copy) {
-  throw new Error(
-    `[whyq] no page copy for "${slug}". Add it to WHYQ_PAGE_COPY in src/lib/whyq-pages.ts.`,
-  );
-}
+const { slug, page } = Astro.props as {
+  slug: string;
+  page: WhyqAudiencePageContent;
+};
+const copy = toWhyqPageCopy(page);
 
-const [{ whyq, ticketCategories, contact }, { nav }, partners] =
-  await Promise.all([getPageContent(), getSiteSettings(), getPartners()]);
+const [{ whyq, ticketCategories, contact }, { nav }] = await Promise.all([
+  getPageContent(),
+  getSiteSettings(),
+]);
 
 const { label, parentLabel } = whyqAudienceNames(slug, nav);
 // A nav without a "Why Q?" item still gets a name from content.
@@ -89,25 +98,9 @@ const escapeHtml = (value: string) =>
 
 // An answer that quotes a price takes it from the offer; one whose ticket
 // is gone is dropped rather than printed with a hole in it.
-// The day the Early Bird price ends ("November 22"), from the sale phases
-// of page-tickets: the "early-bird" phase, else the phase on sale. An
-// answer that names it is left out while no phase has an end date.
-const earlyBird =
-  phases?.items.find((item) => item.key === "early-bird") ??
-  phases?.items.find((item) => item.key === phases.activeKey);
-const saleEnd =
-  earlyBird?.endsAt && !Number.isNaN(Date.parse(earlyBird.endsAt))
-    ? new Intl.DateTimeFormat("en-US", {
-        month: "long",
-        day: "numeric",
-        timeZone: "Europe/Berlin",
-      }).format(new Date(earlyBird.endsAt))
-    : undefined;
-
 const faqs: Faq[] = copy.faq.items.flatMap((item) => {
-  if (item.answer.includes("{saleEnd}") && !saleEnd) return [];
   const answer = fillTicketTokens(
-    item.answer.replaceAll("{saleEnd}", saleEnd ?? ""),
+    item.answer,
     ticketCategories.offer.tickets,
     euro,
   );
@@ -137,32 +130,25 @@ const faqMore = contactEmail
     }
   : WHYQ_SHARED.faqMore;
 
-// Logos for the companies the highlight names, from the partners
-// collection, matched as the homepage's strip matches them (exact, case
-// and punctuation aside; "&" reads as "and"). A name without a logo stays
-// a name.
-const normalizeName = (name: string) =>
-  name
-    .toLowerCase()
-    .replace(/&/g, "and")
-    .replace(/[^a-z0-9]/g, "");
-const highlightNames =
-  copy.highlight.kind === "logos" || copy.highlight.kind === "qube"
-    ? copy.highlight.names
-    : [];
+// The highlight's logos, each an upload of its own (where the Partners
+// list has the company, the same file). Its size comes from the CMS or,
+// for a partner logo, from the logo manifest the partner strips use; a
+// logo with neither, or no file, stays a name.
 const logos: Record<string, WhyqLogo> = {};
-for (const name of highlightNames) {
-  const partner = partners.find(
-    (entry) => normalizeName(entry.name) === normalizeName(name),
+for (const entry of page.highlight.logos ?? []) {
+  if (!entry.file) continue;
+  const logo = resolvePartnerLogoDisplay(
+    {
+      name: entry.name,
+      websiteUrl: entry.href ?? "",
+      logoFilename: entry.file,
+      logoWidth: entry.width,
+      logoHeight: entry.height,
+    },
+    logoManifest as Record<string, PartnerLogoMeta>,
+    "[whyq] highlight logos",
   );
-  const logo = partner
-    ? resolvePartnerLogoDisplay(
-        partner,
-        logoManifest as Record<string, PartnerLogoMeta>,
-        "[whyq] highlight logos",
-      )
-    : null;
-  if (logo) logos[name] = logo;
+  if (logo) logos[entry.name] = logo;
 }
 ---
 
@@ -191,7 +177,7 @@ for (const name of highlightNames) {
       ctaHref="#ticket"
       jumpLabel={WHYQ_SHARED.jumpLabel}
       jumpHref="#activities"
-      eventLine={WHYQ_SHARED.eventLine}
+      eventLine={whyq.eventLine ?? ""}
       audience={slug}
     />
     <AudienceStats heading={`${copy.crumb} in numbers`} stats={copy.stats} />
