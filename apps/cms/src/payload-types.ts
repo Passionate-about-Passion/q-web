@@ -1467,7 +1467,7 @@ export interface PageWhyq {
   heading: string;
   intro: string;
   /**
-   * One section per audience. Each shows on its own page under Why Q?: attendees on /whyq/students/, startups on /whyq/startups/, partners on /whyq/corporates/, investors on /whyq/investors/. A section with another anchor id (founders) is kept but not shown on the site.
+   * The earlier Why Q? sections, kept for the record. The pages under /whyq/ show the Audience pages section below.
    */
   audiences: {
     /**
@@ -1500,6 +1500,218 @@ export interface PageWhyq {
     imageLeft?: boolean | null;
     id?: string | null;
   }[];
+  /**
+   * The line on the pill under every hero, e.g. "April 1-2, 2027 · Mannheim · 10th edition".
+   */
+  eventLine?: string | null;
+  /**
+   * One entry per page under Why Q?: Students, Startups, Corporates and Investors. A page without an entry is not built.
+   */
+  pages?:
+    | {
+        /**
+         * Which page this is. Each page may appear only once.
+         */
+        audience: 'students' | 'startups' | 'corporates' | 'investors';
+        /**
+         * Name in the breadcrumb, e.g. "For Startups".
+         */
+        crumb: string;
+        /**
+         * One or two sentences for Google and for link previews of this page.
+         */
+        metaDescription: string;
+        hero: {
+          heading: string;
+          intro: string;
+          /**
+           * Ticket button, e.g. "Get your startup ticket".
+           */
+          ctaLabel: string;
+        };
+        /**
+         * Key figures under the hero, e.g. "1500+" and "Participants". Keep the same figure in the same place on every page.
+         */
+        stats?:
+          | {
+              value: string;
+              label: string;
+              id?: string | null;
+            }[]
+          | null;
+        activities: {
+          heading: string;
+          intro?: string | null;
+          /**
+           * The cards in the row that scrolls sideways. A card without a photo shows the blue wash of the ticket page.
+           */
+          items?:
+            | {
+                title: string;
+                text: string;
+                kind: 'included' | 'apply';
+                /**
+                 * Photo of the activity.
+                 */
+                image?: (number | null) | Media;
+                /**
+                 * What the photo shows, for screen readers. Needed when a photo is set.
+                 */
+                imageAlt?: string | null;
+                id?: string | null;
+              }[]
+            | null;
+        };
+        /**
+         * The section between the activities and the tickets. Its layout decides which of the fields below are shown.
+         */
+        highlight: {
+          layout: 'cards' | 'winner' | 'logos' | 'qube';
+          eyebrow: string;
+          heading: string;
+          intro?: string | null;
+          cards?:
+            | {
+                kicker: string;
+                title: string;
+                text: string;
+                /**
+                 * Photo of the card.
+                 */
+                image?: (number | null) | Media;
+                /**
+                 * What the photo shows, for screen readers. Needed when a photo is set.
+                 */
+                imageAlt?: string | null;
+                id?: string | null;
+              }[]
+            | null;
+          /**
+           * e.g. "Winner · Pitch Battle 2026".
+           */
+          winnerLabel?: string | null;
+          winnerName?: string | null;
+          /**
+           * One line on what the winner does and the prize money.
+           */
+          winnerLine?: string | null;
+          /**
+           * The large photo of the section.
+           */
+          image?: (number | null) | Media;
+          /**
+           * What the photo shows, for screen readers. Needed when a photo is set.
+           */
+          imageAlt?: string | null;
+          /**
+           * Up to three smaller photos under the winner's photo.
+           */
+          moments?:
+            | {
+                /**
+                 * Photo of the moment.
+                 */
+                image?: (number | null) | Media;
+                /**
+                 * What the photo shows, for screen readers. Needed when a photo is set.
+                 */
+                imageAlt?: string | null;
+                id?: string | null;
+              }[]
+            | null;
+          /**
+           * e.g. "In the Qube 2026".
+           */
+          logosEyebrow?: string | null;
+          logosHeading?: string | null;
+          /**
+           * Companies or investors, in this order. Where the Partners list already has the logo, pick that same file.
+           */
+          logos?:
+            | {
+                name: string;
+                /**
+                 * Optional link to the website.
+                 */
+                websiteUrl?: string | null;
+                /**
+                 * Prefer SVG, otherwise a PNG or WebP with a transparent background. Without a logo the name is shown.
+                 */
+                logo?: (number | null) | Media;
+                id?: string | null;
+              }[]
+            | null;
+        };
+        ticket: {
+          heading: string;
+          intro?: string | null;
+          /**
+           * The tickets this page sells, in this order. Prices and benefits come from Website pages → Tickets.
+           */
+          keys: ('student' | 'young-professional' | 'start-up' | 'investor' | 'corporate')[];
+          /**
+           * Cards beside a single ticket, each with a status pill.
+           */
+          side?:
+            | {
+                title: string;
+                text: string;
+                /**
+                 * e.g. "Included" or "Applications open soon".
+                 */
+                status: string;
+                id?: string | null;
+              }[]
+            | null;
+          /**
+           * Heading of the list beside two tickets, e.g. "Both tickets include".
+           */
+          includesHeading?: string | null;
+          /**
+           * The list beside two tickets.
+           */
+          includes?:
+            | {
+                text: string;
+                id?: string | null;
+              }[]
+            | null;
+          /**
+           * Optional panel under the tickets that leads to the partner page. Left out while its heading is empty.
+           */
+          partnerPanel?: {
+            eyebrow?: string | null;
+            heading?: string | null;
+            text?: string | null;
+            /**
+             * What a partner package brings.
+             */
+            perks?:
+              | {
+                  text: string;
+                  id?: string | null;
+                }[]
+              | null;
+            linkLabel?: string | null;
+            href?: string | null;
+          };
+        };
+        faq: {
+          heading: string;
+          /**
+           * For a price, write {price:student} (price on sale now) or {regular:student} (regular price) instead of a number, with the ticket's key: student, young-professional, start-up, investor or corporate. The site fills in the current price.
+           */
+          items?:
+            | {
+                question: string;
+                answer: string;
+                id?: string | null;
+              }[]
+            | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
   /**
    * Browser tab and social-share title for the whyq page (shown as "Q-Summit | …").
    */
@@ -2893,6 +3105,134 @@ export interface PageWhyqSelect<T extends boolean = true> {
         imageFile?: T;
         imageAlt?: T;
         imageLeft?: T;
+        id?: T;
+      };
+  eventLine?: T;
+  pages?:
+    | T
+    | {
+        audience?: T;
+        crumb?: T;
+        metaDescription?: T;
+        hero?:
+          | T
+          | {
+              heading?: T;
+              intro?: T;
+              ctaLabel?: T;
+            };
+        stats?:
+          | T
+          | {
+              value?: T;
+              label?: T;
+              id?: T;
+            };
+        activities?:
+          | T
+          | {
+              heading?: T;
+              intro?: T;
+              items?:
+                | T
+                | {
+                    title?: T;
+                    text?: T;
+                    kind?: T;
+                    image?: T;
+                    imageAlt?: T;
+                    id?: T;
+                  };
+            };
+        highlight?:
+          | T
+          | {
+              layout?: T;
+              eyebrow?: T;
+              heading?: T;
+              intro?: T;
+              cards?:
+                | T
+                | {
+                    kicker?: T;
+                    title?: T;
+                    text?: T;
+                    image?: T;
+                    imageAlt?: T;
+                    id?: T;
+                  };
+              winnerLabel?: T;
+              winnerName?: T;
+              winnerLine?: T;
+              image?: T;
+              imageAlt?: T;
+              moments?:
+                | T
+                | {
+                    image?: T;
+                    imageAlt?: T;
+                    id?: T;
+                  };
+              logosEyebrow?: T;
+              logosHeading?: T;
+              logos?:
+                | T
+                | {
+                    name?: T;
+                    websiteUrl?: T;
+                    logo?: T;
+                    id?: T;
+                  };
+            };
+        ticket?:
+          | T
+          | {
+              heading?: T;
+              intro?: T;
+              keys?: T;
+              side?:
+                | T
+                | {
+                    title?: T;
+                    text?: T;
+                    status?: T;
+                    id?: T;
+                  };
+              includesHeading?: T;
+              includes?:
+                | T
+                | {
+                    text?: T;
+                    id?: T;
+                  };
+              partnerPanel?:
+                | T
+                | {
+                    eyebrow?: T;
+                    heading?: T;
+                    text?: T;
+                    perks?:
+                      | T
+                      | {
+                          text?: T;
+                          id?: T;
+                        };
+                    linkLabel?: T;
+                    href?: T;
+                  };
+            };
+        faq?:
+          | T
+          | {
+              heading?: T;
+              items?:
+                | T
+                | {
+                    question?: T;
+                    answer?: T;
+                    id?: T;
+                  };
+            };
         id?: T;
       };
   title?: T;

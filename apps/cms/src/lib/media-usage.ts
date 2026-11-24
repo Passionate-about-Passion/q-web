@@ -73,7 +73,17 @@ export const MEDIA_GLOBAL_FIELDS = [
     slug: "page-whyq",
     label: "Why Q?",
     path: "/whyq/",
-    refs: [{ fieldPath: "audiences[].imageFile", titleField: "heading" }],
+    refs: [
+      { fieldPath: "audiences[].imageFile", titleField: "heading" },
+      { fieldPath: "pages[].activities.items[].image", titleField: "title" },
+      { fieldPath: "pages[].highlight.cards[].image", titleField: "title" },
+      { fieldPath: "pages[].highlight.image", titleField: "crumb" },
+      {
+        fieldPath: "pages[].highlight.moments[].image",
+        titleField: "imageAlt",
+      },
+      { fieldPath: "pages[].highlight.logos[].logo", titleField: "name" },
+    ],
   },
   {
     slug: "page-hackathon",
