@@ -18,8 +18,7 @@ import { resolveContentImage } from "../lib/images";
 import TeamHero from "../components/team/TeamHero.astro";
 import { TEAM_HERO_PHOTO } from "../lib/team-media";
 import TeamPanels from "../components/team/TeamPanels.astro";
-import Section from "../components/ui/Section.astro";
-import Container from "../components/ui/Container.astro";
+import "../components/ui/navy-glass.css";
 
 const [{ ourTeam, pastTeams }, { siteTitle }, team, pastTeamPhotos] =
   await Promise.all([
@@ -56,22 +55,21 @@ const heroPreload = heroImage
   title={ourTeam.title}
   description={ourTeam.metaDescription}
   preloadImageSrcset={heroPreload?.srcSet.attribute}
-  preloadImageSizes="100vw"
+  preloadImageSizes="132vw"
   preloadImageType="image/avif"
   livePreviewGlobal="page-our-team"
 >
-  <TeamHero title={ourTeam.heading} lpTitle="heading" />
-
-  <Section small>
-    <Container>
-      <TeamPanels
-        active="current"
-        divisions={divisions}
-        pastYears={pastYears}
-        pastIntro={pastTeams.intro}
-        currentTitle={`${siteTitle} | ${ourTeam.title}`}
-        pastTitle={`${siteTitle} | ${pastTeams.title}`}
-      />
-    </Container>
-  </Section>
+  <div class="n-page">
+    <div class="n-ground" aria-hidden="true"></div>
+    <TeamHero title={ourTeam.heading} lpTitle="heading" />
+    <TeamPanels
+      active="current"
+      divisions={divisions}
+      pastYears={pastYears}
+      pastIntro={pastTeams.intro}
+      currentTitle={`${siteTitle} | ${ourTeam.title}`}
+      pastTitle={`${siteTitle} | ${pastTeams.title}`}
+    />
+    <div class="h-page-fade" aria-hidden="true"></div>
+  </div>
 </Base>

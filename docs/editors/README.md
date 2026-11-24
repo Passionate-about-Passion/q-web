@@ -34,7 +34,7 @@ The dashboard leads with **Website pages**: every page you can edit, its address
 
 ## Team members
 
-Each person under **Lists & people → Team** carries a name, role, portrait, division, and board year. The **LinkedIn profile** field is optional: paste the full profile address (`https://www.linkedin.com/in/…`) and a small LinkedIn icon appears next to that person's name on `/our-team/`. Leave it empty and no icon shows, so you can fill these in gradually.
+Each person under **Lists & people → Team** carries a name, role, portrait, division, and board year. The **LinkedIn profile** and **Email address** fields are optional: paste the full profile address (`https://www.linkedin.com/in/…`) or the email address, and its icon appears in the small bar that rises over that person's photo on `/our-team/` (on hover, or after a tap on a phone). Leave a field empty and its icon does not show, so you can fill these in gradually. The **Role** is the title shown above the photo: people with exactly the same role stand together under one title, so spell a shared role the same way for everyone who has it.
 
 It only accepts linkedin.com addresses. A search result, a company page, or a bare handle is rejected when you save, because all three would render a broken link on the live site.
 

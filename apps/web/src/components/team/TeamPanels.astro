@@ -22,6 +22,7 @@
 import { Picture } from "../../lib/astro-assets";
 import TeamToggle from "./TeamToggle.astro";
 import TeamGrid from "./TeamGrid.astro";
+import "../ui/navy-glass.css";
 import type { DivisionGroup, PastYearEntry } from "../../lib/team";
 
 interface Props {
@@ -38,97 +39,116 @@ const { active, divisions, pastYears, pastIntro, currentTitle, pastTitle } =
   Astro.props;
 ---
 
-<TeamToggle active={active} />
+<div class="team-body n-shell">
+  <div class="team-controls">
+    <TeamToggle active={active} />
+  </div>
 
-<div
-  id="team-panel-current"
-  class="team-panel"
-  data-team-panel="current"
-  data-title={currentTitle}
-  role="tabpanel"
-  aria-labelledby="team-tab-current"
-  tabindex="0"
-  hidden={active !== "current"}
->
-  {
-    divisions.map((group, i) => (
-      <section class="division">
-        <h2 class="division__title">{group.division} Division</h2>
-        <TeamGrid
-          members={group.members}
-          eager={active === "current" && i === 0}
-        />
-      </section>
-    ))
-  }
-</div>
+  <div
+    id="team-panel-current"
+    class="team-panel"
+    data-team-panel="current"
+    data-title={currentTitle}
+    role="tabpanel"
+    aria-labelledby="team-tab-current"
+    tabindex="0"
+    hidden={active !== "current"}
+  >
+    {
+      divisions.map((group) => (
+        <section class="division">
+          <h2 class="division__title">{group.division} Division</h2>
+          <TeamGrid members={group.members} />
+        </section>
+      ))
+    }
+  </div>
 
-<div
-  id="team-panel-past"
-  class="team-panel history"
-  data-team-panel="past"
-  data-title={pastTitle}
-  role="tabpanel"
-  aria-labelledby="team-tab-past"
-  tabindex="0"
-  hidden={active !== "past"}
->
-  <p class="history__intro">{pastIntro}</p>
-  {
-    pastYears.map((entry, i) => (
-      <section class="history__year">
-        <h2 class="history__year-title">Year {entry.year}</h2>
-        {entry.image ? (
-          <Picture
-            class="history__photo"
-            src={entry.image}
-            alt={`The Q-Summit team of ${entry.year}`}
-            widths={[500, 850, 1200]}
-            sizes="(max-width: 950px) 90vw, 850px"
-            formats={["avif", "webp"]}
-            fallbackFormat="jpg"
-            quality={80}
-            loading={active === "past" && i === 0 ? "eager" : "lazy"}
-            decoding="async"
-          />
-        ) : (
-          <img
-            class="history__photo"
-            src={entry.photo.src}
-            srcset={entry.photo.srcset}
-            sizes="(max-width: 950px) 90vw, 850px"
-            alt={`The Q-Summit team of ${entry.year}`}
-            width={entry.size.width}
-            height={entry.size.height}
-            loading={active === "past" && i === 0 ? "eager" : "lazy"}
-            decoding="async"
-          />
-        )}
-      </section>
-    ))
-  }
+  <div
+    id="team-panel-past"
+    class="team-panel history"
+    data-team-panel="past"
+    data-title={pastTitle}
+    role="tabpanel"
+    aria-labelledby="team-tab-past"
+    tabindex="0"
+    hidden={active !== "past"}
+  >
+    <p class="history__intro">{pastIntro}</p>
+    {
+      pastYears.map((entry, i) => (
+        <section class="history__year">
+          <h2 class="history__year-title">Year {entry.year}</h2>
+          {entry.image ? (
+            <Picture
+              class="history__photo"
+              src={entry.image}
+              alt={`The Q-Summit team of ${entry.year}`}
+              widths={[500, 850, 1200]}
+              sizes="(max-width: 950px) 90vw, 850px"
+              formats={["avif", "webp"]}
+              fallbackFormat="jpg"
+              quality={80}
+              loading={active === "past" && i === 0 ? "eager" : "lazy"}
+              decoding="async"
+            />
+          ) : (
+            <img
+              class="history__photo"
+              src={entry.photo.src}
+              srcset={entry.photo.srcset}
+              sizes="(max-width: 950px) 90vw, 850px"
+              alt={`The Q-Summit team of ${entry.year}`}
+              width={entry.size.width}
+              height={entry.size.height}
+              loading={active === "past" && i === 0 ? "eager" : "lazy"}
+              decoding="async"
+            />
+          )}
+        </section>
+      ))
+    }
+  </div>
 </div>
 
 <style>
+  /* DESIGN.md NAVY-1: the panels on the 2027 navy, in the page's own
+     shell (deviates from LAYOUT-1 and LAYOUT-3). */
+  /* The bottom padding is the room the fade into the footer
+     (.h-page-fade) starts in, as after the ticket page's last section. */
+  .team-body {
+    padding-top: clamp(2.5rem, 5vw, 3.5rem);
+    padding-bottom: clamp(4rem, 9vw, 7rem);
+  }
+
+  .team-controls {
+    position: relative;
+    z-index: 5;
+    display: grid;
+    justify-items: center;
+  }
+
+  .team-panel:focus-visible {
+    outline: none;
+  }
+
   .division {
-    margin-top: 4rem;
+    padding-top: clamp(3.5rem, 7vw, 5.5rem);
   }
 
-  .division:first-child {
-    margin-top: 0;
-  }
-
+  /* Display type above the heading scale, like the homepage's section
+     titles (deviates from TYPE-1 as NAVY-1 allows). */
   .division__title {
-    margin-bottom: var(--space-lg);
-  }
-
-  @media (min-width: 768px) {
-    .division {
-      margin-top: 5rem;
-    }
+    margin-bottom: clamp(var(--space-md), 3vw, 2.25rem);
+    font-size: clamp(2rem, 4.4vw, 3.25rem);
+    font-weight: var(--heading-weight-home);
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    text-align: center;
   }
 
   .history {
+    padding-top: clamp(3.5rem, 7vw, 5.5rem);
     text-align: center;
   }
 
@@ -136,7 +156,7 @@ const { active, divisions, pastYears, pastIntro, currentTitle, pastTitle } =
   .history__intro {
     max-width: var(--container-small);
     margin: 0 auto;
-    color: var(--color-neutral-darker);
+    color: color-mix(in srgb, var(--color-white) 78%, transparent);
   }
 
   .history__year {
@@ -155,8 +175,10 @@ const { active, divisions, pastYears, pastIntro, currentTitle, pastTitle } =
   .history__photo {
     width: min(100%, 850px);
     margin-inline: auto;
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-lifted);
+    border-radius: var(--radius-ticket-card);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--color-white) 18%, transparent),
+      0 22px 40px -24px var(--color-black);
   }
 </style>
 
@@ -186,6 +208,27 @@ const { active, divisions, pastYears, pastIntro, currentTitle, pastTitle } =
       toggle.querySelectorAll<HTMLAnchorElement>("[data-team-tab]"),
     );
     const thumb = toggle.querySelector<HTMLElement>(".team-toggle__thumb");
+
+    // Slide the drop of ice under the active tab, measured, since the two
+    // labels differ in width. The first placement does not animate.
+    function placeThumb() {
+      const tab = tabs.find((t) => t.classList.contains("is-active"));
+      if (!thumb || !tab) return;
+      thumb.style.width = `${tab.offsetWidth}px`;
+      thumb.style.transform = `translateX(${tab.offsetLeft}px)`;
+    }
+    if (thumb) {
+      thumb.style.transition = "none";
+      placeThumb();
+      thumb.classList.add("is-placed");
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          thumb.style.transition = "";
+        }),
+      );
+      new ResizeObserver(placeThumb).observe(toggle);
+      document.fonts?.ready.then(placeThumb);
+    }
     const panels: Record<"current" | "past", HTMLElement | null> = {
       current: document.querySelector<HTMLElement>(
         '[data-team-panel="current"]',
@@ -215,7 +258,7 @@ const { active, divisions, pastYears, pastIntro, currentTitle, pastTitle } =
         tab.setAttribute("aria-selected", isActive ? "true" : "false");
       });
       setRovingTabindex(key);
-      thumb?.setAttribute("data-position", key);
+      placeThumb();
       if (panels.current) panels.current.hidden = key !== "current";
       if (panels.past) panels.past.hidden = key !== "past";
 
@@ -302,4 +345,21 @@ const { active, divisions, pastYears, pastIntro, currentTitle, pastTitle } =
   document
     .querySelectorAll<HTMLElement>(".team-toggle")
     .forEach(setUpTeamToggle);
+
+  // Touch screens have no hover: a tap on a member raises the contact bar,
+  // a second tap or a tap anywhere else lowers it. A tap on a contact link
+  // itself just follows the link.
+  if (window.matchMedia("(hover: none)").matches) {
+    document.addEventListener("click", (event) => {
+      const target = event.target as Element | null;
+      const member = target?.closest<HTMLElement>("[data-member]") ?? null;
+      if (member && target?.closest("a")) return;
+      document
+        .querySelectorAll<HTMLElement>("[data-member].is-open")
+        .forEach((open) => {
+          if (open !== member) open.classList.remove("is-open");
+        });
+      member?.classList.toggle("is-open");
+    });
+  }
 </script>
