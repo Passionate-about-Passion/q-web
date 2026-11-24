@@ -56,15 +56,18 @@ const offer =
   active && phases
     ? phases.discountLabel.replace("{discount}", String(active.discount))
     : undefined;
-// "until 22.11.", as the team's post and mockup write it, in German time.
+// "until 22.11.", as the team's post and mockup write it, in German time;
+// between two phases (onSale off) the coming phase reads "coming soon".
 const until =
-  active?.endsAt && !Number.isNaN(Date.parse(active.endsAt))
-    ? `until ${new Intl.DateTimeFormat("de-DE", {
-        day: "2-digit",
-        month: "2-digit",
-        timeZone: "Europe/Berlin",
-      }).format(new Date(active.endsAt))}`
-    : undefined;
+  phases?.onSale === false
+    ? "coming soon"
+    : active?.endsAt && !Number.isNaN(Date.parse(active.endsAt))
+      ? `until ${new Intl.DateTimeFormat("de-DE", {
+          day: "2-digit",
+          month: "2-digit",
+          timeZone: "Europe/Berlin",
+        }).format(new Date(active.endsAt))}`
+      : undefined;
 ---
 
 <section class="hx" id="top" aria-labelledby="home-hero-title">

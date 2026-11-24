@@ -1,5 +1,6 @@
 // VRT variants for SalePhases: the first phase on sale, a later one (the
-// earlier phases read as over), and a short set. Sample data only. See
+// earlier phases read as over), one between phases (the next one
+// announced as coming), and a short set. Sample data only. See
 // docs/dev/visual-testing.md.
 import SalePhases from "./SalePhases.astro";
 
@@ -24,6 +25,14 @@ export default {
   variants: {
     default: { phases: { ...base, activeKey: "one" } },
     later: { phases: { ...base, activeKey: "three" } },
+    coming: {
+      phases: {
+        ...base,
+        activeKey: "two",
+        onSale: false,
+        nextLabel: "Next up",
+      },
+    },
     short: { phases: { ...base, items: items.slice(0, 2), activeKey: "two" } },
   },
 };

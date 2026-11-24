@@ -42,6 +42,8 @@ export function phaseStates(
  * Compare always name the phase the timeline marks as on sale.
  */
 export function salePriceLabel(phases: TicketPhases | undefined): string {
+  // Between two phases no discount phase is on sale.
+  if (phases?.onSale === false) return "Current price";
   const active = phases?.items.find((p) => p.key === phases.activeKey);
   return `${active?.label ?? "Early Bird"} price`;
 }

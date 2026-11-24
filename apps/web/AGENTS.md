@@ -88,6 +88,7 @@ than in DESIGN.md, but they are cited the same way.
 | `Timeline` | `items`, `images`, `reveal`, `priorityFirstImage`; also owns the `.timeline-intro` class for the caller's intro paragraph |
 | `LogoGrid` | `logos`, `variant="tier"\|"hack"`, `featured`, `eager`, `flip` |
 | `SaleCards` | `phases`, `href`, `actionLabel` |
+| `SaleIntro` | `phases`, `href`, `level="h1"\|"h2"`, `headingId`, `reveal` |
 
 `Timeline`'s `reveal` emits `[data-reveal]`, which gates every scroll-driven
 rule; the `IntersectionObserver` fallback for browsers without
@@ -97,7 +98,9 @@ as local custom properties on the list and re-pointed by `.is-hack`.
 `SaleCards` is the discount phases as four glass cards on the homepage
 (HOME-1) and the ticket page (TICKETS-1); `href` is where the card on sale
 leads, and its tints come from the homepage's glass recipe
-(`home/home-theme.css` `.h-pane`, `.h-ice`, `.h-frost`).
+(`home/home-theme.css` `.h-pane`, `.h-ice`, `.h-frost`). `SaleIntro` is the
+heading, offer sentence and ticket link above those cards: "… is live." while
+a phase is on sale, "… Sale is coming." while `phases.onSale` is off.
 
 **PRIM-1 Standard section shells use the primitives.** `<Section>` (props
 `variant="alternate"|"dark"`, `small`, `as="section"|"article"|"header"|"div"`

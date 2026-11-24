@@ -34,6 +34,12 @@ const activeIndex = Math.max(
   0,
   phases.items.findIndex((item) => item.key === phases.activeKey),
 );
+// Between two phases the current card announces the next one ("Next up")
+// in the same icy glass, still a link to the tickets.
+const currentStatus =
+  phases.onSale === false
+    ? (phases.nextLabel ?? phases.upcomingLabel)
+    : phases.currentLabel;
 const items = phases.items.map((item, i) => ({
   ...item,
   state: i < activeIndex ? "past" : i === activeIndex ? "current" : "next",
@@ -45,7 +51,7 @@ const items = phases.items.map((item, i) => ({
     i < activeIndex
       ? phases.pastLabel
       : i === activeIndex
-        ? phases.currentLabel
+        ? currentStatus
         : phases.upcomingLabel,
 }));
 ---

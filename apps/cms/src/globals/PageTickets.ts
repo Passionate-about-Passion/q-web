@@ -481,15 +481,37 @@ export const PageTickets: GlobalConfig = pageGlobal({
         },
         {
           name: "activeKey",
-          label: "On sale now",
+          label: "Current phase",
           type: "text",
           admin: {
             description:
-              'Key of the phase on sale now, e.g. "early-bird". Earlier phases show as over, later ones as coming.',
+              'Key of the current phase, e.g. "early-bird": the one on sale now, or, while "On sale" is off, the one coming next. Earlier phases show as over, later ones as coming.',
           },
           validate: validateActivePhase,
         },
+        // Between two phases (one sold out, the next not open yet) the
+        // current phase is announced instead of sold. Default on, so
+        // existing content keeps its meaning.
+        {
+          name: "onSale",
+          label: "On sale",
+          type: "checkbox",
+          defaultValue: true,
+          admin: {
+            description:
+              "On: the current phase is on sale now. Off: it opens soon; it is shown as next up and the homepage says it is coming.",
+          },
+        },
         phaseLabelField("currentLabel", 'e.g. "On sale now".'),
+        {
+          name: "nextLabel",
+          type: "text",
+          defaultValue: "Next up",
+          admin: {
+            description:
+              'Tag on the current phase while "On sale" is off, e.g. "Next up".',
+          },
+        },
         phaseLabelField("upcomingLabel", 'e.g. "Coming soon".'),
         phaseLabelField("pastLabel", 'e.g. "Sold out".'),
         {

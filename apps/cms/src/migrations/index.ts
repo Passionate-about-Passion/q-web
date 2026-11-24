@@ -13,6 +13,7 @@ import * as migration_20261111_104849_home_2027 from './20261111_104849_home_202
 import * as migration_20261116_221744_home_aftermovie from './20261116_221744_home_aftermovie';
 import * as migration_20261117_140507_ticket_phase_ends from './20261117_140507_ticket_phase_ends';
 import * as migration_20261121_003544_qhack_2027 from './20261121_003544_qhack_2027';
+import * as migration_20261124_075209_ticket_phase_on_sale from './20261124_075209_ticket_phase_on_sale';
 
 export const migrations = [
   {
@@ -88,6 +89,11 @@ export const migrations = [
   {
     up: migration_20261121_003544_qhack_2027.up,
     down: migration_20261121_003544_qhack_2027.down,
-    name: '20261121_003544_qhack_2027'
+    name: '20261121_003544_qhack_2027',
+  },
+  {
+    up: migration_20261124_075209_ticket_phase_on_sale.up,
+    down: migration_20261124_075209_ticket_phase_on_sale.down,
+    name: '20261124_075209_ticket_phase_on_sale'
   },
 ];
