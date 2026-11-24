@@ -5,11 +5,16 @@
 // picker below), or, without phases, the Q in a glass tile, the original
 // mark with material from light only, over the one-line offer eyebrow, so
 // the discount is never stated twice; then the page h1, the intro and the
-// clear glass jump to Compare tickets.
+// clear glass jump to Compare tickets. Between two phases (phases.onSale
+// off) the page opens like the homepage's sale section instead
+// (ui/SaleIntro.astro as the h1: "Christmas Sale is coming." beside the
+// offer and "See ticket options" to the picker), then the cards, with
+// the current phase tagged "Next up".
 import "./ticket-theme.css";
 import type { TicketCategoriesContent } from "../../lib/content";
 import IconChevron from "../icons/IconChevron.astro";
 import SaleCards from "../ui/SaleCards.astro";
+import SaleIntro from "../ui/SaleIntro.astro";
 
 interface Props {
   hero: TicketCategoriesContent["hero"];
@@ -17,6 +22,7 @@ interface Props {
 }
 
 const { hero, phases } = Astro.props;
+const coming = phases?.onSale === false && phases.items.length > 0;
 
 // The square Q mark that ships with the site (public/icon-512.png, the
 // same file the Join Q quiz uses). No vector original is in the repo; the
@@ -24,48 +30,70 @@ const { hero, phases } = Astro.props;
 const markSrc = "/icon-512.png";
 ---
 
-<header class="t-hero t-shell">
-  {
-    phases && phases.items.length > 0 ? (
-      <div class="t-hero-phases">
+{
+  coming && phases ? (
+    <header class="t-hero t-shell is-coming">
+      <div class="t-hero-intro-block">
+        <SaleIntro
+          phases={phases}
+          href="#included"
+          level="h1"
+          headingId="ticket-hero-title"
+        />
+      </div>
+      <div class="t-hero-phases is-below">
         <SaleCards
           phases={phases}
           href="#included"
-          actionLabel="Choose your ticket"
+          actionLabel="See ticket options"
         />
       </div>
-    ) : (
-      <>
-        <span class="t-mark t-glass" aria-hidden="true">
-          <span class="t-mark-logo" style={`--mark: url(${markSrc})`}>
-            <img
-              src={markSrc}
-              alt=""
-              width="512"
-              height="512"
-              decoding="async"
-            />
-            <span class="t-mark-shade" />
-            <span class="t-mark-gloss" />
+    </header>
+  ) : (
+    <header class="t-hero t-shell">
+      {phases && phases.items.length > 0 ? (
+        <div class="t-hero-phases">
+          <SaleCards
+            phases={phases}
+            href="#included"
+            actionLabel="Choose your ticket"
+          />
+        </div>
+      ) : (
+        <>
+          <span class="t-mark t-glass" aria-hidden="true">
+            <span class="t-mark-logo" style={`--mark: url(${markSrc})`}>
+              <img
+                src={markSrc}
+                alt=""
+                width="512"
+                height="512"
+                decoding="async"
+              />
+              <span class="t-mark-shade" />
+              <span class="t-mark-gloss" />
+            </span>
           </span>
+          <p class="t-eyebrow t-glass" data-lp="hero.eyebrow">
+            {hero.eyebrow}
+          </p>
+        </>
+      )}
+      <h1 class="t-hero-title" data-lp="hero.heading">
+        {hero.heading}
+      </h1>
+      <p class="t-hero-intro" data-lp="hero.intro">
+        {hero.intro}
+      </p>
+      <a class="t-btn h-frost is-ghost t-hero-compare" href="#compare">
+        <span data-lp="hero.compareLabel">{hero.compareLabel}</span>
+        <span class="t-hero-chevron" aria-hidden="true">
+          <IconChevron size={20} />
         </span>
-        <p class="t-eyebrow t-glass" data-lp="hero.eyebrow">
-          {hero.eyebrow}
-        </p>
-      </>
-    )
-  }
-  <h1 class="t-hero-title" data-lp="hero.heading">{hero.heading}</h1>
-  <p class="t-hero-intro" data-lp="hero.intro">
-    {hero.intro}
-  </p>
-  <a class="t-btn h-frost is-ghost t-hero-compare" href="#compare">
-    <span data-lp="hero.compareLabel">{hero.compareLabel}</span>
-    <span class="t-hero-chevron" aria-hidden="true">
-      <IconChevron size={20} />
-    </span>
-  </a>
-</header>
+      </a>
+    </header>
+  )
+}
 
 <style>
   /* DESIGN.md TICKETS-1: display type above the heading scale, glass Q. */
@@ -83,6 +111,17 @@ const markSrc = "/icon-512.png";
     align-self: stretch;
     margin-bottom: clamp(var(--space-lg), 5vw, var(--space-xl));
     text-align: left;
+  }
+
+  /* Between two phases: the sale opener spans the grid at the left, the
+     cards under it. */
+  .t-hero.is-coming {
+    align-items: stretch;
+    text-align: left;
+  }
+
+  .t-hero-phases.is-below {
+    margin-bottom: 0;
   }
 
   /* The Q tile: neutral glass, the mark sits in it like an inlay. */

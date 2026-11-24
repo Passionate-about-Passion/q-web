@@ -1986,13 +1986,21 @@ export interface PageTicket {
         }[]
       | null;
     /**
-     * Key of the phase on sale now, e.g. "early-bird". Earlier phases show as over, later ones as coming.
+     * Key of the current phase, e.g. "early-bird": the one on sale now, or, while "On sale" is off, the one coming next. Earlier phases show as over, later ones as coming.
      */
     activeKey?: string | null;
+    /**
+     * On: the current phase is on sale now. Off: it opens soon; it is shown as next up and the homepage says it is coming.
+     */
+    onSale?: boolean | null;
     /**
      * e.g. "On sale now".
      */
     currentLabel?: string | null;
+    /**
+     * Tag on the current phase while "On sale" is off, e.g. "Next up".
+     */
+    nextLabel?: string | null;
     /**
      * e.g. "Coming soon".
      */
@@ -3212,7 +3220,9 @@ export interface PageTicketsSelect<T extends boolean = true> {
               id?: T;
             };
         activeKey?: T;
+        onSale?: T;
         currentLabel?: T;
+        nextLabel?: T;
         upcomingLabel?: T;
         pastLabel?: T;
         discountLabel?: T;

@@ -1,0 +1,267 @@
+---
+// The sale's opener above the discount cards (apps/web AGENTS.md PRIM-3,
+// DESIGN.md HOME-1 and TICKETS-1), one pattern for the homepage's sale
+// section and the ticket page's opener while a phase is coming: the
+// heading at the left, as tall as the offer beside it, the offer told as
+// one sentence, a short line under it and the ticket link.
+//
+//   on sale  "Early Bird / is live.", "30% off every ticket until 22
+//            November. The earlier you book, the less you pay.", then,
+//            when the phase has an end, the countdown with what comes
+//            after it ("then only 25% off"; home.client.ts runs it)
+//   coming   (phases.onSale off, between two phases) "Christmas Sale / is
+//            coming.", "25% off every ticket dropping soon. Missed the
+//            Early Bird? Your next chance is just around the corner.",
+//            no countdown, and the link reads "See ticket options"
+//
+// Phases, discounts and which phase is current come from the ticket
+// page's content (page-tickets, phases); nothing switches by date.
+import type { TicketPhases } from "../../lib/content";
+import { saleActionLabel } from "../../lib/sale";
+import "../home/home-theme.css";
+
+interface Props {
+  phases: TicketPhases;
+  /** Where the ticket link leads (the ticket page, or its picker). */
+  href: string;
+  /** h1 on the ticket page, h2 in the homepage's section. */
+  level?: "h1" | "h2";
+  headingId: string;
+  /** Adds the homepage's scroll reveal (home.client.ts). */
+  reveal?: boolean;
+}
+
+const { phases, href, level = "h2", headingId, reveal = false } = Astro.props;
+const Heading = level;
+const activeIndex = Math.max(
+  0,
+  phases.items.findIndex((item) => item.key === phases.activeKey),
+);
+const active = phases.items[activeIndex];
+const coming = phases.onSale === false;
+const previous = phases.items[activeIndex - 1];
+const offer = active
+  ? phases.discountLabel.replace("{discount}", String(active.discount))
+  : "";
+// The end of the phase on sale, if the content gives one, in German time.
+const endsAt =
+  !coming && active?.endsAt && !Number.isNaN(Date.parse(active.endsAt))
+    ? active.endsAt
+    : undefined;
+const endDay = endsAt
+  ? new Intl.DateTimeFormat("en-GB", {
+      day: "numeric",
+      month: "long",
+      timeZone: "Europe/Berlin",
+    }).format(new Date(endsAt))
+  : undefined;
+// The phase after this one, if any: what the price becomes.
+const next = phases.items[activeIndex + 1];
+const nextOffer = next
+  ? phases.discountLabel.replace("{discount}", String(next.discount))
+  : undefined;
+const revealAttr = reveal ? { "data-h-reveal": "" } : {};
+const titleLines = active
+  ? coming
+    ? [`${active.label} Sale`, "is coming."]
+    : [active.label, "is live."]
+  : [];
+// The longer line sets how wide the heading may be set (see the style).
+const titleChars = Math.max(10, ...titleLines.map((line) => line.length));
+---
+
+{
+  active && (
+    <div class="sp-head">
+      <div class="sp-title-box">
+        <Heading
+          class="h-title sp-title"
+          id={headingId}
+          style={`--sp-chars: ${titleChars}`}
+          {...revealAttr}
+        >
+          <span class="h-accent sp-line">{titleLines[0]}</span>
+          <br />
+          <span class="sp-line">{titleLines[1]}</span>
+        </Heading>
+      </div>
+      <div class="sp-aside" {...revealAttr}>
+        <div class="sp-copy">
+          {coming ? (
+            <p class="sp-offer">
+              <strong>{offer}</strong> every ticket dropping soon.
+            </p>
+          ) : (
+            <p class="sp-offer">
+              <strong>{offer}</strong> every ticket
+              {endDay ? ` until ${endDay}.` : "."}
+            </p>
+          )}
+          <p class="sp-why">
+            {coming
+              ? previous
+                ? `Missed the ${previous.label}? Your next chance is just around the corner.`
+                : "Your chance is just around the corner."
+              : "The earlier you book, the less you pay."}
+          </p>
+        </div>
+        {endsAt && (
+          <p class="sp-clock" data-sp-clock={endsAt} hidden>
+            <span class="sp-clock-label">{active.label} ends in</span>
+            <span class="sp-clock-time" aria-hidden="true" data-sp-time />
+            {nextOffer && (
+              <span class="sp-clock-next">then only {nextOffer}</span>
+            )}
+          </p>
+        )}
+        <a class="h-btn h-ice sp-cta" href={href}>
+          {saleActionLabel(phases)}
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M4 12h15M13 6l6 6-6 6"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </a>
+      </div>
+    </div>
+  )
+}
+
+<style>
+  /* DESIGN.md HOME-1, TICKETS-1 */
+  /* The soft text tone of the homepage (home-theme.css .h-home), set
+     here too, so the ticket page, outside .h-home, reads the same. */
+  .sp-head {
+    --h-text-soft: color-mix(in srgb, var(--color-white) 78%, transparent);
+
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-lg);
+    margin-bottom: clamp(var(--space-xl), 6vw, 5rem);
+  }
+
+  .sp-title {
+    font-size: clamp(2.75rem, 7vw, 6.75rem);
+  }
+
+  /* Wide screens: the heading is exactly as tall as the offer beside it
+     (its two lines fill the row the offer sets; the box is size-contained,
+     so only the offer decides the height), top and foot level, never
+     wider than its column. */
+  @media (min-width: 48rem) {
+    .sp-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: stretch;
+    }
+
+    .sp-line {
+      white-space: nowrap;
+    }
+
+    .sp-title-box {
+      container-type: size;
+      min-height: 0;
+    }
+
+    .sp-title {
+      /* 0.54 em per character of the longer line ("Early Bird" at 10
+         characters fills the box exactly), so a longer name such as
+         "Christmas Sale" sets smaller instead of wrapping. */
+      font-size: min(
+        calc(100cqh / 1.88),
+        calc(100cqw / (var(--sp-chars) * 0.54))
+      );
+      line-height: 0.94;
+    }
+  }
+
+  .sp-aside {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-md);
+    min-width: 0;
+    max-width: 26rem;
+  }
+
+  /* On the narrowest phones the ticket link may wrap to two lines rather
+     than run past the screen's edge. */
+  .sp-cta {
+    max-width: 100%;
+    padding-block: var(--space-2xs);
+    white-space: normal;
+    text-align: center;
+  }
+
+  /* The offer as a sentence: the discount in ice and heavy, the rest
+     white; the reason under it, softer. */
+  .sp-copy {
+    display: grid;
+    gap: var(--space-xs);
+  }
+
+  .sp-offer {
+    margin: 0;
+    color: var(--color-white);
+    font-size: clamp(1.25rem, 1.7vw, 1.5rem);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    text-wrap: balance;
+  }
+
+  .sp-offer strong {
+    color: var(--color-ticket-ice);
+    font-weight: var(--font-weight-extrabold);
+  }
+
+  .sp-why {
+    margin: 0;
+    color: var(--h-text-soft);
+    font-size: var(--text-size-medium);
+    line-height: 1.45;
+  }
+
+  /* The countdown: what is left of the phase, large, and what the price
+     becomes after it, so the rise is plain. A fine rule above sets it
+     apart from the sentence. */
+  .sp-clock {
+    display: grid;
+    gap: 0.2rem;
+    width: 100%;
+    margin: 0;
+    padding-top: var(--space-sm);
+    border-top: 1px solid
+      color-mix(in srgb, var(--color-white) 16%, transparent);
+  }
+
+  .sp-clock-label,
+  .sp-clock-next {
+    color: var(--h-text-soft);
+    font-size: var(--text-size-tiny);
+    font-weight: var(--font-weight-extrabold);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .sp-clock-time {
+    color: var(--color-white);
+    font-size: clamp(1.5rem, 2.2vw, 2rem);
+    font-weight: var(--font-weight-extrabold);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+    white-space: nowrap;
+  }
+
+  .sp-clock[hidden] {
+    display: none;
+  }
+</style>

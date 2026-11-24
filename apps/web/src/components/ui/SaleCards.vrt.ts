@@ -1,5 +1,6 @@
 // VRT variants for SaleCards: the first phase on sale (three coming), a
-// later one (two over, one coming), and a short set. Sample data only. See
+// later one (two over, one coming), one between phases (the next one
+// announced, not on sale), and a short set. Sample data only. See
 // docs/dev/visual-testing.md.
 import SaleCards from "./SaleCards.astro";
 
@@ -31,6 +32,16 @@ export default {
       phases: { ...base, activeKey: "three" },
       href: "#",
       actionLabel: "Get your sample ticket",
+    },
+    coming: {
+      phases: {
+        ...base,
+        activeKey: "two",
+        onSale: false,
+        nextLabel: "Next up",
+      },
+      href: "#",
+      actionLabel: "See ticket options",
     },
     short: {
       phases: { ...base, items: items.slice(0, 2), activeKey: "two" },

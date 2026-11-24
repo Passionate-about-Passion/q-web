@@ -339,10 +339,20 @@ export interface TicketPhases {
   /** Accessible name of the timeline, e.g. "Discount phases". */
   label: string;
   items: TicketPhase[];
-  /** key of the phase on sale now. */
+  /**
+   * key of the current phase: on sale now, or, with onSale false, the
+   * one opening next.
+   */
   activeKey: string;
+  /**
+   * False between two phases: the earlier ones are over and the current
+   * one is not open yet, so it is announced, not sold. Absent means true.
+   */
+  onSale?: boolean;
   /** e.g. "On sale now". */
   currentLabel: string;
+  /** Tag of the current phase while onSale is false, e.g. "Next up". */
+  nextLabel?: string;
   /** e.g. "Coming soon". */
   upcomingLabel: string;
   /** e.g. "Sold out". */
@@ -1086,7 +1096,9 @@ interface CmsTicketsDoc {
         }[]
       | null;
     activeKey?: string | null;
+    onSale?: boolean | null;
     currentLabel?: string | null;
+    nextLabel?: string | null;
     upcomingLabel?: string | null;
     pastLabel?: string | null;
     discountLabel?: string | null;
@@ -1194,7 +1206,11 @@ async function cmsGetTicketCategories(): Promise<TicketCategoriesContent> {
               ...(p.endsAt ? { endsAt: p.endsAt } : {}),
             })),
             activeKey: doc.phases.activeKey ?? "",
+            onSale: doc.phases.onSale !== false,
             currentLabel: doc.phases.currentLabel ?? "",
+            ...(doc.phases.nextLabel?.trim()
+              ? { nextLabel: doc.phases.nextLabel.trim() }
+              : {}),
             upcomingLabel: doc.phases.upcomingLabel ?? "",
             pastLabel: doc.phases.pastLabel ?? "",
             discountLabel: doc.phases.discountLabel ?? "",

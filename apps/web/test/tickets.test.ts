@@ -134,4 +134,8 @@ describe("discount phases", () => {
     expect(salePriceLabel(phases)).toBe("Phase B price");
     expect(salePriceLabel(undefined)).toBe("Early Bird price");
   });
+
+  it("names no phase while the current one is only coming", () => {
+    expect(salePriceLabel({ ...phases, onSale: false })).toBe("Current price");
+  });
 });
