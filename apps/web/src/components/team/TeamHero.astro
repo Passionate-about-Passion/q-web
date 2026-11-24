@@ -76,10 +76,13 @@ const background = widePhotoSrc(TEAM_HERO_PHOTO);
      hero, and a short melt (stacked backdrop blurs under a navy wash)
      dissolves that strip into the page instead of ending on an edge. The
      hero is never taller than the photo allows (62vw), else the live
-     min(100svh, 52rem). */
+     min(100svh, 52rem). On windows wider than about 1850px the 52rem cap
+     would cut the heads off (they start about 40% down the photo), so
+     there the cap grows with the width (45vw keeps the top of the hero
+     above the heads); only the window's own height still limits it. */
   .team-hero {
     position: relative;
-    height: min(100svh, 52rem, 62vw);
+    height: min(100svh, max(52rem, 45vw), 62vw);
     overflow: hidden;
     background: var(--q-night);
   }
