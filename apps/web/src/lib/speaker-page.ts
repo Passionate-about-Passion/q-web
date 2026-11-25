@@ -31,6 +31,22 @@ export function speakerPageCopy(page: SpeakerPageContent): SpeakerPageCopy {
   };
 }
 
+/**
+ * The speaker photos for the stage are "screen look" images: cutouts of the
+ * stage photo (components/speaker/stage.jpg, 2576 x 1449) at x 760-1817,
+ * y 152-906, with the speaker projected onto the middle screen. A photo of
+ * that shape is laid over the stage where it was cut from; any other photo
+ * is fitted into the screen. Without a recorded size (JSON mode) a photo
+ * counts as a screen-look image.
+ */
+export const STAGE_SHOT = { width: 1057, height: 754 };
+
+export function isStageShot(speaker: Speaker): boolean {
+  const { photoWidth: w, photoHeight: h } = speaker;
+  if (!w || !h) return true;
+  return Math.abs(w / h - STAGE_SHOT.width / STAGE_SHOT.height) < 0.02;
+}
+
 /** "Role · Company", or the role line when there is no company. */
 export function stageRole(speaker: Speaker): string {
   return speaker.company

@@ -12,6 +12,7 @@ import { isFixtureMediaSentinel } from "../lib/media-filename";
 import {
   STAGE_EDITION,
   speakerPageCopy,
+  isStageShot,
   stageEditionSpeakers,
   stageRole,
 } from "../lib/speaker-page";
@@ -38,7 +39,9 @@ let stage: StageSpeaker[] = stageEditionSpeakers(speakers).map((s) => ({
   role: stageRole(s),
   ...(s.talkTitle ? { talkTitle: s.talkTitle } : {}),
   ...(s.quote ? { quote: s.quote } : {}),
-  ...(photoUrl(s.photoFilename) ? { photo: photoUrl(s.photoFilename) } : {}),
+  ...(photoUrl(s.photoFilename)
+    ? { photo: photoUrl(s.photoFilename), photoLook: isStageShot(s) }
+    : {}),
 }));
 
 // Until the real line-up is in the CMS, `astro dev` fills the stage with

@@ -40,6 +40,7 @@ import { partnerAudiencePages } from "../src/lib/partner-audiences";
 import {
   NEXT_EDITION,
   STAGE_EDITION,
+  isStageShot,
   stageEditionSpeakers,
 } from "../src/lib/speaker-page";
 import {
@@ -759,5 +760,36 @@ describe("/speaker in the LLM corpus", () => {
       expect(block).toContain(`- ${s.name}:`);
     for (const panel of content.speaker.panels)
       expect(block).not.toContain(panel.title);
+  });
+});
+
+describe("stage photos", () => {
+  const speaker = (size?: { photoWidth: number; photoHeight: number }) =>
+    ({
+      name: "Alex Example",
+      role: "CEO",
+      company: "Example Co",
+      roleLine: "CEO, Example Co",
+      photoFilename: "alex.webp",
+      group: "current",
+      year: 2026,
+      ...size,
+    }) as Speaker;
+
+  it("lays a screen-look cutout over the stage, fits any other photo into the screen", () => {
+    expect(isStageShot(speaker({ photoWidth: 1057, photoHeight: 754 }))).toBe(
+      true,
+    );
+    expect(isStageShot(speaker({ photoWidth: 2114, photoHeight: 1508 }))).toBe(
+      true,
+    );
+    expect(isStageShot(speaker({ photoWidth: 1200, photoHeight: 800 }))).toBe(
+      false,
+    );
+    expect(isStageShot(speaker({ photoWidth: 800, photoHeight: 1000 }))).toBe(
+      false,
+    );
+    // JSON mode records no size: the photo counts as a cutout.
+    expect(isStageShot(speaker())).toBe(true);
   });
 });

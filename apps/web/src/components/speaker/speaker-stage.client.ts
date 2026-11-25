@@ -19,6 +19,7 @@ interface StageSpeaker {
   talkTitle?: string;
   quote?: string;
   photo?: string;
+  photoLook?: boolean;
 }
 
 const TYPE_MS = 60;
@@ -38,9 +39,7 @@ function initStage(root: HTMLElement): void {
   ];
   const typed = root.querySelector<HTMLElement>("[data-stage-typed]");
   const photo = root.querySelector<HTMLImageElement>("[data-stage-photo]");
-  const photoScreen = root.querySelector<HTMLElement>(
-    "[data-stage-photo-screen]",
-  );
+  const scene = root.querySelector<HTMLElement>("[data-stage-scene]");
   const live = root.querySelector<HTMLElement>("[data-stage-live]");
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
 
@@ -82,11 +81,18 @@ function initStage(root: HTMLElement): void {
     all("[data-stage-quote-wrap]").forEach((el) => (el.hidden = !s.quote));
     typeName(s.name);
 
-    if (photo && photoScreen) {
+    if (photo && scene) {
       photo.removeAttribute("data-fade");
+      // "look": a cutout of the stage with the speaker on the screen, laid
+      // over the stage photo; "screen": any other photo, fitted into the
+      // screen; "none": the silhouette (SpeakerStage.astro).
+      scene.dataset.photo = s.photo
+        ? s.photoLook
+          ? "look"
+          : "screen"
+        : "none";
       if (s.photo) {
         photo.hidden = false;
-        photoScreen.removeAttribute("data-empty");
         photo.src = s.photo;
         // Restart the CSS fade (skipped by the reduced-motion rule).
         void photo.offsetWidth;
@@ -94,7 +100,6 @@ function initStage(root: HTMLElement): void {
       } else {
         photo.hidden = true;
         photo.removeAttribute("src");
-        photoScreen.setAttribute("data-empty", "");
       }
     }
 

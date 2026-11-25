@@ -24,8 +24,15 @@ export interface StageSpeaker {
   role: string;
   talkTitle?: string;
   quote?: string;
-  /** Root-relative photo URL, landscape about 3:2; none shows a silhouette. */
+  /** Root-relative photo URL; none shows a silhouette on the screen. */
   photo?: string;
+  /**
+   * The photo is a "screen look" image: a cutout of this very stage photo
+   * (STAGE_SHOT below) with the speaker already projected onto the middle
+   * screen and soft edges, so it lies over the stage photo seamlessly. Any
+   * other photo is fitted into the screen with the CSS screen look instead.
+   */
+  photoLook?: boolean;
 }
 
 interface Props {
@@ -41,6 +48,8 @@ const pad = (n: number) => String(n).padStart(2, "0");
 const data = JSON.stringify(speakers).replace(/</g, "\\u003c");
 const STAGE_ALT =
   "Q-Summit main stage seen from the audience, with three large blue screens above the Q-Summit lectern and the banner Innovation. Inspiration. Entrepreneurship.";
+const photoMode = (s: StageSpeaker) =>
+  s.photo ? (s.photoLook ? "look" : "screen") : "none";
 const arrow = (dir: "prev" | "next") =>
   dir === "prev" ? "M15 5l-7 7 7 7" : "M9 5l7 7-7 7";
 ---
@@ -63,7 +72,7 @@ const arrow = (dir: "prev" | "next") =>
       />
 
       <div class="stage-frame" data-stage-swipe>
-        <div class="stage-scene">
+        <div class="stage-scene" data-photo={photoMode(first)} data-stage-scene>
           <Picture
             class="stage-photo"
             src={stagePhoto}
@@ -96,28 +105,24 @@ const arrow = (dir: "prev" | "next") =>
             <p class="scr-edition">Q-Summit · {edition}</p>
           </div>
 
-          <div
-            class="screen is-center"
-            data-stage-photo-screen
-            data-empty={first.photo ? undefined : ""}
-          >
-            <svg class="scr-silhouette" viewBox="0 0 120 80" aria-hidden="true">
+          <div class="screen is-center" aria-hidden="true">
+            <svg class="scr-silhouette" viewBox="0 0 120 80">
               <circle cx="60" cy="30" r="14" />
               <path d="M32 80c0-17 12.5-28 28-28s28 11 28 28z" />
             </svg>
-            <img
-              class="scr-photo"
-              src={first.photo ?? ""}
-              alt=""
-              width="1200"
-              height="800"
-              loading="lazy"
-              decoding="async"
-              data-stage-photo
-              hidden={first.photo ? undefined : true}
-            />
-            <span class="scr-glass" aria-hidden="true" />
           </div>
+          <img
+            class="stage-shot"
+            src={first.photo ?? ""}
+            alt=""
+            width="1057"
+            height="754"
+            loading="lazy"
+            decoding="async"
+            data-stage-photo
+            hidden={first.photo ? undefined : true}
+          />
+          <span class="stage-glass" aria-hidden="true" />
 
           <div class="screen is-right">
             <p class="scr-kicker">
@@ -319,7 +324,7 @@ const arrow = (dir: "prev" | "next") =>
     position: absolute;
     left: 0;
     right: 0;
-    z-index: 2;
+    z-index: 4;
     pointer-events: none;
   }
 
@@ -487,9 +492,14 @@ const arrow = (dir: "prev" | "next") =>
     display: none;
   }
 
-  /* Middle screen: the photo with a slight screen look (a gloss from the
-     top left, a vignette, a tint toward navy and ice). Without a photo a
-     light silhouette stands on the blue. */
+  /* Middle screen. Without a photo a light silhouette stands on the blue.
+     A screen-look photo (data-photo="look") is a cutout of this stage photo
+     with the speaker on the screen and soft edges, laid over the stage at
+     the place it was cut from: x 760-1817, y 152-906 of 2576 x 1449. It
+     carries its own projection look, so the CSS screen and glass step
+     aside. Any other photo (data-photo="screen") fills the screen with a
+     slight screen look: a gloss from the top left, a vignette, a tint
+     toward navy and ice. */
   .scr-silhouette {
     position: absolute;
     left: 50%;
@@ -499,20 +509,39 @@ const arrow = (dir: "prev" | "next") =>
     transform: translateX(-50%);
   }
 
-  .scr-photo {
+  [data-photo="screen"] .scr-silhouette,
+  [data-photo="look"] .screen.is-center {
+    visibility: hidden;
+  }
+
+  .stage-shot,
+  .stage-glass {
     position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
+    left: 33%;
+    top: 16.7%;
+    z-index: 2;
+    width: 34.04%;
+    height: 39.61%;
+  }
+
+  .stage-shot {
     object-fit: cover;
   }
 
+  [data-photo="look"] .stage-shot {
+    left: 29.503%;
+    top: 10.49%;
+    width: 41.033%;
+    height: 52.036%;
+    object-fit: fill;
+  }
+
   /* global.css sets display on img, which would beat the hidden attribute. */
-  .scr-photo[hidden] {
+  .stage-shot[hidden] {
     display: none;
   }
 
-  .scr-photo[data-fade] {
+  .stage-shot[data-fade] {
     animation: stage-fade-in var(--duration-reveal) var(--ease-emphasized);
   }
 
@@ -522,9 +551,9 @@ const arrow = (dir: "prev" | "next") =>
     }
   }
 
-  .scr-glass {
-    position: absolute;
-    inset: 0;
+  .stage-glass {
+    z-index: 3;
+    display: none;
     background:
       linear-gradient(
         135deg,
@@ -544,6 +573,10 @@ const arrow = (dir: "prev" | "next") =>
     pointer-events: none;
   }
 
+  [data-photo="screen"] .stage-glass {
+    display: block;
+  }
+
   /* Desktop controls: two round glass buttons over the audience. */
   .stage-controls {
     display: flex;
@@ -556,7 +589,7 @@ const arrow = (dir: "prev" | "next") =>
     position: absolute;
     left: 50%;
     bottom: 3.2%;
-    z-index: 3;
+    z-index: 5;
     display: none;
     transform: translateX(-50%);
   }
@@ -710,7 +743,7 @@ const arrow = (dir: "prev" | "next") =>
       display: none;
     }
 
-    .scr-photo[data-fade] {
+    .stage-shot[data-fade] {
       animation: none;
     }
 
