@@ -33,7 +33,7 @@ export function speakerPageCopy(page: SpeakerPageContent): SpeakerPageCopy {
 
 /**
  * The speaker photos for the stage are "screen look" images: cutouts of the
- * stage photo (components/speaker/stage.jpg, 2576 x 1449) at x 760-1817,
+ * stage photo (components/speaker/stage.jpg, 16:9, on a 2576 x 1449 scale) at x 760-1817,
  * y 152-906, with the speaker projected onto the middle screen. A photo of
  * that shape is laid over the stage where it was cut from; any other photo
  * is fitted into the screen. Without a recorded size (JSON mode) a photo
