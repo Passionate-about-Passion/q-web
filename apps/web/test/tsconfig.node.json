@@ -23,6 +23,7 @@
     "./media-filename.test.ts",
     "./media-match.test.ts",
     "./tickets.test.ts",
-    "./team-layout.test.ts"
+    "./team-layout.test.ts",
+    "./whyq-pages.test.ts"
   ]
 }
