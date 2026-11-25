@@ -2586,6 +2586,30 @@ export function assertTicketPage(t: TicketCategoriesContent): void {
   }
 }
 
+/**
+ * Between two discount phases (phases.onSale off) nothing is on sale, so
+ * every ticket sells at its regular price, whatever sale price the content
+ * still holds. Editors can leave the last (or enter the next) phase's prices
+ * in place; the onSale switch alone decides whether they show. Every view,
+ * the Why Q pages and llms read the price from here, so none can show a
+ * discount the timeline says is not running.
+ */
+export function normalizeTicketPrices(
+  page: TicketCategoriesContent,
+): TicketCategoriesContent {
+  if (page.phases?.onSale !== false) return page;
+  return {
+    ...page,
+    offer: {
+      ...page.offer,
+      tickets: page.offer.tickets.map((ticket) => ({
+        ...ticket,
+        price: ticket.regularPrice,
+      })),
+    },
+  };
+}
+
 export async function getPageContent(): Promise<PageContent> {
   const content =
     CONTENT_SOURCE === "cms"
@@ -2595,6 +2619,7 @@ export async function getPageContent(): Promise<PageContent> {
   resolved.kickoff = normalizeKickoff(resolved.kickoff);
   resolved.hackathon = normalizeHackathon(resolved.hackathon);
   assertTicketPage(resolved.ticketCategories);
+  resolved.ticketCategories = normalizeTicketPrices(resolved.ticketCategories);
   assertEventDates(resolved.home?.event);
   return resolved;
 }

@@ -128,18 +128,18 @@ const buyLabel = "Buy now";
                     <span class="u-visually-hidden">{priceLabel} </span>
                     {euro(ticket.price)}
                   </p>
-                  <p class="t-detail-was">
-                    {saleNote && <span>{saleNote}</span>}
-                    <span>
-                      <span class="u-visually-hidden">Regular price </span>
-                      <s>{euro(ticket.regularPrice)}</s>
-                    </span>
-                    {saved > 0 && (
+                  {saved > 0 && (
+                    <p class="t-detail-was">
+                      {saleNote && <span>{saleNote}</span>}
+                      <span>
+                        <span class="u-visually-hidden">Regular price </span>
+                        <s>{euro(ticket.regularPrice)}</s>
+                      </span>
                       <span class="t-detail-save">
                         {offer.saveLabel} {euro(saved)}
                       </span>
-                    )}
-                  </p>
+                    </p>
+                  )}
                 </div>
               </div>
               {ticket.note ? (

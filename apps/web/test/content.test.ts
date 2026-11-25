@@ -25,7 +25,10 @@ import {
   speakersForEdition,
 } from "../src/lib/content";
 import type { PageContent, SiteSettings } from "../src/lib/content";
-import { assertTicketPage } from "../src/lib/content/pages";
+import {
+  assertTicketPage,
+  normalizeTicketPrices,
+} from "../src/lib/content/pages";
 import { toNavLink } from "../src/lib/content/site-settings";
 import { buildLlmsFullTxt, buildRouteTable } from "../src/lib/llms";
 import {
@@ -298,6 +301,37 @@ describe("assertTicketPage", () => {
     ).toThrow(/{discount}/);
     const { phases: _omit, ...withoutPhases } = page;
     expect(() => assertTicketPage(withoutPhases)).not.toThrow();
+  });
+});
+
+// Between two discount phases (onSale off) nothing is on sale: every ticket
+// sells at its regular price even while the content still holds the last
+// phase's sale prices.
+describe("normalizeTicketPrices", () => {
+  const fixture = () =>
+    JSON.parse(
+      readFileSync(
+        new URL("./fixtures/ci-content/page-content.json", import.meta.url),
+        "utf-8",
+      ),
+    ).ticketCategories;
+  type Ticket = { price: number; regularPrice: number };
+
+  it("sells at the regular price while onSale is off", () => {
+    const page = fixture();
+    page.phases = { ...page.phases, onSale: false };
+    const out = normalizeTicketPrices(page);
+    expect(
+      out.offer.tickets.every((t: Ticket) => t.price === t.regularPrice),
+    ).toBe(true);
+    expect(
+      page.offer.tickets.some((t: Ticket) => t.price < t.regularPrice),
+    ).toBe(true);
+  });
+
+  it("keeps the sale prices while a phase is on sale", () => {
+    const page = fixture();
+    expect(normalizeTicketPrices(page)).toBe(page);
   });
 });
 
