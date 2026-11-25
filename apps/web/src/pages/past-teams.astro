@@ -1,9 +1,13 @@
 ---
-// /past-teams: the team history page ported from the live Webflow site.
-// Same hero as /our-team, then the Current Team / History toggle and both
-// team panels (see components/team/TeamPanels.astro): rendering both
-// datasets on both team routes is what lets the toggle switch instantly,
-// client-side, instead of a full page navigation.
+// /past-teams: the team history. The same photo hero as /our-team, then the
+// history story (components/history/, DESIGN.md HISTORY-1, ADR-0010): a drawn
+// scroll story whose camera becomes the album of every team. The album is the
+// Past Teams list (one group photo per board year) plus the current team's
+// hero photo as the newest year.
+//
+// The story's texts come from the CMS (Past Teams > Story). Until every one
+// of them is published, the page keeps its previous form (the intro and the
+// year grid in TeamPanels), so a deploy before the copy is in changes nothing.
 import Base from "../layouts/Base.astro";
 import {
   getPageContent,
@@ -11,10 +15,14 @@ import {
   getSiteSettings,
   getTeam,
 } from "../lib/content";
+import { getImage } from "../lib/astro-assets";
 import { groupDivisions, groupPastYears } from "../lib/team";
 import TeamHero from "../components/team/TeamHero.astro";
 import { teamHeroSources } from "../lib/team-media";
 import TeamPanels from "../components/team/TeamPanels.astro";
+import HistoryStory, {
+  type HistoryTeam,
+} from "../components/history/HistoryStory.astro";
 import "../components/ui/navy-glass.css";
 
 const [{ ourTeam, pastTeams }, { siteTitle }, team, pastTeamPhotos] =
@@ -25,13 +33,51 @@ const [{ ourTeam, pastTeams }, { siteTitle }, team, pastTeamPhotos] =
     getPastTeamPhotos(),
   ]);
 
-const divisions = groupDivisions(team);
 const pastYears = await groupPastYears(pastTeamPhotos);
+const story = pastTeams.story;
 
 // Preload the team hero: it is the LCP element on this route, so the
 // browser fetches the same srcset TeamHero.astro renders before it parses
 // the page.
 const hero = teamHeroSources(ourTeam.heroImage);
+
+const photoAlt = pastTeams.photoAlt ?? "The Q-Summit team of {year}";
+const altFor = (year: number) => photoAlt.replaceAll("{year}", String(year));
+// "22/23" is the board that ran Q-Summit 2023 (Q23).
+const yearOf = (board: string) => 2000 + Number(board.split("/")[1]);
+
+const albumTeams: HistoryTeam[] = [];
+if (story) {
+  for (const entry of [...pastYears].reverse()) {
+    const year = yearOf(entry.year);
+    if (!Number.isFinite(year)) continue;
+    // A screen-sized picture for the camera's screen (it is drawn into the
+    // 3D screen too, so one size serves both).
+    const src = entry.image
+      ? (await getImage({ src: entry.image, width: 1400, format: "webp" })).src
+      : entry.photo.src;
+    albumTeams.push({
+      label: `Q${String(year).slice(2)}`,
+      year,
+      src,
+      srcset: entry.image ? undefined : entry.photo.srcset,
+      width: entry.size.width,
+      height: entry.size.height,
+      alt: altFor(year),
+    });
+  }
+  // the current team, the newest picture of the album
+  const latest = albumTeams.at(-1)?.year ?? new Date().getFullYear();
+  albumTeams.push({
+    label: `Q${String(latest + 1).slice(2)}`,
+    year: latest + 1,
+    src: hero.src,
+    srcset: hero.srcset,
+    width: hero.width,
+    height: hero.height,
+    alt: altFor(latest + 1),
+  });
+}
 ---
 
 <Base
@@ -49,21 +95,34 @@ const hero = teamHeroSources(ourTeam.heroImage);
       lpTitle="heading"
       photo={ourTeam.heroImage}
     />
-    <TeamPanels
-      active="past"
-      divisions={divisions}
-      pastYears={pastYears}
-      pastIntro={pastTeams.intro}
-      labels={{
-        currentTab: ourTeam.tabLabel,
-        pastTab: pastTeams.tabLabel,
-        divisionHeading: ourTeam.divisionHeading,
-        yearHeading: pastTeams.yearHeading,
-        photoAlt: pastTeams.photoAlt,
-      }}
-      currentTitle={`${siteTitle} | ${ourTeam.title}`}
-      pastTitle={`${siteTitle} | ${pastTeams.title}`}
-    />
-    <div class="h-page-fade" aria-hidden="true"></div>
+    {
+      story ? (
+        <HistoryStory
+          story={story}
+          teams={albumTeams}
+          currentLabel={ourTeam.tabLabel ?? "Current Team"}
+          pastLabel={pastTeams.tabLabel ?? "History"}
+        />
+      ) : (
+        <>
+          <TeamPanels
+            active="past"
+            divisions={groupDivisions(team)}
+            pastYears={pastYears}
+            pastIntro={pastTeams.intro}
+            labels={{
+              currentTab: ourTeam.tabLabel,
+              pastTab: pastTeams.tabLabel,
+              divisionHeading: ourTeam.divisionHeading,
+              yearHeading: pastTeams.yearHeading,
+              photoAlt: pastTeams.photoAlt,
+            }}
+            currentTitle={`${siteTitle} | ${ourTeam.title}`}
+            pastTitle={`${siteTitle} | ${pastTeams.title}`}
+          />
+          <div class="h-page-fade" aria-hidden="true" />
+        </>
+      )
+    }
   </div>
 </Base>

@@ -90,6 +90,7 @@ export type {
   HackathonContent,
   OurTeamContent,
   PastTeamsContent,
+  PastTeamsStory,
   PartnerPageContent,
   SpeakerPanel,
   SpeakerPageContent,

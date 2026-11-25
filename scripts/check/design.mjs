@@ -356,6 +356,10 @@ const UNMAPPED_TOKENS = new Map([
   ["--duration-ticket-drift", "see --duration-ticket-press"],
   ["--duration-ticket-drift-alt", "see --duration-ticket-press"],
   ["--duration-ticket-enter", "see --duration-ticket-press"],
+  [
+    "--duration-history-wheel",
+    "the spec has no motion group; /past-teams only (DESIGN.md HISTORY-1)",
+  ],
   ["--duration-ticket-stagger", "see --duration-ticket-press"],
   [
     "--ease-glass-spring",

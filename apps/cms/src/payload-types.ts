@@ -2516,20 +2516,108 @@ export interface PageContact {
  */
 export interface PagePastTeam {
   id: number;
+  /**
+   * The title on the team photo at the top of the page.
+   */
   heading: string;
+  /**
+   * Shown under the title only while the Story below is not complete. Once every Story field is filled and published, the story replaces it.
+   */
   intro: string;
   /**
    * The "History" side of the switch above the team. Empty shows "History".
    */
   tabLabel?: string | null;
   /**
-   * The heading above each year's team photo, with {year} for the year. Empty shows "Year {year}".
+   * Shown only while the Story is not complete: the heading above each year's team photo, with {year} for the year. Empty shows "Year {year}".
    */
   yearHeading?: string | null;
   /**
-   * What each year's team photo shows, for screen readers, with {year} for the year. Empty uses "The Q-Summit team of {year}".
+   * What each team photo in the album shows, for screen readers, with {year} for the year. Empty uses "The Q-Summit team of {year}".
    */
   photoAlt?: string | null;
+  story?: {
+    /**
+     * The small line above the story's first heading.
+     */
+    heroEyebrow?: string | null;
+    /**
+     * The first heading of the story.
+     */
+    heroHeading?: string | null;
+    /**
+     * The paragraph under the first heading.
+     */
+    heroLead?: string | null;
+    /**
+     * The button under the first paragraph that glides through the first part of the story.
+     */
+    cueLabel?: string | null;
+    /**
+     * The small line above the heading about how Q-Summit began.
+     */
+    originEyebrow?: string | null;
+    /**
+     * The heading about how Q-Summit began.
+     */
+    originHeading?: string | null;
+    /**
+     * The short line under the heading about how Q-Summit began.
+     */
+    originSub?: string | null;
+    /**
+     * The paragraph about how Q-Summit began.
+     */
+    originText?: string | null;
+    /**
+     * The small line above the heading about the teams over the years.
+     */
+    teamsEyebrow?: string | null;
+    /**
+     * The heading about the teams over the years.
+     */
+    teamsHeading?: string | null;
+    /**
+     * The paragraph about the teams over the years.
+     */
+    teamsText?: string | null;
+    /**
+     * The small line above the heading of the photo album.
+     */
+    albumEyebrow?: string | null;
+    /**
+     * The heading of the photo album on the camera screen.
+     */
+    albumHeading?: string | null;
+    /**
+     * The hint under the camera on a computer, telling visitors how to flip through the photos.
+     */
+    albumHint?: string | null;
+    /**
+     * The same hint on a phone or tablet.
+     */
+    albumHintTouch?: string | null;
+    /**
+     * The button under the camera that scrolls back to the start of the story.
+     */
+    backLabel?: string | null;
+    /**
+     * The small line above the closing heading at the end of the page.
+     */
+    closingEyebrow?: string | null;
+    /**
+     * The closing heading at the end of the page.
+     */
+    closingHeading?: string | null;
+    /**
+     * The closing paragraph at the end of the page.
+     */
+    closingText?: string | null;
+    /**
+     * The button at the end of the page. It always leads to the Our Team page.
+     */
+    closingButtonLabel?: string | null;
+  };
   /**
    * Browser tab and social-share title for the past teams page (shown as "Q-Summit | …").
    */
@@ -3811,6 +3899,30 @@ export interface PagePastTeamsSelect<T extends boolean = true> {
   tabLabel?: T;
   yearHeading?: T;
   photoAlt?: T;
+  story?:
+    | T
+    | {
+        heroEyebrow?: T;
+        heroHeading?: T;
+        heroLead?: T;
+        cueLabel?: T;
+        originEyebrow?: T;
+        originHeading?: T;
+        originSub?: T;
+        originText?: T;
+        teamsEyebrow?: T;
+        teamsHeading?: T;
+        teamsText?: T;
+        albumEyebrow?: T;
+        albumHeading?: T;
+        albumHint?: T;
+        albumHintTouch?: T;
+        backLabel?: T;
+        closingEyebrow?: T;
+        closingHeading?: T;
+        closingText?: T;
+        closingButtonLabel?: T;
+      };
   title?: T;
   metaDescription?: T;
   lastEditedBy?: T;

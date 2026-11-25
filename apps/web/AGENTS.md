@@ -71,6 +71,17 @@ WebGL. Copy comes from `page-hackathon` and the FAQs; only the terminal's own
 chrome (prompts, window titles) is written in the components. Apply buttons
 follow `application.isOpen`, with `hero.cta` as the link.
 
+`/past-teams` is the team history story (DESIGN.md HISTORY-1,
+[ADR-0010](../../docs/decisions/0010-three-history-page.md)): a drawn scroll
+story whose Three.js camera becomes the album of every team. Its rules live in
+`components/history/history-theme.css` under the `.history` wrapper; Three.js
+enters only through the dynamic import in `HistoryStory.astro`, after load and
+never with reduced motion. Copy comes from `page-past-teams` (`story`), photos
+from the Past Teams list plus the Our Team hero; until every story field is
+published the page keeps the old intro and year grid. The model is
+`public/past-teams/kamera.glb` (Draco), decoded by three's own decoder copied
+verbatim to `public/past-teams/draco/` (excluded from lint, format and spell).
+
 ### UI primitives (`components/ui/`)
 
 Two kinds live here. **Shells** (`Section`, `Container`, `SectionHeader`,
