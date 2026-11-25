@@ -441,6 +441,7 @@ export function startHistory(root: HTMLElement): void {
       };
       follow();
       addEventListener("scroll", follow, { passive: true });
+      document.addEventListener("team:view", follow);
     });
 
   /* ================================================================ 3D scene */
@@ -1870,9 +1871,27 @@ export function startHistory(root: HTMLElement): void {
       kick();
     }).observe(view);
     new IntersectionObserver(([en]) => {
+      // Coming back into view (scrolled back, or the team switch shows the
+      // story again): start where the scroll is now. The inertia only
+      // smooths scrolling that was watched; gliding over what happened
+      // while nobody looked would rewind the whole story on screen.
+      if (en.isIntersecting && !visible) pS = scrollP();
       visible = en.isIntersecting;
       run();
     }).observe(story);
+    // The team switch shows the story again (TeamPanels.astro): set it to
+    // the scroll right away, before the first frame, so the state it was
+    // hidden in never flashes up.
+    document.addEventListener("team:view", (e) => {
+      if ((e as CustomEvent<string>).detail !== "past") return;
+      if (story.closest("[hidden]")) return;
+      layout();
+      pS = scrollP();
+      visible = true;
+      apply(pS, performance.now());
+      draw(pS);
+      kick();
+    });
     run();
   }
 }
