@@ -8,10 +8,17 @@ import { existsSync } from "node:fs";
 import { MEDIA_DIR, variant } from "./media-filename";
 
 /**
- * Group-photo LCP asset. Named `-p-1600` on purpose: R2 has no unsuffixed
- * original. Keep in sync with contact-legal/ReachOut.astro srcset.
+ * Group photo of the hero on both team pages (the LCP element there). It
+ * lives in the CMS media library in three widths, each under its own
+ * filename, so the hero and the page preload share one srcset.
  */
-export const TEAM_HERO_PHOTO = "6a3aa1fe255b386868d8b214_Q2027-CT-p-1600.jpg";
+export const TEAM_HERO_WIDTHS = [1280, 1920, 2560] as const;
+export const TEAM_HERO_SIZE = { width: 2560, height: 1707 } as const;
+const teamHeroFile = (width: number) => `team-2027-hero-p-${width}.webp`;
+export const TEAM_HERO_PHOTO = teamHeroFile(1920);
+export const TEAM_HERO_SRCSET = TEAM_HERO_WIDTHS.map(
+  (width) => `/media/${teamHeroFile(width)} ${width}w`,
+).join(", ");
 
 export interface ResponsivePhoto {
   src: string;
