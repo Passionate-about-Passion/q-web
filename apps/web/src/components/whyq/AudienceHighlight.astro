@@ -120,29 +120,31 @@ const image: WhyqImage | undefined =
               )}
             </div>
           </div>
-          <ul class="wq-moments" role="list">
-            {highlight.moments.map((moment, i) => (
-              <li
-                class:list={["wq-moment", { "has-photo": !!moment.image }]}
-                data-h-reveal
-                style={`--h-i: ${i + 1}`}
-              >
-                <div class="wq-media">
-                  {moment.image && (
-                    <img
-                      src={moment.image.src}
-                      width={moment.image.width}
-                      height={moment.image.height}
-                      alt={moment.image.alt}
-                      loading="lazy"
-                      decoding="async"
-                      data-wq-img
-                    />
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
+          {highlight.moments.length > 0 && (
+            <ul class="wq-moments" role="list">
+              {highlight.moments.map((moment, i) => (
+                <li
+                  class:list={["wq-moment", { "has-photo": !!moment.image }]}
+                  data-h-reveal
+                  style={`--h-i: ${i + 1}`}
+                >
+                  <div class="wq-media">
+                    {moment.image && (
+                      <img
+                        src={moment.image.src}
+                        width={moment.image.width}
+                        height={moment.image.height}
+                        alt={moment.image.alt}
+                        loading="lazy"
+                        decoding="async"
+                        data-wq-img
+                      />
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </Fragment>
       )
     }
