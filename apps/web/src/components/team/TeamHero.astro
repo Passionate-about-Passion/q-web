@@ -12,9 +12,12 @@ interface Props {
   lpTitle?: string;
   /** The group photo from the CMS (Our Team); unset keeps the built-in one. */
   photo?: TeamHeroPhoto;
+  /** Both pages' headings, for the team switch (TeamPanels.astro) to swap
+   * the title when it swaps the views in place. */
+  titles?: { current: string; past: string };
 }
 
-const { title, lpTitle, photo } = Astro.props;
+const { title, lpTitle, photo, titles } = Astro.props;
 const hero = teamHeroSources(photo);
 ---
 
@@ -38,7 +41,15 @@ const hero = teamHeroSources(photo);
   <div class="team-hero__overlay" aria-hidden="true"></div>
   <div class="team-hero__melt" aria-hidden="true"></div>
   <div class="container team-hero__content">
-    <h1 class="team-hero__title" data-lp={lpTitle}>{title}</h1>
+    <h1
+      class="team-hero__title"
+      data-lp={lpTitle}
+      data-team-title
+      data-title-current={titles?.current}
+      data-title-past={titles?.past}
+    >
+      {title}
+    </h1>
   </div>
 </header>
 

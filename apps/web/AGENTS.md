@@ -78,7 +78,11 @@ story whose Three.js camera becomes the album of every team. Its rules live in
 enters only through the dynamic import in `HistoryStory.astro`, after load and
 never with reduced motion. Copy comes from `page-past-teams` (`story`), photos
 from the Past Teams list plus the Our Team hero; until every story field is
-published the page keeps the old intro and year grid. The model is
+published the page keeps the old intro and year grid. Both team routes render
+both views (`components/team/TeamPanels.astro`), so the Current Team / History
+switch and the story's "Meet the team" button swap them in place without a page
+load; the story starts only once it is shown (the `team:view` event). The album
+is built by `lib/history-album.ts`. The model is
 `public/past-teams/kamera.glb` (Draco), decoded by three's own decoder copied
 verbatim to `public/past-teams/draco/` (excluded from lint, format and spell).
 

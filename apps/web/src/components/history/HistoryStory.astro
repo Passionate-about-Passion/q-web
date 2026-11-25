@@ -6,31 +6,21 @@
 // another and the photos form a grid. The script (history-story.ts, with
 // Three.js) is loaded after the page is there and turns the same markup into
 // the pinned scroll story.
-import TeamToggle from "../team/TeamToggle.astro";
+//
+// Both team routes render it (TeamPanels.astro): on /our-team it waits hidden
+// until the Current Team / History switch shows it, and its script starts the
+// story only then, never while hidden. The switch itself stands above the
+// story, in the same place as above the team, so it never moves.
 import type { PastTeamsStory } from "../../lib/content";
+import type { HistoryTeam } from "../../lib/history-album";
 import "./history-theme.css";
-
-export interface HistoryTeam {
-  /** "Q23" */
-  label: string;
-  /** 2023 */
-  year: number;
-  /** A screen-sized image for the album (about 1300 px wide). */
-  src: string;
-  srcset?: string;
-  width: number;
-  height: number;
-  alt: string;
-}
 
 interface Props {
   story: PastTeamsStory;
   teams: HistoryTeam[];
-  currentLabel: string;
-  pastLabel: string;
 }
 
-const { story, teams, currentLabel, pastLabel } = Astro.props;
+const { story, teams } = Astro.props;
 const first = teams[0];
 const albumLabel =
   teams.length > 1
@@ -120,11 +110,6 @@ const albumLabel =
 
       <div class="history-panels">
         <article class="history-panel history-panel--side" data-panel="hero">
-          <TeamToggle
-            active="past"
-            currentLabel={currentLabel}
-            pastLabel={pastLabel}
-          />
           <p class="history-eyebrow" data-lp="story.heroEyebrow">
             {story.heroEyebrow}
           </p>
@@ -215,7 +200,7 @@ const albumLabel =
       <p class="history-text" data-lp="story.closingText">
         {story.closingText}
       </p>
-      <a class="h-btn h-frost" href="/our-team/">
+      <a class="h-btn h-frost" href="/our-team/" data-team-switch="current">
         <span data-lp="story.closingButtonLabel"
           >{story.closingButtonLabel}</span
         >
@@ -228,15 +213,36 @@ const albumLabel =
 <script>
   // The story runs only where it can be watched: never with reduced motion
   // (DESIGN.md MOTION-2), and only after the page is there, so the 3D code
-  // never competes with the hero photo (ADR-0010).
+  // never competes with the hero photo (ADR-0010). On /our-team the story
+  // waits hidden: it starts the first time the team switch shows it
+  // ("team:view", TeamPanels.astro), since a hidden stage has no size to
+  // measure.
   const root = document.querySelector<HTMLElement>("[data-history]");
   const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (root && !calm) {
-    const start = () =>
+    let started = false;
+    const start = () => {
+      if (started || root.closest("[hidden]")) return;
+      started = true;
       import("./history-story")
         .then((m) => m.startHistory(root))
         .catch((err: unknown) => console.error(err));
-    if (document.readyState === "complete") void start();
-    else window.addEventListener("load", () => void start(), { once: true });
+    };
+    const ready = () => {
+      start();
+      document.addEventListener("team:view", start);
+      // While it waits hidden, fetch the code as soon as a visitor heads
+      // for the History tab, so the switch does not wait for the download.
+      if (started) return;
+      const warm = () => void import("./history-story").catch(() => {});
+      document
+        .querySelectorAll<HTMLElement>('[data-team-tab="past"]')
+        .forEach((tab) => {
+          for (const type of ["pointerenter", "focus", "touchstart"])
+            tab.addEventListener(type, warm, { once: true, passive: true });
+        });
+    };
+    if (document.readyState === "complete") ready();
+    else window.addEventListener("load", ready, { once: true });
   }
 </script>

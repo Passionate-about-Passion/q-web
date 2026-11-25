@@ -66,7 +66,7 @@
   margin-top: 0.9rem;
   padding: 0.7rem 1.15rem 0.7rem 0.85rem;
   border: 1.5px solid var(--color-white);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--color-white) 5%, transparent);
   color: var(--hist-ice);
   font-size: var(--text-size-small);
@@ -82,7 +82,7 @@
   width: 1.25rem;
   height: 1.95rem;
   border: 2px solid var(--color-white);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
 }
 
 .history-cue__mouse i {
@@ -92,7 +92,7 @@
   width: 0.22rem;
   height: 0.42rem;
   margin-left: -0.11rem;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   background: var(--color-white);
   animation: history-wheel var(--duration-history-wheel) var(--ease-buttery)
     infinite;
@@ -240,12 +240,6 @@
 
 .history.is-live .history-panel--top h2 {
   font-size: clamp(1.6rem, 3.4vw, 2.9rem);
-}
-
-/* the toggle sits on top of the first text, as on the other team page */
-.history-panel .team-toggle-wrap {
-  justify-content: flex-start;
-  margin-bottom: 0.9rem;
 }
 
 /* the glow behind the camera follows it (--gx, --gy); its edges fade out, so
@@ -476,7 +470,7 @@
   aspect-ratio: 1;
   translate: 0 -50%;
   border: 1px solid color-mix(in srgb, var(--color-white) 30%, transparent);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-circle);
   background: color-mix(in srgb, var(--color-ticket-midnight) 45%, transparent);
   color: var(--color-white);
   backdrop-filter: blur(10px);
@@ -530,7 +524,7 @@
   all: unset;
   position: absolute;
   translate: -50% -50%;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
@@ -576,7 +570,7 @@
   padding: 0.45rem 0.95rem;
   translate: -50% 0;
   border: 1px solid var(--hist-line);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--color-ticket-midnight) 55%, transparent);
   color: var(--hist-soft);
   font-size: var(--text-size-tiny);
