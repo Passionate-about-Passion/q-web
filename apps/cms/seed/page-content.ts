@@ -686,12 +686,55 @@ async function run() {
     console.log("page-past-teams: updated and published");
   }
 
-  // page-partner
+  // page-partner: contact portraits travel as a filename in the JSON and
+  // as a Media upload in Payload. Look the file up like seed/testimonials.ts
+  // does and leave the portrait empty (the card shows initials) when the
+  // local media library does not have it, which is always the case for the
+  // fixture's fixture-missing-* sentinel.
   {
     const partner = content.partner;
+    const audiences: Record<string, any> = {};
+    for (const [key, audience] of Object.entries<any>(
+      partner.audiences ?? {},
+    )) {
+      const contacts = [];
+      for (const { photoFilename, ...contact } of audience.contacts ?? []) {
+        let photo: string | number | undefined;
+        if (photoFilename) {
+          const media = await payload.find({
+            collection: "media",
+            where: { filename: { contains: photoFilename } },
+            limit: 1,
+            overrideAccess: true,
+          });
+          photo = media.docs[0]?.id;
+        }
+        contacts.push({ ...contact, photo });
+      }
+      audiences[key] = { ...audience, contacts };
+    }
+    // The Become a Partner contact: same portrait lookup; its points are
+    // plain strings in the JSON and title rows in Payload.
+    const { photoFilename: ctaPhoto, ...ctaContact } =
+      partner.cta?.contact ?? {};
+    let ctaPhotoId: string | number | undefined;
+    if (ctaPhoto) {
+      const media = await payload.find({
+        collection: "media",
+        where: { filename: { contains: ctaPhoto } },
+        limit: 1,
+        overrideAccess: true,
+      });
+      ctaPhotoId = media.docs[0]?.id;
+    }
+    const cta = {
+      ...partner.cta,
+      points: (partner.cta?.points ?? []).map((title: string) => ({ title })),
+      contact: { ...ctaContact, photo: ctaPhotoId },
+    };
     await payload.updateGlobal({
       slug: "page-partner",
-      data: { ...partner, _status: "published" },
+      data: { ...partner, cta, audiences, _status: "published" },
       user: seedUser,
       overrideAccess: true,
     });

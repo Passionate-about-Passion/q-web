@@ -91,7 +91,7 @@ verbatim to `public/past-teams/draco/` (excluded from lint, format and spell).
 Two kinds live here. **Shells** (`Section`, `Container`, `SectionHeader`,
 `Button`) are thin typed Astro wrappers over the `global.css` classes DESIGN.md
 defines: they carry no styles of their own and exist so the markup is written
-once. **Patterns** (`Timeline`, `LogoGrid`, `SaleCards`) are whole components shared by two
+once. **Patterns** (`Timeline`, `LogoGrid`, `SaleCards`, `PersonPhoto`) are whole components shared by two
 or more pages; they own their scoped CSS, which is allowed because they render
 every element that CSS selects, so PRIM-2's boundary is never crossed. A
 pattern keeps page-specific behavior behind an opt-in prop. These rules are
@@ -104,6 +104,7 @@ than in DESIGN.md, but they are cited the same way.
 | `LogoGrid` | `logos`, `variant="tier"\|"hack"`, `featured`, `eager`, `flip` |
 | `SaleCards` | `phases`, `href`, `actionLabel` |
 | `SaleIntro` | `phases`, `href`, `level="h1"\|"h2"`, `headingId`, `reveal` |
+| `PersonPhoto` | `name`, `filename`, `widths`, `sizes`, `eager`; fills the caller's box (square if it has no height), initials when there is no photo or the file is missing |
 
 `Timeline`'s `reveal` emits `[data-reveal]`, which gates every scroll-driven
 rule; the `IntersectionObserver` fallback for browsers without

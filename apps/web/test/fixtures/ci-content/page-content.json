@@ -1479,12 +1479,154 @@
   "partner": {
     "title": "Partner",
     "metaDescription": "Get to know the numerous supporters and partners of Q-Summit.",
-    "heading": "Get to know our Partners of Q-Summit 2026!",
+    "projector": {
+      "eyebrow": "Fixture eyebrow",
+      "heading": "Fixture partner page heading",
+      "intro": "",
+      "hint": "Fixture hint for the tier tabs",
+      "tierSuffix": "Partner",
+      "websiteLabel": "Example website button"
+    },
+    "heading": "Fixture quotes heading",
     "cta": {
-      "heading": "Join Us as a Partner",
-      "text": "Unlock new possibilities for collaboration.",
-      "buttonLabel": "Inquire",
-      "buttonHref": "mailto:lennart.fielhauer@q-summit.com"
+      "eyebrow": "Fixture eyebrow",
+      "heading": "Fixture Become a Partner heading",
+      "text": "Placeholder text for the Become a Partner section. Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "points": [
+        "Fixture point one",
+        "Fixture point two",
+        "Fixture point three"
+      ],
+      "buttonLabel": "Example inquiry button",
+      "buttonHref": "mailto:partners@example.com",
+      "contact": {
+        "name": "Example Contact",
+        "role": "Example Partner Relations",
+        "email": "partners@example.com",
+        "copyLabel": "Copy address",
+        "copiedLabel": "Copied",
+        "photoFilename": "fixture-missing-photo.webp"
+      }
+    },
+    "audiences": {
+      "startup": {
+        "label": "Startups",
+        "summary": "Placeholder summary for startup partners. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.",
+        "linkLabel": "Partner as a startup",
+        "heading": "Partner with Q-Summit as a startup",
+        "intro": "Placeholder intro for the startup partner page. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore.",
+        "benefitsHeading": "What you get",
+        "benefits": [
+          {
+            "title": "Example benefit 1",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
+          },
+          {
+            "title": "Example benefit 2",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
+          },
+          {
+            "title": "Example benefit 3",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
+          },
+          {
+            "title": "Example benefit 4",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
+          }
+        ],
+        "contactsHeading": "Your contacts",
+        "contactLabel": "Write an email",
+        "contacts": [
+          {
+            "name": "Example Contact",
+            "role": "Example Startup Partnerships",
+            "email": "startup@example.com",
+            "photoFilename": "fixture-missing-photo.webp"
+          },
+          {
+            "name": "Sample Person",
+            "role": "Example Startup Partnerships",
+            "email": "startup.team@example.com"
+          }
+        ]
+      },
+      "corporate": {
+        "label": "Corporates",
+        "summary": "Placeholder summary for corporate partners. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.",
+        "linkLabel": "Partner as a corporate",
+        "heading": "Partner with Q-Summit as a corporate",
+        "intro": "Placeholder intro for the corporate partner page. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore.",
+        "benefitsHeading": "What you get",
+        "benefits": [
+          {
+            "title": "Example benefit 1",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
+          },
+          {
+            "title": "Example benefit 2",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
+          },
+          {
+            "title": "Example benefit 3",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
+          },
+          {
+            "title": "Example benefit 4",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
+          }
+        ],
+        "contactsHeading": "Your contacts",
+        "contactLabel": "Write an email",
+        "contacts": [
+          {
+            "name": "Example Contact",
+            "role": "Example Corporate Partnerships",
+            "email": "corporate@example.com",
+            "photoFilename": "fixture-missing-photo.webp"
+          },
+          {
+            "name": "Sample Person",
+            "role": "Example Corporate Partnerships",
+            "email": "corporate.team@example.com"
+          }
+        ]
+      },
+      "investor": {
+        "label": "Investors",
+        "summary": "Placeholder summary for investor partners. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.",
+        "linkLabel": "Partner as an investor",
+        "heading": "Partner with Q-Summit as an investor",
+        "intro": "Placeholder intro for the investor partner page. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore.",
+        "benefitsHeading": "What you get",
+        "benefits": [
+          {
+            "title": "Example benefit 1",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
+          },
+          {
+            "title": "Example benefit 2",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
+          },
+          {
+            "title": "Example benefit 3",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
+          },
+          {
+            "title": "Example benefit 4",
+            "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut enim ad minim veniam, quis nostrud exercitation."
+          }
+        ],
+        "contactsHeading": "Your contacts",
+        "contactLabel": "Write an email",
+        "contacts": [
+          {
+            "name": "Example Contact",
+            "role": "Example Investor Partnerships",
+            "email": "investor@example.com",
+            "photoFilename": "fixture-missing-photo.webp"
+          }
+        ]
+      }
     }
   },
   "speaker": {

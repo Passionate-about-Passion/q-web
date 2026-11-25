@@ -1,5 +1,6 @@
 // Builders for /llms.txt and /llms-full.txt. Route tables are hand-curated.
 import type { PageContent, SiteSettings } from "./content";
+import { partnerAudiencePages } from "./partner-audiences";
 import {
   WHYQ_AUDIENCE_PAGES,
   whyqAudienceNames,
@@ -83,6 +84,13 @@ export function buildRouteTable(
       label: "Partners",
       description: content.partner.metaDescription,
     },
+    // The Become a Partner audience pages; one that the CMS has not filled
+    // in is not built, so it is not listed either.
+    ...partnerAudiencePages(content.partner).map(({ key, audience }) => ({
+      slug: `/partner/${key}/`,
+      label: `Partners: ${audience.label}`,
+      description: audience.intro,
+    })),
     // /program is offline (astro.config.mjs redirects it to the homepage),
     // so it is listed neither here nor in the full-text corpus below.
     {
@@ -237,6 +245,7 @@ export function buildLlmsFullTxt(opts: {
     pastTeams,
     kickoff,
   } = pageContent;
+  const partnerAudiences = partnerAudiencePages(partner);
 
   const blocks: string[][] = [
     [
@@ -330,18 +339,57 @@ export function buildLlmsFullTxt(opts: {
       "---",
       "",
     ],
+    // The partner page in its order: the logo section's heading and intro
+    // (the page title stands in until the heading is filled, as on the
+    // site), the quotes section, then Become a Partner: its text and
+    // points, the contact person, and one line per audience.
+    // Each audience page that is built gets its own block after it.
     [
       ...pageHeader(site, "/partner", partner.title, partner.metaDescription),
-      partner.heading,
+      partner.projector.heading || partner.title,
       "",
+      ...(partner.projector.intro.trim() ? [partner.projector.intro, ""] : []),
+      ...section("Partner voices", [partner.heading]),
       ...section("Partner with us", [
         partner.cta.heading,
         partner.cta.text,
+        ...(partner.cta.points ?? []).map((point) => `- ${point}`),
+        ...(partner.cta.contact?.name.trim() && partner.cta.contact.email.trim()
+          ? [
+              bullet(
+                "Contact",
+                [
+                  partner.cta.contact.name,
+                  partner.cta.contact.role,
+                  partner.cta.contact.email,
+                ]
+                  .filter((part) => part.trim())
+                  .join(", "),
+              ),
+            ]
+          : []),
+        ...partnerAudiences.map(({ key, audience }) =>
+          bullet(
+            audience.label,
+            `${audience.summary} (${toAbsoluteUrl(site, `/partner/${key}/`)})`,
+          ),
+        ),
         bullet("CTA", `${partner.cta.buttonLabel} (${partner.cta.buttonHref})`),
       ]),
       "---",
       "",
     ],
+    ...partnerAudiences.map(({ key, audience }) => [
+      ...pageHeader(site, `/partner/${key}/`, audience.heading, audience.intro),
+      ...section(
+        audience.benefitsHeading,
+        audience.benefits.map((benefit) =>
+          bullet(benefit.title, benefit.description),
+        ),
+      ),
+      "---",
+      "",
+    ]),
     [
       ...pageHeader(
         site,

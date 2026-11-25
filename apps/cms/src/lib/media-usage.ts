@@ -25,6 +25,12 @@ import type { Payload, PayloadRequest } from "payload";
 /** Collections with a top-level `upload` field pointing at media. */
 export const MEDIA_UPLOAD_FIELDS = [
   { slug: "partners", field: "logo", label: "Partners", titleField: "name" },
+  {
+    slug: "partners",
+    field: "logoOnDark",
+    label: "Partners",
+    titleField: "name",
+  },
   { slug: "jobs", field: "logo", label: "Jobs", titleField: "title" },
   { slug: "speakers", field: "photo", label: "Speakers", titleField: "name" },
   { slug: "team", field: "photo", label: "Team", titleField: "name" },
@@ -107,6 +113,17 @@ export const MEDIA_GLOBAL_FIELDS = [
       { fieldPath: "kickoff.company.logo", title: "Company logo" },
       { fieldPath: "kickoff.speakers[].image", titleField: "name" },
       { fieldPath: "journey.moments[].image", titleField: "title" },
+    ],
+  },
+  {
+    slug: "page-partner",
+    label: "Partners",
+    path: "/partner/",
+    refs: [
+      { fieldPath: "cta.contact.photo", title: "Partner contact" },
+      { fieldPath: "audiences.startup.contacts[].photo", titleField: "name" },
+      { fieldPath: "audiences.corporate.contacts[].photo", titleField: "name" },
+      { fieldPath: "audiences.investor.contacts[].photo", titleField: "name" },
     ],
   },
 ] as const satisfies readonly {

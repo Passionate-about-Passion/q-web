@@ -362,6 +362,10 @@ const UNMAPPED_TOKENS = new Map([
   ],
   ["--duration-ticket-stagger", "see --duration-ticket-press"],
   [
+    "--duration-partner-stagger",
+    "see --ease-snappy; partner page intro only (DESIGN.md PARTNER-1)",
+  ],
+  [
     "--ease-glass-spring",
     "see --ease-snappy; shared glass motion (DESIGN.md MOTION-6)",
   ],

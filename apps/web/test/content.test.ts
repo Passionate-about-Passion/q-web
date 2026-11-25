@@ -31,6 +31,7 @@ import {
 } from "../src/lib/content/pages";
 import { toNavLink } from "../src/lib/content/site-settings";
 import { buildLlmsFullTxt, buildRouteTable } from "../src/lib/llms";
+import { partnerAudiencePages } from "../src/lib/partner-audiences";
 import {
   WHYQ_AUDIENCE_PAGES,
   whyqAudienceNames,
@@ -612,6 +613,21 @@ describe("whyq audience pages", () => {
     }
     // A price token never reaches the corpus (prices change between builds).
     expect(full).not.toMatch(/\{(?:price|regular):/);
+  });
+
+  it("gives every built partner audience page its own block in the full text", () => {
+    const full = buildLlmsFullTxt({
+      site: "https://q-summit.com",
+      siteSettings: settings,
+      pageContent: content,
+    });
+    const audiences = partnerAudiencePages(content.partner);
+    expect(audiences.length).toBeGreaterThan(0);
+    for (const { key, audience } of audiences) {
+      expect(full).toContain(`Source: https://q-summit.com/partner/${key}/`);
+      expect(full).toContain(`# ${audience.heading}`);
+    }
+    expect(full).toContain(content.partner.projector.heading);
   });
 });
 
