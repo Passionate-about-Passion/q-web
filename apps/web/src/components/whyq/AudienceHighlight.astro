@@ -120,29 +120,31 @@ const image: WhyqImage | undefined =
               )}
             </div>
           </div>
-          <ul class="wq-moments" role="list">
-            {highlight.moments.map((moment, i) => (
-              <li
-                class:list={["wq-moment", { "has-photo": !!moment.image }]}
-                data-h-reveal
-                style={`--h-i: ${i + 1}`}
-              >
-                <div class="wq-media">
-                  {moment.image && (
-                    <img
-                      src={moment.image.src}
-                      width={moment.image.width}
-                      height={moment.image.height}
-                      alt={moment.image.alt}
-                      loading="lazy"
-                      decoding="async"
-                      data-wq-img
-                    />
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
+          {highlight.moments.length > 0 && (
+            <ul class="wq-moments" role="list">
+              {highlight.moments.map((moment, i) => (
+                <li
+                  class:list={["wq-moment", { "has-photo": !!moment.image }]}
+                  data-h-reveal
+                  style={`--h-i: ${i + 1}`}
+                >
+                  <div class="wq-media">
+                    {moment.image && (
+                      <img
+                        src={moment.image.src}
+                        width={moment.image.width}
+                        height={moment.image.height}
+                        alt={moment.image.alt}
+                        loading="lazy"
+                        decoding="async"
+                        data-wq-img
+                      />
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </Fragment>
       )
     }
@@ -421,13 +423,28 @@ const image: WhyqImage | undefined =
   }
 
   /* --- logos: names on small slabs of dark glass --- */
+  /* Fixed column counts (2, 3, 4), so a wall of 12 logos fills every row at
+     every width; an auto-fill grid would leave a short last row at some
+     widths. */
   .wq-names {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-sm);
     margin: 0;
     padding: 0;
     list-style: none;
+  }
+
+  @media (min-width: 768px) {
+    .wq-names {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .wq-names {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
   }
 
   .wq-name {
