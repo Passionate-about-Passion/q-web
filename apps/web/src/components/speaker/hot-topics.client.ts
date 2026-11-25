@@ -2,10 +2,13 @@
  * Hot topics card on /speaker (HotTopics.astro, DESIGN.md SPEAKER-1).
  *
  * Every topic is already in the HTML; this only moves `data-active` between
- * them. The arrows loop (after the last comes the first), a small sphere
+ * them. The arrow buttons and the left and right arrow keys
+ * (arrow-keys.client.ts) loop (after the last comes the first), a small sphere
  * jumps to its topic, and the change is announced once through a polite
  * live region. Cross-fades are CSS and stop for reduced motion.
  */
+
+import { registerArrowKeys } from "./arrow-keys.client";
 
 function initHotTopics(root: HTMLElement): void {
   const items = [...root.querySelectorAll<HTMLElement>("[data-ht-item]")];
@@ -46,6 +49,7 @@ function initHotTopics(root: HTMLElement): void {
   minis.forEach((mini, i) =>
     mini.addEventListener("click", () => show(i, true)),
   );
+  registerArrowKeys(root, (direction) => show(index + direction, true));
 }
 
 document

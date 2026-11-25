@@ -86,7 +86,7 @@ export const HotTopics: CollectionConfig = draftCollection({
             width: "50%",
             sortOptions: "-createdAt",
             description:
-              "Optional. A plainer version for the small round button; leave empty to use the sphere.",
+              "Optional. A square close-up cropped to the ball, without anything around it; it fills the small round button. Leave empty to use a zoomed-in sphere.",
           },
         },
       ],

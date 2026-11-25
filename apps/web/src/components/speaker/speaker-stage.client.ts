@@ -3,13 +3,15 @@
  *
  * The stage photo never changes; this swaps what stands on its screens.
  * Steps loop in both directions and come from the arrows, the left and right
- * arrow keys while the stage has focus, and a horizontal swipe. The name is
+ * arrow keys (arrow-keys.client.ts) and a horizontal swipe. The name is
  * typed one letter every TYPE_MS behind a blinking cursor; screen readers
  * get the whole speaker at once from a polite live region, never the typing
  * (the typed text is aria-hidden). Reduced motion shows the name at once and
  * skips the photo fade. The photos of the previous and next speaker are
  * preloaded so a step never waits for the network.
  */
+
+import { registerArrowKeys } from "./arrow-keys.client";
 
 interface StageSpeaker {
   name: string;
@@ -111,16 +113,9 @@ function initStage(root: HTMLElement): void {
     b.addEventListener("click", () => show(index + 1)),
   );
 
-  root.addEventListener("keydown", (event) => {
-    if (total < 2) return;
-    if (event.key === "ArrowLeft") {
-      event.preventDefault();
-      show(index - 1);
-    } else if (event.key === "ArrowRight") {
-      event.preventDefault();
-      show(index + 1);
-    }
-  });
+  // Arrow keys: whenever the stage is focused or the section most in view.
+  if (total > 1)
+    registerArrowKeys(root, (direction) => show(index + direction));
 
   // Swipe on the stage and the card under it; vertical scrolling stays
   // native (touch-action: pan-y on the frame).

@@ -150,14 +150,17 @@ const arrow = (dir: "prev" | "next") =>
                   aria-pressed={i === 0 ? "true" : "false"}
                   data-ht-mini={i}
                 >
-                  <img
-                    src={src(topic.thumbFilename || topic.imageFilename)}
-                    alt=""
-                    width="124"
-                    height="124"
-                    loading="lazy"
-                    decoding="async"
-                  />
+                  <span class="ht-mini-pic">
+                    <img
+                      class:list={[!topic.thumbFilename && "is-zoomed"]}
+                      src={src(topic.thumbFilename || topic.imageFilename)}
+                      alt=""
+                      width="124"
+                      height="124"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </span>
                   <span class="ht-mini-num" aria-hidden="true">
                     {pad(i + 1)}
                   </span>
@@ -478,11 +481,26 @@ const arrow = (dir: "prev" | "next") =>
     }
   }
 
-  .ht-mini img {
+  /* The picture fills the whole round button. A thumb is cropped to the
+     ball already; without one the full sphere artwork (with its transparent
+     margin and anything around the ball) is zoomed onto the ball. */
+  .ht-mini-pic {
+    display: block;
     width: 100%;
     height: 100%;
+    overflow: hidden;
     border-radius: var(--radius-circle);
+  }
+
+  .ht-mini-pic img {
+    display: block;
+    width: 100%;
+    height: 100%;
     object-fit: cover;
+  }
+
+  .ht-mini-pic img.is-zoomed {
+    transform: scale(1.8);
   }
 
   .ht-mini-num {
