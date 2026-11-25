@@ -17,11 +17,11 @@
     "thumbFilename": "fixture-missing-thumb.webp"
   },
   {
-    "keyword": "GAMMAWORD",
+    "keyword": "SUSTAINABILITY",
     "title": "Fixture topic 3",
     "field": "Example field & example industry",
     "description": "Placeholder description for CI fixture builds. Two or three sentences about the topic.",
     "imageFilename": "fixture-missing-sphere.webp",
-    "imageAlt": "Fixture sphere for topic GAMMAWORD"
+    "imageAlt": "Fixture sphere for topic SUSTAINABILITY"
   }
 ]

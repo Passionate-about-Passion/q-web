@@ -22,6 +22,10 @@ export interface Speaker {
   /** Verbatim bio paragraph; only the main-stage-homepage highlights have
    * one (the live homepage carousel is the only place bios are shown). */
   bio?: string;
+  /** Talk title, shown on the /speaker stage. */
+  talkTitle?: string;
+  /** One sentence from the talk, without quotation marks. */
+  quote?: string;
 }
 
 // The CMS `group` select passes straight through: the exported union mirrors
@@ -49,6 +53,8 @@ interface CmsSpeakerDoc {
    * the pre-roleLine port did unconditionally. */
   roleLine?: string | null;
   bio?: string | null;
+  talkTitle?: string | null;
+  quote?: string | null;
   photo: CmsMediaRef | number | string | null;
   group: string;
   year?: number | null;
@@ -75,6 +81,8 @@ async function cmsGetSpeakers(): Promise<Speaker[]> {
       group: toSpeakerGroup(doc.group),
       year: doc.year ?? null,
       ...(doc.bio?.trim() ? { bio: doc.bio.trim() } : {}),
+      ...(doc.talkTitle?.trim() ? { talkTitle: doc.talkTitle.trim() } : {}),
+      ...(doc.quote?.trim() ? { quote: doc.quote.trim() } : {}),
     });
   }
   return speakers;

@@ -43,7 +43,8 @@ export const PageSpeaker: GlobalConfig = pageGlobal({
       type: "text",
       required: true,
       admin: {
-        description: "Main heading over the stage, e.g. Voices on the main stage.",
+        description:
+          "Main heading over the stage, e.g. Voices on the main stage.",
       },
     },
     {

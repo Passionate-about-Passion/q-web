@@ -191,7 +191,7 @@ write(
 // third with a long keyword so the smaller keyword size is exercised.
 write(
   "hot-topics.json",
-  ["ALPHA", "BETA", "GAMMAWORD"].map((keyword, i) => ({
+  ["ALPHA", "BETA", "SUSTAINABILITY"].map((keyword, i) => ({
     keyword,
     title: `Fixture topic ${i + 1}`,
     field: "Example field & example industry",

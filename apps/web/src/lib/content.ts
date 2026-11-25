@@ -42,6 +42,9 @@ export {
   getSpeakers,
 } from "./content/speakers";
 
+export type { HotTopic } from "./content/hot-topics";
+export { getHotTopics } from "./content/hot-topics";
+
 export type { TeamMember, PastTeam } from "./content/team";
 export { getTeam, getPastTeamPhotos } from "./content/team";
 
