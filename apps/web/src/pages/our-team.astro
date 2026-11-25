@@ -3,8 +3,10 @@
 // Full-height group-photo hero, then the Current Team / History toggle and
 // both team panels (see components/team/TeamPanels.astro): rendering both
 // datasets on both team routes is what lets the toggle switch instantly,
-// client-side, instead of a full page navigation. All people data comes
-// from getTeam() / getPastTeamPhotos() at build time.
+// client-side, instead of a full page navigation. Once the history story is
+// published, the History panel is that story (DESIGN.md HISTORY-1); it waits
+// hidden here and starts the first time the toggle shows it. All people data
+// comes from getTeam() / getPastTeamPhotos() at build time.
 import Base from "../layouts/Base.astro";
 import {
   getPageContent,
@@ -15,6 +17,7 @@ import {
 import { groupDivisions, groupPastYears } from "../lib/team";
 import TeamHero from "../components/team/TeamHero.astro";
 import { teamHeroSources } from "../lib/team-media";
+import { buildHistoryAlbum } from "../lib/history-album";
 import TeamPanels from "../components/team/TeamPanels.astro";
 import "../components/ui/navy-glass.css";
 
@@ -33,6 +36,10 @@ const pastYears = await groupPastYears(pastTeamPhotos);
 // browser fetches the same srcset TeamHero.astro renders before it parses
 // the page.
 const hero = teamHeroSources(ourTeam.heroImage);
+const story = pastTeams.story;
+const album = story
+  ? await buildHistoryAlbum(pastYears, hero, pastTeams.photoAlt)
+  : [];
 ---
 
 <Base
@@ -49,10 +56,12 @@ const hero = teamHeroSources(ourTeam.heroImage);
       title={ourTeam.heading}
       lpTitle="heading"
       photo={ourTeam.heroImage}
+      titles={{ current: ourTeam.heading, past: pastTeams.heading }}
     />
     <TeamPanels
       active="current"
-      pastPanel={!pastTeams.story}
+      story={story}
+      album={album}
       divisions={divisions}
       pastYears={pastYears}
       pastIntro={pastTeams.intro}
@@ -66,6 +75,6 @@ const hero = teamHeroSources(ourTeam.heroImage);
       currentTitle={`${siteTitle} | ${ourTeam.title}`}
       pastTitle={`${siteTitle} | ${pastTeams.title}`}
     />
-    <div class="h-page-fade" aria-hidden="true"></div>
+    {!story && <div class="h-page-fade" aria-hidden="true" />}
   </div>
 </Base>

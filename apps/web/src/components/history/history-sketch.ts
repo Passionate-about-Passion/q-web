@@ -716,6 +716,9 @@ export function createSketch(host: HTMLElement | null, T: SketchTimes): Sketch {
     area: null,
   };
   function paint() {
+    // hidden (the team switch shows the other view): nothing to draw on; the
+    // ResizeObserver sizes and paints again once the story is shown
+    if (W < 1 || H < 1) return;
     const p = cur.p,
       lens = cur.flash;
     // while the page waits at the top, the pen rests on the 0 and its tip breathes
