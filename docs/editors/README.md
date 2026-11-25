@@ -95,9 +95,25 @@ Media: anyone can upload new files (straight from an image field or via **Media 
 Two separate lists, two different jobs:
 
 - **Team** holds the people currently organizing Q-Summit: one entry per member with name, role, division, photo, the board year, and an optional LinkedIn profile. This fills the division grid on the Our Team page.
-- **Past Teams** holds one group photo per finished board year (e.g. `25/26`). This fills the year-by-year history panel.
+- **Past Teams** holds one group photo per finished board year (e.g. `25/26`). These photos fill the photo album on the History page.
 
-The pages around them are set under **Website pages**. **Our Team** holds the heading and the group photo at the top of both team pages (**Hero Image**: upload it in three widths with the same name ending in `-p-1280`, `-p-1920` and `-p-2560` and pick the 2560 one, so every screen loads only the size it needs), the **Current Team** label of the switch, and the heading above each division (**Division Heading**, `{division}` stands for the name). **Past Teams** holds the **History** label, the heading above each year (`{year}` stands for the year) and the description of each year's photo for screen readers. An empty field shows the current wording.
+The pages around them are set under **Website pages**. **Our Team** holds the heading and the group photo at the top of both team pages (**Hero Image**: upload it in three widths with the same name ending in `-p-1280`, `-p-1920` and `-p-2560` and pick the 2560 one, so every screen loads only the size it needs), the **Current Team** label of the switch, and the heading above each division (**Division Heading**, `{division}` stands for the name). **Past Teams** holds the **Heading** on the photo at the top, the **History** label, the description of each album photo for screen readers (**Photo Alt**, `{year}` stands for the year) and the **Story** section. An empty label or description shows the current wording.
+
+**The History story.** Below the photo, the History page tells a scroll story: a drawn line turns into a camera, and the camera's screen becomes a photo album of every team. The album shows one photo per year from the **Past Teams** list, plus the current team's photo from **Our Team → Hero Image**. All of the story's words live in **Website pages → Past Teams → Story**:
+
+| Field | What it shows |
+| --- | --- |
+| **Hero Eyebrow**, **Hero Heading**, **Hero Lead** | The small line, the heading and the paragraph that open the story |
+| **Cue Label** | The button under that paragraph that glides through the first part of the story |
+| **Origin Eyebrow**, **Origin Heading**, **Origin Sub**, **Origin Text** | The part about how Q-Summit began: small line, heading, short line under it, paragraph |
+| **Teams Eyebrow**, **Teams Heading**, **Teams Text** | The part about the teams over the years |
+| **Album Eyebrow**, **Album Heading** | The small line and the heading of the photo album |
+| **Album Hint**, **Album Hint Touch** | The hint under the camera on how to flip through the photos, on a computer and on a phone |
+| **Back Label** | The button under the camera that scrolls back to the start |
+| **Closing Eyebrow**, **Closing Heading**, **Closing Text** | The closing part at the end of the page |
+| **Closing Button Label** | The button at the end; it always leads to the Our Team page |
+
+Fill in every Story field. Until all of them are filled and published, the History page keeps its older layout: the **Intro** under the heading and one photo per year, each with the **Year Heading** above it (`{year}` stands for the year). Once the whole story is published, **Intro** and **Year Heading** are no longer shown.
 
 At board handover (Chair or PR, then a Head publishes):
 

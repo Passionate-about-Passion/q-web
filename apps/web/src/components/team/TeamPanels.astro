@@ -33,6 +33,10 @@ interface Props {
   /** Fully composed <title> text (siteTitle | page title) for each panel. */
   currentTitle: string;
   pastTitle: string;
+  /** Render the year-by-year history panel. Off once /past-teams shows the
+   * history story: the History tab is then a plain link to that page (the
+   * script below only swaps panels when both exist). */
+  pastPanel?: boolean;
   /** Texts from the CMS (Our Team / Past Teams); each has a default. */
   labels?: {
     currentTab?: string;
@@ -53,6 +57,7 @@ const {
   pastIntro,
   currentTitle,
   pastTitle,
+  pastPanel = true,
   labels = {},
 } = Astro.props;
 
@@ -94,53 +99,55 @@ const photoAlt = labels.photoAlt ?? "The Q-Summit team of {year}";
     }
   </div>
 
-  <div
-    id="team-panel-past"
-    class="team-panel history"
-    data-team-panel="past"
-    data-title={pastTitle}
-    role="tabpanel"
-    aria-labelledby="team-tab-past"
-    tabindex="0"
-    hidden={active !== "past"}
-  >
-    <p class="history__intro">{pastIntro}</p>
-    {
-      pastYears.map((entry, i) => (
-        <section class="history__year">
-          <h2 class="history__year-title">
-            {fill(yearHeading, "year", entry.year)}
-          </h2>
-          {entry.image ? (
-            <Picture
-              class="history__photo"
-              src={entry.image}
-              alt={fill(photoAlt, "year", entry.year)}
-              widths={[500, 850, 1200]}
-              sizes="(max-width: 950px) 90vw, 850px"
-              formats={["avif", "webp"]}
-              fallbackFormat="jpg"
-              quality={80}
-              loading={active === "past" && i === 0 ? "eager" : "lazy"}
-              decoding="async"
-            />
-          ) : (
-            <img
-              class="history__photo"
-              src={entry.photo.src}
-              srcset={entry.photo.srcset}
-              sizes="(max-width: 950px) 90vw, 850px"
-              alt={fill(photoAlt, "year", entry.year)}
-              width={entry.size.width}
-              height={entry.size.height}
-              loading={active === "past" && i === 0 ? "eager" : "lazy"}
-              decoding="async"
-            />
-          )}
-        </section>
-      ))
-    }
-  </div>
+  {
+    pastPanel && (
+      <div
+        id="team-panel-past"
+        class="team-panel history"
+        data-team-panel="past"
+        data-title={pastTitle}
+        role="tabpanel"
+        aria-labelledby="team-tab-past"
+        tabindex="0"
+        hidden={active !== "past"}
+      >
+        <p class="history__intro">{pastIntro}</p>
+        {pastYears.map((entry, i) => (
+          <section class="history__year">
+            <h2 class="history__year-title">
+              {fill(yearHeading, "year", entry.year)}
+            </h2>
+            {entry.image ? (
+              <Picture
+                class="history__photo"
+                src={entry.image}
+                alt={fill(photoAlt, "year", entry.year)}
+                widths={[500, 850, 1200]}
+                sizes="(max-width: 950px) 90vw, 850px"
+                formats={["avif", "webp"]}
+                fallbackFormat="jpg"
+                quality={80}
+                loading={active === "past" && i === 0 ? "eager" : "lazy"}
+                decoding="async"
+              />
+            ) : (
+              <img
+                class="history__photo"
+                src={entry.photo.src}
+                srcset={entry.photo.srcset}
+                sizes="(max-width: 950px) 90vw, 850px"
+                alt={fill(photoAlt, "year", entry.year)}
+                width={entry.size.width}
+                height={entry.size.height}
+                loading={active === "past" && i === 0 ? "eager" : "lazy"}
+                decoding="async"
+              />
+            )}
+          </section>
+        ))}
+      </div>
+    )
+  }
 </div>
 
 <style>

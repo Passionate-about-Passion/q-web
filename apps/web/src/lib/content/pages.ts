@@ -642,6 +642,40 @@ export interface PastTeamsContent {
   yearHeading?: string;
   /** Alt text of each year's team photo, with {year}. */
   photoAlt?: string;
+  /**
+   * Copy of the scroll story. Set only when every field is filled; unset,
+   * the page falls back to `intro` plus one photo per year.
+   */
+  story?: PastTeamsStory;
+}
+
+/** The /past-teams/ scroll story copy (page-past-teams `story` group). */
+export interface PastTeamsStory {
+  heroEyebrow: string;
+  heroHeading: string;
+  heroLead: string;
+  /** The button that glides through the first part of the story. */
+  cueLabel: string;
+  originEyebrow: string;
+  originHeading: string;
+  originSub: string;
+  originText: string;
+  teamsEyebrow: string;
+  teamsHeading: string;
+  teamsText: string;
+  albumEyebrow: string;
+  albumHeading: string;
+  /** The hint under the camera on a computer. */
+  albumHint: string;
+  /** The same hint on a phone. */
+  albumHintTouch: string;
+  /** The button under the camera that scrolls back to the start. */
+  backLabel: string;
+  closingEyebrow: string;
+  closingHeading: string;
+  closingText: string;
+  /** Label of the button to /our-team/ (the link is fixed in code). */
+  closingButtonLabel: string;
 }
 
 export interface PartnerPageContent {
@@ -1855,10 +1889,57 @@ interface CmsPastTeamsDoc {
   tabLabel?: string | null;
   yearHeading?: string | null;
   photoAlt?: string | null;
+  story?: { [K in keyof PastTeamsStory]?: string | null } | null;
+}
+
+const PAST_TEAMS_STORY_KEYS = [
+  "heroEyebrow",
+  "heroHeading",
+  "heroLead",
+  "cueLabel",
+  "originEyebrow",
+  "originHeading",
+  "originSub",
+  "originText",
+  "teamsEyebrow",
+  "teamsHeading",
+  "teamsText",
+  "albumEyebrow",
+  "albumHeading",
+  "albumHint",
+  "albumHintTouch",
+  "backLabel",
+  "closingEyebrow",
+  "closingHeading",
+  "closingText",
+  "closingButtonLabel",
+] as const satisfies readonly (keyof PastTeamsStory)[];
+
+/**
+ * The story only renders when every field is filled, so a build that runs
+ * before the copy is published falls back to the old layout instead of
+ * showing half a story. A partly filled group warns once, naming the gaps.
+ */
+function toPastTeamsStory(
+  raw: CmsPastTeamsDoc["story"],
+): PastTeamsStory | undefined {
+  if (!raw) return undefined;
+  const missing = PAST_TEAMS_STORY_KEYS.filter((key) => !raw[key]?.trim());
+  if (missing.length === PAST_TEAMS_STORY_KEYS.length) return undefined;
+  if (missing.length > 0) {
+    console.warn(
+      `[content:cms] page-past-teams story is partly filled; showing the fallback layout. Missing: ${missing.join(", ")}`,
+    );
+    return undefined;
+  }
+  const story = {} as PastTeamsStory;
+  for (const key of PAST_TEAMS_STORY_KEYS) story[key] = raw[key] as string;
+  return story;
 }
 
 async function cmsGetPastTeams(): Promise<PastTeamsContent> {
   const doc = await fetchGlobal<CmsPastTeamsDoc>("page-past-teams");
+  const story = toPastTeamsStory(doc.story);
   return {
     title: doc.title,
     metaDescription: doc.metaDescription ?? "",
@@ -1867,6 +1948,7 @@ async function cmsGetPastTeams(): Promise<PastTeamsContent> {
     ...(doc.tabLabel && { tabLabel: doc.tabLabel }),
     ...(doc.yearHeading && { yearHeading: doc.yearHeading }),
     ...(doc.photoAlt && { photoAlt: doc.photoAlt }),
+    ...(story && { story }),
   };
 }
 
