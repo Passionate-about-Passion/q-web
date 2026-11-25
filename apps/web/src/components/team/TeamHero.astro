@@ -1,11 +1,13 @@
 ---
 // Hero shared by /our-team and /past-teams: the current-team group photo
 // behind a dark overlay with a centered white H1 (the live header7/header65
-// section), sized so the whole group always shows, melting into the 2027
-// navy below (DESIGN.md NAVY-1).
-import { Picture } from "../../lib/astro-assets";
-import { TEAM_HERO_PHOTO, widePhotoSrc } from "../../lib/team-media";
-import { resolveContentImage } from "../../lib/images";
+// section), framed like the team's history page mockup and melting softly
+// into the 2027 navy below (DESIGN.md NAVY-1).
+import {
+  TEAM_HERO_PHOTO,
+  TEAM_HERO_SIZE,
+  TEAM_HERO_SRCSET,
+} from "../../lib/team-media";
 
 interface Props {
   title: string;
@@ -14,52 +16,27 @@ interface Props {
 }
 
 const { title, lpTitle } = Astro.props;
-
-// Group photo used as the hero background on both live team pages: this is
-// the LCP element on both routes, so it stays loading="eager"/fetchpriority
-// "high" through the pipeline.
-const backgroundImage = await resolveContentImage(
-  TEAM_HERO_PHOTO,
-  "team hero background",
-);
-const background = widePhotoSrc(TEAM_HERO_PHOTO);
 ---
 
 <header class="team-hero">
   {
-    backgroundImage ? (
-      <Picture
-        class="team-hero__image"
-        src={backgroundImage}
-        alt=""
-        widths={[800, 1200, 1600]}
-        sizes="132vw"
-        formats={["avif", "webp"]}
-        fallbackFormat="jpg"
-        quality={80}
-        loading="eager"
-        fetchpriority="high"
-        decoding="async"
-      />
-    ) : (
-      <img
-        class="team-hero__image"
-        src={background.src}
-        srcset={background.srcset}
-        sizes="132vw"
-        alt=""
-        width="1600"
-        height="1066"
-        loading="eager"
-        fetchpriority="high"
-        decoding="async"
-      />
-    )
+    /* The LCP element on both team routes: eager, high priority, and the
+      same srcset the pages preload (lib/team-media.ts). */
   }
+  <img
+    class="team-hero__image"
+    src={`/media/${TEAM_HERO_PHOTO}`}
+    srcset={TEAM_HERO_SRCSET}
+    sizes="100vw"
+    alt=""
+    width={TEAM_HERO_SIZE.width}
+    height={TEAM_HERO_SIZE.height}
+    loading="eager"
+    fetchpriority="high"
+    decoding="async"
+  />
   <div class="team-hero__overlay" aria-hidden="true"></div>
-  <div class="team-hero__melt" aria-hidden="true">
-    <div></div><div></div><div></div><div></div>
-  </div>
+  <div class="team-hero__melt" aria-hidden="true"></div>
   <div class="container team-hero__content">
     <h1 class="team-hero__title" data-lp={lpTitle}>{title}</h1>
   </div>
@@ -68,35 +45,31 @@ const background = widePhotoSrc(TEAM_HERO_PHOTO);
 
 <style>
   /* DESIGN.md NAVY-1: the live team hero (the 50% scrim, the centered
-     white H1 at the site's H1 size) on the 2027 navy, with the group photo
-     sized by the window's WIDTH so nobody is ever cut off: the group spans
-     about 16% to 85% of the frame, so the photo is drawn 1/0.76 of the
-     hero's width, centered, which leaves a little air at both sides. Its
-     foot is anchored so the strip of pavement under the shoes ends the
-     hero, and a short melt (stacked backdrop blurs under a navy wash)
-     dissolves that strip into the page instead of ending on an edge. The
-     hero is never taller than the photo allows (62vw), else the live
-     min(100svh, 52rem). On windows wider than about 1850px the 52rem cap
-     would cut the heads off (they start about 40% down the photo), so
-     there the cap grows with the width (45vw keeps the top of the hero
-     above the heads); only the window's own height still limits it. */
+     white H1 at the site's H1 size) on the 2027 navy, framed like the
+     team's history page mockup: the photo spans the full width and shows
+     the band between --crop-top and --crop-bottom of its height (the
+     building above the heads and the road below the pavement are cut), so
+     the whole group stands in the frame with the title on the
+     sweatshirts. */
   .team-hero {
+    --crop-top: 0.28;
+    --crop-bottom: 0.12;
     position: relative;
-    height: min(100svh, max(52rem, 45vw), 62vw);
+    height: min(100svh, 52rem);
     overflow: hidden;
     background: var(--q-night);
   }
 
   .team-hero__image {
+    --shown: calc(1 - var(--crop-top) - var(--crop-bottom));
     position: absolute;
-    left: 50%;
-    bottom: -11.4vw;
-    width: calc(100% / 0.76);
+    inset-inline: 0;
+    top: calc(-100% * var(--crop-top) / var(--shown));
+    width: 100%;
+    height: calc(100% / var(--shown));
     max-width: none;
-    height: auto;
-    aspect-ratio: 1600 / 1066;
     object-fit: cover;
-    transform: translateX(-50%);
+    object-position: center bottom;
   }
 
   .team-hero__overlay {
@@ -107,90 +80,43 @@ const background = widePhotoSrc(TEAM_HERO_PHOTO);
     background-color: var(--color-overlay);
   }
 
-  /* The melt: four backdrop blurs, each stronger and masked to a lower
-     band, and over them a navy wash along one eased OKLab curve. */
+  /* The melt: the photo goes soft and dark towards its lower edge in one
+     long eased band (a single blur under an eased mask, with a navy wash
+     on the same curve), so it melts into the page instead of ending on a
+     line. */
   .team-hero__melt {
+    --ease:
+      transparent, color-mix(in srgb, var(--color-black) 4%, transparent) 10%,
+      color-mix(in srgb, var(--color-black) 15%, transparent) 22%,
+      color-mix(in srgb, var(--color-black) 34%, transparent) 35%,
+      color-mix(in srgb, var(--color-black) 57%, transparent) 48%,
+      color-mix(in srgb, var(--color-black) 78%, transparent) 60%,
+      color-mix(in srgb, var(--color-black) 92%, transparent) 71%,
+      var(--color-black) 82%;
     position: absolute;
-    left: 0;
-    right: 0;
-    bottom: -2px;
+    inset: auto 0 -2px;
     z-index: 2;
-    height: 5.4vw;
+    height: 42%;
     pointer-events: none;
-  }
-
-  .team-hero__melt > div {
-    position: absolute;
-    inset: 0;
-  }
-
-  .team-hero__melt > div:nth-child(1) {
-    -webkit-backdrop-filter: blur(1px);
-    backdrop-filter: blur(1px);
-    -webkit-mask: linear-gradient(
-      transparent 0%,
-      var(--color-black) 20%,
-      var(--color-black) 40%,
-      transparent 60%
-    );
-    mask: linear-gradient(
-      transparent 0%,
-      var(--color-black) 20%,
-      var(--color-black) 40%,
-      transparent 60%
-    );
-  }
-
-  .team-hero__melt > div:nth-child(2) {
-    -webkit-backdrop-filter: blur(3px);
-    backdrop-filter: blur(3px);
-    -webkit-mask: linear-gradient(
-      transparent 20%,
-      var(--color-black) 45%,
-      var(--color-black) 60%,
-      transparent 80%
-    );
-    mask: linear-gradient(
-      transparent 20%,
-      var(--color-black) 45%,
-      var(--color-black) 60%,
-      transparent 80%
-    );
-  }
-
-  .team-hero__melt > div:nth-child(3) {
-    -webkit-backdrop-filter: blur(7px);
-    backdrop-filter: blur(7px);
-    -webkit-mask: linear-gradient(transparent 40%, var(--color-black) 65%);
-    mask: linear-gradient(transparent 40%, var(--color-black) 65%);
-  }
-
-  .team-hero__melt > div:nth-child(4) {
-    -webkit-backdrop-filter: blur(14px);
-    backdrop-filter: blur(14px);
-    -webkit-mask: linear-gradient(transparent 60%, var(--color-black) 85%);
-    mask: linear-gradient(transparent 60%, var(--color-black) 85%);
-  }
-
-  .team-hero__melt::after {
-    content: "";
-    position: absolute;
-    inset: 0;
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    -webkit-mask: linear-gradient(var(--ease));
+    mask: linear-gradient(var(--ease));
     background: linear-gradient(
       in oklab 180deg,
       transparent 0%,
-      color-mix(in oklab, var(--q-night) 8%, transparent) 15%,
-      color-mix(in oklab, var(--q-night) 26%, transparent) 30%,
-      color-mix(in oklab, var(--q-night) 52%, transparent) 45%,
-      color-mix(in oklab, var(--q-night) 77%, transparent) 60%,
-      color-mix(in oklab, var(--q-night) 93%, transparent) 74%,
-      var(--q-night) 86%,
+      color-mix(in oklab, var(--q-night) 6%, transparent) 14%,
+      color-mix(in oklab, var(--q-night) 20%, transparent) 28%,
+      color-mix(in oklab, var(--q-night) 40%, transparent) 42%,
+      color-mix(in oklab, var(--q-night) 62%, transparent) 56%,
+      color-mix(in oklab, var(--q-night) 81%, transparent) 70%,
+      color-mix(in oklab, var(--q-night) 94%, transparent) 84%,
       var(--q-night) 100%
     );
   }
 
   /* A strip of the ground over the photo's clipped lower edge: the
-     stacked backdrop blurs leave a faint line on that sub-pixel row. */
+     backdrop blur leaves a faint line on that sub-pixel row. */
   .team-hero__seam {
     position: relative;
     z-index: 4;
@@ -199,13 +125,12 @@ const background = widePhotoSrc(TEAM_HERO_PHOTO);
     background: var(--q-night);
   }
 
-  /* The title sits on the sweatshirts, below the faces, at every width. */
   .team-hero__content {
     position: absolute;
     z-index: 3;
     inset-inline: 0;
-    bottom: 21vw;
-    transform: translateY(50%);
+    top: 50%;
+    transform: translateY(-50%);
     text-align: center;
   }
 
@@ -214,8 +139,23 @@ const background = widePhotoSrc(TEAM_HERO_PHOTO);
     text-wrap: balance;
   }
 
-  /* The hero is 62vw tall on phones, so the title steps down with it. */
+  /* Phones: trim the pavement, not the heads; the photo only goes soft
+     below the feet. */
   @media (max-width: 767px) {
+    .team-hero {
+      --crop-top: 0.25;
+      --crop-bottom: 0.13;
+      height: min(62svh, 30rem);
+    }
+
+    .team-hero__content {
+      top: 60%;
+    }
+
+    .team-hero__melt {
+      height: 17%;
+    }
+
     .team-hero__title {
       font-size: clamp(1.5rem, 4.2vw, 2.5rem);
     }
