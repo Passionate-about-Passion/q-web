@@ -40,8 +40,13 @@ import { partnerAudiencePages } from "../src/lib/partner-audiences";
 import {
   NEXT_EDITION,
   STAGE_EDITION,
+  homepageStageSpeakers,
   isStageShot,
+  stageEdition,
   stageEditionSpeakers,
+  stageLabel,
+  stagePhotoFilename,
+  stageSpeakers,
 } from "../src/lib/speaker-page";
 import {
   WHYQ_AUDIENCE_PAGES,
@@ -755,8 +760,8 @@ describe("/speaker in the LLM corpus", () => {
     );
     expect(block).toContain(`## Hot topics ${NEXT_EDITION}`);
     for (const topic of hotTopics) expect(block).toContain(topic.keyword);
-    expect(block).toContain(`## Speakers ${STAGE_EDITION}`);
-    for (const s of stageEditionSpeakers(speakers))
+    expect(block).toContain(`## ${stageLabel()}`);
+    for (const s of stageSpeakers(content.home.previousSpeakers, speakers))
       expect(block).toContain(`- ${s.name}:`);
     for (const panel of content.speaker.panels)
       expect(block).not.toContain(panel.title);
@@ -764,7 +769,7 @@ describe("/speaker in the LLM corpus", () => {
 });
 
 describe("stage photos", () => {
-  const speaker = (size?: { photoWidth: number; photoHeight: number }) =>
+  const speaker = (extra?: Partial<Speaker>) =>
     ({
       name: "Alex Example",
       role: "CEO",
@@ -773,7 +778,7 @@ describe("stage photos", () => {
       photoFilename: "alex.webp",
       group: "current",
       year: 2026,
-      ...size,
+      ...extra,
     }) as Speaker;
 
   it("lays a screen-look cutout over the stage, fits any other photo into the screen", () => {
@@ -789,7 +794,76 @@ describe("stage photos", () => {
     expect(isStageShot(speaker({ photoWidth: 800, photoHeight: 1000 }))).toBe(
       false,
     );
-    // JSON mode records no size: the photo counts as a cutout.
-    expect(isStageShot(speaker())).toBe(true);
+    // Without a recorded size the homepage photo is not taken for a cutout.
+    expect(isStageShot(speaker())).toBe(false);
+  });
+
+  it("prefers the stage picture and never needs the homepage photo for it", () => {
+    const own = speaker({
+      stagePhotoFilename: "alex-stage.webp",
+      stagePhotoWidth: 1057,
+      stagePhotoHeight: 754,
+      photoWidth: 1000,
+      photoHeight: 1000,
+    });
+    expect(stagePhotoFilename(own)).toBe("alex-stage.webp");
+    expect(isStageShot(own)).toBe(true);
+    // JSON mode records no size: a stage picture counts as a cutout.
+    expect(isStageShot(speaker({ stagePhotoFilename: "a.webp" }))).toBe(true);
+    expect(stagePhotoFilename(speaker())).toBe("alex.webp");
+  });
+});
+
+describe("stage speakers", () => {
+  const person = (name: string, group: Speaker["group"], year: number | null) =>
+    ({
+      name,
+      role: "Role",
+      company: null,
+      roleLine: "Role",
+      photoFilename: "",
+      group,
+      year,
+    }) as Speaker;
+  const speakers = [
+    person("Ada", "panel", null),
+    person("Ben", "current", 2026),
+    person("Ben", "panel", null),
+    person("Cleo", "panel", null),
+    person("Dan", "current", 2026),
+  ];
+
+  it("shows the homepage's highlights, then its stand-ins, each once", () => {
+    const names = homepageStageSpeakers(
+      { highlights: ["Cleo", "Ada", "Nobody"], standIns: ["Ben", "Ada"] },
+      speakers,
+    ).map((s) => `${s.name}/${s.group}`);
+    expect(names).toEqual(["Cleo/panel", "Ada/panel", "Ben/current"]);
+  });
+
+  it("takes the booked line-up over the stand-ins", () => {
+    const lineup = [...speakers, person("Eve", "current", 2027)];
+    const names = homepageStageSpeakers(
+      { highlights: ["Ada"], standIns: ["Ben"], lineup: { year: 2027 } },
+      lineup,
+    ).map((s) => s.name);
+    expect(names).toEqual(["Ada", "Eve"]);
+  });
+
+  it("falls back to every panel speaker without a highlight list", () => {
+    expect(homepageStageSpeakers({}, speakers).map((s) => s.name)).toEqual([
+      "Ada",
+      "Ben",
+      "Cleo",
+    ]);
+  });
+
+  it("switches to the edition and names its year", () => {
+    expect(stageSpeakers({}, speakers, "edition").map((s) => s.name)).toEqual(
+      stageEditionSpeakers(speakers).map((s) => s.name),
+    );
+    expect(stageEdition("edition")).toBe(STAGE_EDITION);
+    expect(stageEdition("homepage")).toBeUndefined();
+    expect(stageLabel("edition")).toBe(`Speakers ${STAGE_EDITION}`);
   });
 });

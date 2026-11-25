@@ -335,6 +335,10 @@ export interface Speaker {
    */
   quote?: string | null;
   /**
+   * Optional. Picture for the stage of the speakers page only, best a 1057 x 754 cutout of the stage photo with the speaker on the middle screen. Any other picture is fitted into the screen. Leave empty to use the photo above. The homepage always shows the photo above.
+   */
+  stagePhoto?: (number | null) | Media;
+  /**
    * Where the speaker appears on the site.
    */
   group: 'current' | 'moderation' | 'panel' | 'previous';
@@ -383,7 +387,7 @@ export interface HotTopic {
    */
   image: number | Media;
   /**
-   * Optional. A plainer version for the small round button; leave empty to use the sphere.
+   * Optional. A square close-up cropped to the ball, without anything around it; it fills the small round button. Leave empty to use a zoomed-in sphere.
    */
   thumb?: (number | null) | Media;
   /**
@@ -737,6 +741,7 @@ export interface SpeakersSelect<T extends boolean = true> {
   bio?: T;
   talkTitle?: T;
   quote?: T;
+  stagePhoto?: T;
   group?: T;
   year?: T;
   order?: T;

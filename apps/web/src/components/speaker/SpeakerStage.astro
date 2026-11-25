@@ -38,10 +38,13 @@ export interface StageSpeaker {
 
 interface Props {
   speakers: StageSpeaker[];
-  edition: number;
+  /** The year the screens name; none when the stage mixes editions. */
+  edition?: number | undefined;
 }
 
 const { speakers, edition } = Astro.props;
+// " 2026", or nothing when the stage spans several editions.
+const year = edition ? ` ${edition}` : "";
 const total = speakers.length;
 const first = speakers[0];
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -60,7 +63,7 @@ const arrow = (dir: "prev" | "next") =>
     <section
       class="stage"
       aria-roledescription="carousel"
-      aria-label={`Speakers ${edition}`}
+      aria-label={`Speakers${year}`}
       tabindex="0"
       data-stage
       data-edition={edition}
@@ -103,7 +106,7 @@ const arrow = (dir: "prev" | "next") =>
             <p class="scr-role" data-stage-role>
               {first.role}
             </p>
-            <p class="scr-edition">Q-Summit · {edition}</p>
+            <p class="scr-edition">Q-Summit{edition ? ` · ${edition}` : ""}</p>
           </div>
 
           <div class="screen is-center" aria-hidden="true">
@@ -127,7 +130,7 @@ const arrow = (dir: "prev" | "next") =>
 
           <div class="screen is-right">
             <p class="scr-kicker">
-              Talk<span class="scr-desktop"> · Q-Summit {edition}</span>
+              Talk<span class="scr-desktop"> · Q-Summit{year}</span>
             </p>
             <p class="scr-talk" data-stage-talk>
               {first.talkTitle}
@@ -166,7 +169,7 @@ const arrow = (dir: "prev" | "next") =>
                   <path d={arrow("prev")} />
                 </svg>
               </button>
-              <p class="stage-hint">Speakers {edition} · Use the arrows</p>
+              <p class="stage-hint">Speakers{year} · Use the arrows</p>
               <button
                 type="button"
                 class="stage-arrow"
@@ -190,8 +193,8 @@ const arrow = (dir: "prev" | "next") =>
       <div class="stage-mobile">
         <div class="stage-card">
           <p class="stage-card-kicker">
-            Speaker <span data-stage-num>{pad(1)}</span>/{pad(total)} · Q-Summit{" "}
-            {edition}
+            Speaker <span data-stage-num>{pad(1)}</span>/{pad(total)} · Q-Summit
+            {year}
           </p>
           <p class="stage-card-role" data-stage-role>
             {first.role}
@@ -222,7 +225,7 @@ const arrow = (dir: "prev" | "next") =>
               </svg>
             </button>
             <p class="stage-hint">
-              Speakers {edition}
+              Speakers{year}
               <span>Swipe or tap the arrows</span>
             </p>
             <button

@@ -2,19 +2,21 @@
 // /speaker: the 2027 speaker page (DESIGN.md SPEAKER-1), on the deep night
 // from the site header down to the footer. In order: the hot topics of the
 // next edition (hot-topics list), the intro (page-speaker heading and intro),
-// the speakers of STAGE_EDITION on the main stage (speakers list), and the
-// pill announcing the next line-up. Content and layout are apart: the
-// next line-up is a CMS change plus the one STAGE_EDITION constant in
-// lib/speaker-page.ts (shared with the LLM corpus in lib/llms.ts).
+// the speakers on the main stage (speakers list), and the pill announcing
+// the next line-up. Until that line-up is out the stage shows the homepage's
+// speakers; STAGE_SOURCE and STAGE_EDITION in lib/speaker-page.ts switch it
+// to the edition (shared with the LLM corpus in lib/llms.ts).
 import Base from "../layouts/Base.astro";
 import { getHotTopics, getPageContent, getSpeakers } from "../lib/content";
 import { isFixtureMediaSentinel } from "../lib/media-filename";
 import {
-  STAGE_EDITION,
   speakerPageCopy,
   isStageShot,
-  stageEditionSpeakers,
+  stageEdition,
+  stageLabel,
+  stagePhotoFilename,
   stageRole,
+  stageSpeakers,
 } from "../lib/speaker-page";
 import HotTopics from "../components/speaker/HotTopics.astro";
 import SpeakerStage from "../components/speaker/SpeakerStage.astro";
@@ -23,7 +25,7 @@ import type { StageSpeaker } from "../components/speaker/SpeakerStage.astro";
 /** Placeholder speakers while the list is still empty, in `astro dev` only. */
 const DEV_PLACEHOLDERS = 20;
 
-const [{ speaker: page }, speakers, topics] = await Promise.all([
+const [{ speaker: page, home }, speakers, topics] = await Promise.all([
   getPageContent(),
   getSpeakers(),
   getHotTopics(),
@@ -34,15 +36,19 @@ const photoUrl = (filename: string) =>
     ? `/media/${filename}`
     : undefined;
 
-let stage: StageSpeaker[] = stageEditionSpeakers(speakers).map((s) => ({
-  name: s.name,
-  role: stageRole(s),
-  ...(s.talkTitle ? { talkTitle: s.talkTitle } : {}),
-  ...(s.quote ? { quote: s.quote } : {}),
-  ...(photoUrl(s.photoFilename)
-    ? { photo: photoUrl(s.photoFilename), photoLook: isStageShot(s) }
-    : {}),
-}));
+const edition = stageEdition();
+let stage: StageSpeaker[] = stageSpeakers(home.previousSpeakers, speakers).map(
+  (s) => {
+    const photo = photoUrl(stagePhotoFilename(s));
+    return {
+      name: s.name,
+      role: stageRole(s),
+      ...(s.talkTitle ? { talkTitle: s.talkTitle } : {}),
+      ...(s.quote ? { quote: s.quote } : {}),
+      ...(photo ? { photo, photoLook: isStageShot(s) } : {}),
+    };
+  },
+);
 
 // Until the real line-up is in the CMS, `astro dev` fills the stage with
 // numbered placeholders so layout and navigation can be tested. A build
@@ -81,12 +87,12 @@ const copy = speakerPageCopy(page);
     }
 
     <header class="sp-intro">
-      <p class="sp-label">Speakers {STAGE_EDITION}</p>
+      <p class="sp-label">{stageLabel()}</p>
       <h1 class="sp-title" data-lp="heading">{page.heading}</h1>
       <p class="sp-lead" data-lp="intro">{page.intro}</p>
     </header>
 
-    <SpeakerStage speakers={stage} edition={STAGE_EDITION} />
+    <SpeakerStage speakers={stage} edition={edition} />
 
     <p class="sp-pill" data-lp="lineupPill">{copy.lineupPill}</p>
   </div>

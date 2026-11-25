@@ -532,7 +532,7 @@ Below the dark the page speaks in the home page's voice (`components/partner/par
 
 ## Speakers
 
-`/speaker/` follows the speaker page mockup on a deep night (`speaker-night`), from the site header down to the footer. In order: the hot topics of the next edition, the speakers of the last edition on the main stage, and a small pill announcing the next line-up.
+`/speaker/` follows the speaker page mockup on a deep night (`speaker-night`), from the site header down to the footer. In order: the hot topics of the next edition, the speakers on the main stage (the homepage's speakers until the next line-up is out, then that edition's), and a small pill announcing the next line-up.
 
 The hot topics stand on a radial glow from `speaker-glow` through `speaker-dusk` into the night. One white card (`--radius-speaker-card`, a large soft shadow) shows one topic at a time: the sphere on the left, the text on the right, stacked on a phone. By default the sphere rises out of the card onto the night with a soft oval shadow under it; a second layout keeps it inside the card with the arrows beside it, chosen by one constant in `HotTopics.astro` until the team decides. Under the sphere sit the back arrow (white, navy rim), three small round spheres numbered 01 to 03 (the active one with a navy rim and full opacity, the others faded) and the forward arrow (filled `speaker-ink`). The text runs `speaker-ink` for the keyword, `speaker-blue` for the title, `speaker-field` and `speaker-text` below. The topics loop.
 

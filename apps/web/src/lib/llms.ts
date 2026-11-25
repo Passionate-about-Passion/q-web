@@ -2,10 +2,10 @@
 import type { HotTopic, PageContent, SiteSettings, Speaker } from "./content";
 import { partnerAudiencePages } from "./partner-audiences";
 import {
-  STAGE_EDITION,
   speakerPageCopy,
-  stageEditionSpeakers,
+  stageLabel,
   stageRole,
+  stageSpeakers as pickStageSpeakers,
 } from "./speaker-page";
 import {
   WHYQ_AUDIENCE_PAGES,
@@ -238,7 +238,10 @@ export function buildLlmsFullTxt(opts: {
 }): string {
   const { site, siteSettings, pageContent } = opts;
   const hotTopics = opts.hotTopics ?? [];
-  const stageSpeakers = stageEditionSpeakers(opts.speakers ?? []);
+  const stageSpeakers = pickStageSpeakers(
+    pageContent.home.previousSpeakers,
+    opts.speakers ?? [],
+  );
   const indexUrl = new URL("/llms.txt", site).href;
   const summary = oneLine(
     siteSettings.llms?.summary?.trim() || siteSettings.footer.tagline,
@@ -341,7 +344,7 @@ export function buildLlmsFullTxt(opts: {
     [
       // The page in its order: the hot topics of the next edition (the
       // CMS texts above the card, or the page's built-in wording), then
-      // the stage with the speakers of STAGE_EDITION and their talks. The
+      // the stage with its speakers and their talks (STAGE_SOURCE). The
       // old page-speaker panels stay stored but are no longer on the page.
       ...pageHeader(site, "/speaker", speaker.title, speaker.metaDescription),
       ...section(speakerCopy.hotTopicsLabel, [
@@ -355,7 +358,7 @@ export function buildLlmsFullTxt(opts: {
           ),
         ),
       ]),
-      ...section(`Speakers ${STAGE_EDITION}`, [
+      ...section(stageLabel(), [
         `${speaker.heading}\n\n${oneLine(speaker.intro)}\n`,
         ...stageSpeakers.map((s) =>
           bullet(

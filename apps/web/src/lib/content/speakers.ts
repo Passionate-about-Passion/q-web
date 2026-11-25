@@ -29,6 +29,11 @@ export interface Speaker {
   /** Intrinsic photo size, when the CMS recorded it (not in JSON mode). */
   photoWidth?: number;
   photoHeight?: number;
+  /** Picture for the /speaker stage only (CMS `stagePhoto`); the homepage
+   * keeps `photoFilename`. */
+  stagePhotoFilename?: string;
+  stagePhotoWidth?: number;
+  stagePhotoHeight?: number;
   /** Talk title, shown on the /speaker stage. */
   talkTitle?: string;
   /** One sentence from the talk, without quotation marks. */
@@ -63,6 +68,7 @@ interface CmsSpeakerDoc {
   talkTitle?: string | null;
   quote?: string | null;
   photo: CmsMediaRef | number | string | null;
+  stagePhoto?: CmsMediaRef | number | string | null;
   group: string;
   year?: number | null;
   order?: number | null;
@@ -92,6 +98,20 @@ async function cmsGetSpeakers(): Promise<Speaker[]> {
         const size = uploadDimensions(doc.photo);
         return size ? { photoWidth: size.width, photoHeight: size.height } : {};
       })(),
+      ...(await (async () => {
+        const filename = await resolveOptionalUploadFilename(
+          doc.stagePhoto,
+          `speaker ${doc.name} stage photo`,
+        );
+        if (!filename) return {};
+        const size = uploadDimensions(doc.stagePhoto);
+        return {
+          stagePhotoFilename: filename,
+          ...(size
+            ? { stagePhotoWidth: size.width, stagePhotoHeight: size.height }
+            : {}),
+        };
+      })()),
       ...(doc.talkTitle?.trim() ? { talkTitle: doc.talkTitle.trim() } : {}),
       ...(doc.quote?.trim() ? { quote: doc.quote.trim() } : {}),
     });
