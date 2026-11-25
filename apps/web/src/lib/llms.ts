@@ -389,9 +389,13 @@ export function buildLlmsFullTxt(opts: {
         ticketCategories.hero.intro,
         ...ticketCategories.offer.tickets.map((ticket) => {
           const note = ticket.note ? ` (${ticket.note})` : "";
+          const regular =
+            ticket.price < ticket.regularPrice
+              ? ` (regular €${ticket.regularPrice})`
+              : "";
           return bullet(
             ticket.name,
-            `€${ticket.price} (regular €${ticket.regularPrice})${note}. ${ticket.description}. ${ticket.highlights.join("; ")}`,
+            `€${ticket.price}${regular}${note}. ${ticket.description}. ${ticket.highlights.join("; ")}`,
           );
         }),
         ticketCategories.offer.footnote,

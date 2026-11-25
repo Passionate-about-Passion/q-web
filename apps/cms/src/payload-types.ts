@@ -2214,7 +2214,7 @@ export interface PageTicket {
      */
     activeKey?: string | null;
     /**
-     * On: the current phase is on sale now. Off: it opens soon; it is shown as next up and the homepage says it is coming.
+     * On: the current phase is on sale now, at each ticket's Price. Off: it opens soon; it is shown as next up, the homepage says it is coming, and every ticket shows its regular price only, without a discount.
      */
     onSale?: boolean | null;
     /**
@@ -2272,11 +2272,11 @@ export interface PageTicket {
        */
       description: string;
       /**
-       * Regular price in euros, shown struck through. Whole euros, e.g. 79.
+       * Regular price in whole euros, e.g. 79. Struck through while a discount phase is on sale; the price tickets sell at while On sale is off.
        */
       regularPrice: number;
       /**
-       * Current (Early Bird) price in euros. The saving is worked out from both prices.
+       * Price of the phase on sale in euros. The saving is worked out from both prices. Only shown while On sale (Discount phases) is on; otherwise the regular price shows.
        */
       price: number;
       /**
