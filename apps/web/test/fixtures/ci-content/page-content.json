@@ -1488,6 +1488,7 @@
       "websiteLabel": "Example website button"
     },
     "heading": "Fixture quotes heading",
+    "quotesHint": "Fixture hint: tap the quote mark on a photo.",
     "cta": {
       "eyebrow": "Fixture eyebrow",
       "heading": "Fixture Become a Partner heading",

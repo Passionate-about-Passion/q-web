@@ -737,6 +737,9 @@ export interface PartnerPageContent {
   };
   /** Heading of the partner photos and quotes section. */
   heading: string;
+  /** Line under that heading saying a quote opens from the quote mark;
+   * empty or missing shows none. */
+  quotesHint?: string;
   /** The Become a Partner section: texts, the contact person and the main
    * button to the partner form. points and contact are optional so a JSON
    * snapshot from before these fields still builds. */
@@ -2046,6 +2049,7 @@ interface CmsPartnerPageDoc {
     websiteLabel?: string | null;
   } | null;
   heading: string;
+  quotesHint?: string | null;
   cta: {
     heading: string;
     text: string;
@@ -2149,6 +2153,7 @@ async function cmsGetPartnerPage(): Promise<PartnerPageContent> {
       websiteLabel: doc.projector?.websiteLabel ?? "",
     },
     heading: doc.heading,
+    quotesHint: doc.quotesHint ?? "",
     cta: await cmsGetPartnerCta(doc.cta),
     audiences: { startup, corporate, investor },
   };

@@ -141,6 +141,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "page_partner" ADD COLUMN "projector_hint" varchar;
   ALTER TABLE "page_partner" ADD COLUMN "projector_tier_suffix" varchar;
   ALTER TABLE "page_partner" ADD COLUMN "projector_website_label" varchar;
+  ALTER TABLE "page_partner" ADD COLUMN "quotes_hint" varchar;
   ALTER TABLE "page_partner" ADD COLUMN "cta_contact_name" varchar;
   ALTER TABLE "page_partner" ADD COLUMN "cta_contact_role" varchar;
   ALTER TABLE "page_partner" ADD COLUMN "cta_contact_email" varchar;
@@ -177,6 +178,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "_page_partner_v" ADD COLUMN "version_projector_hint" varchar;
   ALTER TABLE "_page_partner_v" ADD COLUMN "version_projector_tier_suffix" varchar;
   ALTER TABLE "_page_partner_v" ADD COLUMN "version_projector_website_label" varchar;
+  ALTER TABLE "_page_partner_v" ADD COLUMN "version_quotes_hint" varchar;
   ALTER TABLE "_page_partner_v" ADD COLUMN "version_cta_contact_name" varchar;
   ALTER TABLE "_page_partner_v" ADD COLUMN "version_cta_contact_role" varchar;
   ALTER TABLE "_page_partner_v" ADD COLUMN "version_cta_contact_email" varchar;
@@ -323,6 +325,7 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   ALTER TABLE "page_partner" DROP COLUMN "projector_hint";
   ALTER TABLE "page_partner" DROP COLUMN "projector_tier_suffix";
   ALTER TABLE "page_partner" DROP COLUMN "projector_website_label";
+  ALTER TABLE "page_partner" DROP COLUMN "quotes_hint";
   ALTER TABLE "page_partner" DROP COLUMN "cta_contact_name";
   ALTER TABLE "page_partner" DROP COLUMN "cta_contact_role";
   ALTER TABLE "page_partner" DROP COLUMN "cta_contact_email";
@@ -359,6 +362,7 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   ALTER TABLE "_page_partner_v" DROP COLUMN "version_projector_hint";
   ALTER TABLE "_page_partner_v" DROP COLUMN "version_projector_tier_suffix";
   ALTER TABLE "_page_partner_v" DROP COLUMN "version_projector_website_label";
+  ALTER TABLE "_page_partner_v" DROP COLUMN "version_quotes_hint";
   ALTER TABLE "_page_partner_v" DROP COLUMN "version_cta_contact_name";
   ALTER TABLE "_page_partner_v" DROP COLUMN "version_cta_contact_role";
   ALTER TABLE "_page_partner_v" DROP COLUMN "version_cta_contact_email";

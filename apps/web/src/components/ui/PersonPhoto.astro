@@ -18,13 +18,23 @@ interface Props {
   name: string;
   /** Media filename from the CMS; empty or missing shows the initials. */
   filename?: string;
+  /** Which part of a photo that does not fit the box stays in view:
+   * "top" keeps the head of a portrait shot in a square. Default center. */
+  focus?: "center" | "top";
   /** Rendered widths for the srcset, smallest first. */
   widths: number[];
   sizes: string;
   eager?: boolean;
 }
 
-const { name, filename, widths, sizes, eager = false } = Astro.props;
+const {
+  name,
+  filename,
+  widths,
+  sizes,
+  eager = false,
+  focus = "center",
+} = Astro.props;
 
 const initials = name
   .split(/\s+/)
@@ -40,7 +50,11 @@ const image = hasFile
 const loading = eager ? "eager" : "lazy";
 ---
 
-<span class="person-photo" data-person-photo>
+<span
+  class="person-photo"
+  data-person-photo
+  data-focus={focus === "top" ? "top" : undefined}
+>
   <span class="person-initials" aria-hidden="true">{initials}</span>
   {
     image ? (
@@ -125,6 +139,10 @@ const loading = eager ? "eager" : "lazy";
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+
+  .person-photo[data-focus="top"] :global(img) {
+    object-position: 50% 12%;
   }
 
   .person-photo[data-missing] :global(picture),

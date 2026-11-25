@@ -14995,6 +14995,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "quotes_hint": {
+          "name": "quotes_hint",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "cta_heading": {
           "name": "cta_heading",
           "type": "varchar",
@@ -16129,6 +16135,12 @@
         },
         "version_heading": {
           "name": "version_heading",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version_quotes_hint": {
+          "name": "version_quotes_hint",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
@@ -26887,6 +26899,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "6ee553ce-cab2-4b37-82a1-2d0d8595d9af",
+  "id": "ff10a8c7-6f15-4505-b88a-0e7ae30228af",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

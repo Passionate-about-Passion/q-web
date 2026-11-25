@@ -104,6 +104,13 @@ body:has(.p-ground) .site-footer {
   padding-block: clamp(var(--space-xl), 9vw, 6.5rem);
 }
 
+/* The first section after the logos follows them at about the spacing
+   between two tiers, not a full section break (the logo section ends in
+   its own foot, PartnerTiers .pt-fade). */
+.partner-tiers + .p-ground > .p-section:first-child {
+  padding-top: clamp(var(--space-sm), 2vw, var(--space-md));
+}
+
 /* Section header: title and optional intro, centered. */
 .p-head {
   display: flex;

@@ -1811,6 +1811,10 @@ export interface PagePartner {
    * Heading of the section with the partner photos and their quotes.
    */
   heading: string;
+  /**
+   * Short line under that heading telling visitors how to read a quote, e.g. "Tap the quote mark on a photo to read what they said." Leave it empty to show no line.
+   */
+  quotesHint?: string | null;
   cta: {
     heading: string;
     text: string;
@@ -3668,6 +3672,7 @@ export interface PagePartnerSelect<T extends boolean = true> {
         websiteLabel?: T;
       };
   heading?: T;
+  quotesHint?: T;
   cta?:
     | T
     | {

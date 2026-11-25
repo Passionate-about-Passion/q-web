@@ -233,7 +233,7 @@ const label = websiteLabel.trim();
   .dialog-text {
     max-width: 34ch;
     margin: 0;
-    color: color-mix(in srgb, var(--color-ticket-ice) 88%, transparent);
+    color: var(--color-white);
     font-size: var(--text-size-regular);
     line-height: 1.6;
   }
@@ -242,8 +242,35 @@ const label = websiteLabel.trim();
     display: none;
   }
 
-  .dialog-link {
+  /* A white button with a navy label, like the plate above it: the
+     shared glass button keeps its shape, type and press, but drops the
+     glass, the cyan glow, the halos and the light pulse (PARTNER-1). */
+  .button.is-glass.dialog-link {
     justify-self: start;
+    color: var(--color-navy);
+    background: var(--color-white);
+    box-shadow: none;
+    text-shadow: none;
+  }
+
+  .button.is-glass.dialog-link::before,
+  .button.is-glass.dialog-link::after {
+    display: none;
+  }
+
+  .dialog-link .glass-light {
+    display: none;
+  }
+
+  @media (hover: hover) {
+    .button.is-glass.dialog-link:hover {
+      color: var(--color-navy);
+      background: color-mix(
+        in srgb,
+        var(--color-ticket-ice) 35%,
+        var(--color-white)
+      );
+    }
   }
 
   .dialog-link-arrow {

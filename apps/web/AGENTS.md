@@ -104,7 +104,7 @@ than in DESIGN.md, but they are cited the same way.
 | `LogoGrid` | `logos`, `variant="tier"\|"hack"`, `featured`, `eager`, `flip` |
 | `SaleCards` | `phases`, `href`, `actionLabel` |
 | `SaleIntro` | `phases`, `href`, `level="h1"\|"h2"`, `headingId`, `reveal` |
-| `PersonPhoto` | `name`, `filename`, `widths`, `sizes`, `eager`; fills the caller's box (square if it has no height), initials when there is no photo or the file is missing |
+| `PersonPhoto` | `name`, `filename`, `widths`, `sizes`, `eager`, `focus="top"` (keeps the head of a portrait shot); fills the caller's box (square if it has no height), initials when there is no photo or the file is missing |
 
 `Timeline`'s `reveal` emits `[data-reveal]`, which gates every scroll-driven
 rule; the `IntersectionObserver` fallback for browsers without

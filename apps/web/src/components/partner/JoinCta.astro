@@ -89,6 +89,7 @@ const [mailbox, domain] = person ? person.email.split("@") : ["", ""];
                   filename={person.photoFilename}
                   widths={[160, 320]}
                   sizes="7rem"
+                  focus="top"
                 />
               </div>
               <div class="join-person">
@@ -255,7 +256,7 @@ const [mailbox, domain] = person ? person.email.split("@") : ["", ""];
   }
 
   /* What a partner gets: short lines, each behind a small plain dot of
-     ice, centered on the first line, with a faint glow on the dark. */
+     ice, centered on the first line. Flat: no glow. */
   .join-points {
     display: grid;
     gap: var(--space-sm);
@@ -282,8 +283,6 @@ const [mailbox, domain] = person ? person.email.split("@") : ["", ""];
     height: 0.45em;
     background-color: var(--color-ticket-ice);
     border-radius: var(--radius-circle);
-    box-shadow: 0 0 10px
-      color-mix(in srgb, var(--color-ticket-cyan) 45%, transparent);
   }
 
   .join-side {

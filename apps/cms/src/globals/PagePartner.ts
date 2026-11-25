@@ -213,6 +213,14 @@ export const PagePartner: GlobalConfig = pageGlobal({
           "Heading of the section with the partner photos and their quotes.",
       },
     },
+    {
+      name: "quotesHint",
+      type: "text",
+      admin: {
+        description:
+          'Short line under that heading telling visitors how to read a quote, e.g. "Tap the quote mark on a photo to read what they said." Leave it empty to show no line.',
+      },
+    },
     groupSection({
       label: "Become a Partner",
       name: "cta",

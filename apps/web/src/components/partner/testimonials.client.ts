@@ -6,6 +6,16 @@
  * stays visible under its photo.
  */
 
+// The fixed site header's height (the --site-header-height token, in rem),
+// so a bubble never ends up under it.
+function siteHeaderHeight(): number {
+  const root = getComputedStyle(document.documentElement);
+  const value = root.getPropertyValue("--site-header-height").trim();
+  const rem = Number.parseFloat(root.fontSize) || 16;
+  if (value.endsWith("rem")) return Number.parseFloat(value) * rem;
+  return Number.parseFloat(value) || 0;
+}
+
 function initVoiceList(list: HTMLElement): void {
   const voices = [...list.querySelectorAll<HTMLElement>("[data-voice]")];
   const pairs = voices.flatMap((voice) => {
@@ -29,27 +39,38 @@ function initVoiceList(list: HTMLElement): void {
 
   function show(pair: (typeof pairs)[number]): void {
     close();
-    // Keep the bubble on screen: it hangs under the card, from the card's
-    // right edge when it would run past the viewport from the left edge,
-    // and above the card when the window ends below it, unless the site
-    // header or the top of the window would cut it off there.
+    // The bubble rises above the card, from the card's right edge when it
+    // would run past the window from the left edge.
     pair.quote.removeAttribute("data-edge");
-    pair.quote.removeAttribute("data-side");
     pair.quote.hidden = false;
-    const rect = pair.quote.getBoundingClientRect();
-    if (rect.right > document.documentElement.clientWidth) {
+    if (
+      pair.quote.getBoundingClientRect().right >
+      document.documentElement.clientWidth
+    ) {
       pair.quote.setAttribute("data-edge", "end");
-    }
-    if (rect.bottom > window.innerHeight) {
-      pair.quote.setAttribute("data-side", "above");
-      const header = document.querySelector(".site-header");
-      const topLimit = header ? header.getBoundingClientRect().bottom : 0;
-      if (pair.quote.getBoundingClientRect().top < topLimit) {
-        pair.quote.removeAttribute("data-side");
-      }
     }
     pair.trigger.setAttribute("aria-expanded", "true");
     open = pair;
+    bringIntoView(pair);
+  }
+
+  // Opening a bubble pulls the page along so the bubble and its card are
+  // in view: down when the bubble starts under the site header, up when
+  // the card ends below the window.
+  function bringIntoView(pair: (typeof pairs)[number]): void {
+    const gap = 16;
+    const topLimit = siteHeaderHeight() + gap;
+    const top = pair.quote.getBoundingClientRect().top;
+    const bottom = pair.voice.getBoundingClientRect().bottom;
+    let delta = 0;
+    if (top < topLimit) delta = top - topLimit;
+    else if (bottom > window.innerHeight - gap)
+      delta = Math.min(bottom - (window.innerHeight - gap), top - topLimit);
+    if (delta === 0) return;
+    const reduce = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    window.scrollBy({ top: delta, behavior: reduce ? "instant" : "smooth" });
   }
 
   // Hide first, then switch to bubble styles, so nothing animates on load.

@@ -1,8 +1,8 @@
 ---
 // "Get to Know Our Previous Partners": large partner photos, each one a
-// real button that opens that partner's quote as a speech bubble pointing
-// at the photo (DESIGN.md PARTNER-1). Only one bubble is open at a time;
-// Escape, a click elsewhere or the same photo again closes it.
+// real button that opens that partner's quote as a white speech bubble
+// rising above the photo (DESIGN.md PARTNER-1). Only one bubble is open at
+// a time; Escape, a click elsewhere or the same photo again closes it.
 //
 // Progressive enhancement: the markup is a plain grid of photos with every
 // quote standing under its photo. testimonials.client.ts reveals the photo
@@ -12,7 +12,8 @@
 // Rendered inside the page's own section and container: this component
 // adds only the grid, not a section shell (DESIGN.md LAYOUT-1/LAYOUT-3).
 // Each person is a pane of the page's glass (partner-theme.css, in
-// the home page's finish), the bubble navy glass.
+// the home page's finish); the quote mark is the home page's round clear
+// glass (as the speaker arrows), the bubble white with navy type.
 import PersonPhoto from "../ui/PersonPhoto.astro";
 import "./partner-theme.css";
 import type { PartnerTestimonial } from "../../lib/content";
@@ -148,9 +149,11 @@ const items = testimonials.map(({ quote, attribution, photoFilename }, i) => {
     outline-offset: 3px;
   }
 
-  /* Navy glass, lit along its top, with a cyan glow inside its lower
-     edge: the home page's glass in its dark finish. */
+  /* The home page's round clear glass (the speaker arrows' .h-glass-btn,
+     restated here as PARTNER-1 asks): see-through, a bright rim, a soft
+     blur of the photo behind it, no glow. */
   .voice-badge {
+    position: relative;
     display: grid;
     place-items: center;
     width: 2.75rem;
@@ -158,15 +161,19 @@ const items = testimonials.map(({ quote, attribution, photoFilename }, i) => {
     padding-top: 0.4rem;
     color: var(--color-white);
     background: linear-gradient(
-      160deg,
-      color-mix(in srgb, var(--color-ticket-sky) 55%, var(--color-navy)),
-      var(--color-navy)
+      180deg,
+      color-mix(in srgb, var(--color-white) 18%, transparent),
+      color-mix(in srgb, var(--color-white) 6%, transparent)
     );
     border-radius: var(--radius-circle);
     box-shadow:
-      inset 0 1px 1px color-mix(in srgb, var(--color-white) 70%, transparent),
-      inset 0 -8px 12px -10px var(--color-ticket-cyan),
-      0 10px 22px -12px color-mix(in srgb, var(--color-navy) 75%, transparent);
+      inset 0 1px 1px color-mix(in srgb, var(--color-white) 75%, transparent),
+      inset 0 -1px 1px color-mix(in srgb, var(--color-white) 20%, transparent),
+      inset 0 0 0 1px color-mix(in srgb, var(--color-white) 35%, transparent);
+    -webkit-backdrop-filter: blur(10px) saturate(150%) brightness(0.8);
+    backdrop-filter: blur(10px) saturate(150%) brightness(0.8);
+    text-shadow: 0 1px 2px
+      color-mix(in srgb, var(--color-black) 45%, transparent);
     font-size: var(--heading-h5-size);
     font-weight: var(--font-weight-extrabold);
     line-height: 1;
@@ -218,79 +225,47 @@ const items = testimonials.map(({ quote, attribution, photoFilename }, i) => {
     line-height: 1.45;
   }
 
-  /* ---- Enhanced: the quote is a speech bubble of navy glass. It hangs
-     under the person's card, its tail pointing up at them, so it never
-     runs into the section title; where there is no room below in the
-     window it sits above the card instead, tail down. ---- */
+  /* ---- Enhanced: the quote is a white speech bubble with navy type.
+     It rises above the person's card, its tail pointing down at the
+     photo; the script scrolls the page so it is in view. ---- */
 
   .voices[data-enhanced] .voice-quote {
-    --bubble-lift: translateY(-0.25rem) scale(0.96);
-    --bubble-tail: color-mix(
-      in srgb,
-      var(--color-ticket-sky) 55%,
-      var(--color-navy)
-    );
+    --bubble-lift: translateY(0.25rem) scale(0.96);
     position: absolute;
-    top: calc(100% + var(--space-xs));
+    bottom: calc(100% + var(--space-xs));
     left: 0;
     z-index: 2;
     width: min(22rem, calc(100vw - 2 * var(--space-md)));
     margin: 0;
     padding: var(--space-md);
-    color: var(--color-white);
-    background: linear-gradient(
-      160deg,
-      var(--bubble-tail),
-      var(--color-navy) 55%
-    );
+    color: var(--color-navy);
+    background-color: var(--color-white);
     border-radius: var(--radius-ticket-panel);
-    box-shadow:
-      inset 0 0 0 1px color-mix(in srgb, var(--color-white) 22%, transparent),
-      inset 0 1px 1px color-mix(in srgb, var(--color-white) 55%, transparent),
-      inset 0 -10px 16px -14px var(--color-ticket-cyan),
-      0 22px 44px -24px color-mix(in srgb, var(--color-navy) 70%, transparent),
-      0 0 28px -14px
-        color-mix(in srgb, var(--color-ticket-cyan) 55%, transparent);
-    transform-origin: 2.25rem top;
+    box-shadow: 0 22px 44px -24px
+      color-mix(in srgb, var(--color-black) 55%, transparent);
+    transform-origin: 2.25rem bottom;
     transition:
       opacity var(--duration-open) var(--ease-snappy),
       transform var(--duration-open) var(--ease-snappy),
       display var(--duration-open) allow-discrete;
   }
 
-  .voices[data-enhanced] .voice-quote[data-side="above"] {
-    --bubble-lift: translateY(0.25rem) scale(0.96);
-    top: auto;
-    bottom: calc(100% + var(--space-xs));
-    transform-origin: 2.25rem bottom;
-  }
-
   .voices[data-enhanced] .voice-quote[data-edge="end"] {
     right: 0;
     left: auto;
-    transform-origin: calc(100% - 2.25rem) top;
-  }
-
-  .voices[data-enhanced] .voice-quote[data-edge="end"][data-side="above"] {
     transform-origin: calc(100% - 2.25rem) bottom;
   }
 
   .voices[data-enhanced] .voice-quote::before {
     content: "";
     position: absolute;
-    top: calc(-1 * var(--space-2xs));
+    bottom: calc(-1 * var(--space-2xs));
     left: 1.75rem;
     width: 1rem;
     height: 1rem;
-    background-color: var(--bubble-tail);
+    background-color: var(--color-white);
     border-radius: var(--radius-button);
     transform: rotate(45deg);
-  }
-
-  .voices[data-enhanced] .voice-quote[data-side="above"]::before {
-    top: auto;
-    bottom: calc(-1 * var(--space-2xs));
-    background-color: var(--color-navy);
   }
 
   .voices[data-enhanced] .voice-quote[data-edge="end"]::before {

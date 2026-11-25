@@ -128,6 +128,13 @@ const audiences = partnerAudiencePages(page).map(({ key, audience }) => ({
           <h2 id="partner-voices-heading" class="p-title" data-lp="heading">
             {page.heading}
           </h2>
+          {
+            page.quotesHint?.trim() && (
+              <p class="p-intro" data-lp="quotesHint">
+                {page.quotesHint}
+              </p>
+            )
+          }
         </header>
         <TestimonialQuotes testimonials={testimonials} />
       </Container>
