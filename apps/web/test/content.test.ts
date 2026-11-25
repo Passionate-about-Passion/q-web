@@ -24,7 +24,12 @@ import {
   currentSpeakerEdition,
   speakersForEdition,
 } from "../src/lib/content";
-import type { PageContent, SiteSettings } from "../src/lib/content";
+import type {
+  HotTopic,
+  PageContent,
+  SiteSettings,
+  Speaker,
+} from "../src/lib/content";
 import {
   assertTicketPage,
   normalizeTicketPrices,
@@ -32,6 +37,11 @@ import {
 import { toNavLink } from "../src/lib/content/site-settings";
 import { buildLlmsFullTxt, buildRouteTable } from "../src/lib/llms";
 import { partnerAudiencePages } from "../src/lib/partner-audiences";
+import {
+  NEXT_EDITION,
+  STAGE_EDITION,
+  stageEditionSpeakers,
+} from "../src/lib/speaker-page";
 import {
   WHYQ_AUDIENCE_PAGES,
   whyqAudienceNames,
@@ -709,5 +719,45 @@ describe("/program is offline", () => {
     expect(readText("../astro.config.mjs")).toMatch(
       /"\/program":\s*\{\s*status:\s*302,\s*destination:\s*"\/"\s*\}/,
     );
+  });
+});
+
+describe("/speaker in the LLM corpus", () => {
+  const readText = (path: string) =>
+    readFileSync(new URL(path, import.meta.url), "utf-8");
+  const content = JSON.parse(
+    readText("./fixtures/ci-content/page-content.json"),
+  ) as PageContent;
+  const settings = normalizeHrefsDeep(
+    JSON.parse(
+      readText("./fixtures/ci-content/site-settings.json"),
+    ) as SiteSettings,
+  );
+
+  it("describes /speaker as hot topics plus the stage, not the old panels", () => {
+    const hotTopics = JSON.parse(
+      readText("./fixtures/ci-content/hot-topics.json"),
+    ) as HotTopic[];
+    const speakers = JSON.parse(
+      readText("./fixtures/ci-content/speakers.json"),
+    ) as Speaker[];
+    const full = buildLlmsFullTxt({
+      site: "https://q-summit.com",
+      siteSettings: settings,
+      pageContent: content,
+      hotTopics,
+      speakers,
+    });
+    const block = full.slice(
+      full.indexOf("Source: https://q-summit.com/speaker/"),
+      full.indexOf("Source: https://q-summit.com/partner/"),
+    );
+    expect(block).toContain(`## Hot topics ${NEXT_EDITION}`);
+    for (const topic of hotTopics) expect(block).toContain(topic.keyword);
+    expect(block).toContain(`## Speakers ${STAGE_EDITION}`);
+    for (const s of stageEditionSpeakers(speakers))
+      expect(block).toContain(`- ${s.name}:`);
+    for (const panel of content.speaker.panels)
+      expect(block).not.toContain(panel.title);
   });
 });
