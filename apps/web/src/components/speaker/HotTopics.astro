@@ -161,9 +161,6 @@ const arrow = (dir: "prev" | "next") =>
                       decoding="async"
                     />
                   </span>
-                  <span class="ht-mini-num" aria-hidden="true">
-                    {pad(i + 1)}
-                  </span>
                 </button>
               </li>
             ))
@@ -501,23 +498,6 @@ const arrow = (dir: "prev" | "next") =>
 
   .ht-mini-pic img.is-zoomed {
     transform: scale(1.8);
-  }
-
-  .ht-mini-num {
-    position: absolute;
-    right: -4px;
-    bottom: -4px;
-    display: grid;
-    place-items: center;
-    min-width: 1.5rem;
-    height: 1.5rem;
-    padding: 0 0.25rem;
-    border-radius: var(--radius-pill);
-    background: var(--color-speaker-ink);
-    color: var(--color-white);
-    font-size: var(--text-size-tiny);
-    font-weight: var(--font-weight-extrabold);
-    line-height: 1;
   }
 
   .ht-hint {
