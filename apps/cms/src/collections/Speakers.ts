@@ -135,6 +135,36 @@ export const Speakers: CollectionConfig = draftCollection({
       },
     },
     {
+      // Shown on the right screen of the /speaker/ stage. Both optional, so
+      // past editions without talk data stay valid.
+      type: "collapsible",
+      label: "Talk",
+      admin: {
+        initCollapsed: false,
+        description:
+          "Shown on the stage of the speakers page next to the speaker's photo.",
+      },
+      fields: [
+        {
+          name: "talkTitle",
+          type: "text",
+          admin: {
+            placeholder: "Why Europe needs its own launchers",
+            description:
+              "Title of the talk. Keep it under about 45 characters so it fits on phones.",
+          },
+        },
+        {
+          name: "quote",
+          type: "textarea",
+          admin: {
+            description:
+              "One short sentence from the talk, without quotation marks.",
+          },
+        },
+      ],
+    },
+    {
       name: "group",
       type: "select",
       required: true,

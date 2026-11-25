@@ -18,6 +18,7 @@ import * as migration_20261124_193538_whyq_audience_pages from './20261124_19353
 import * as migration_20261125_103005_team_page_cms_fields from './20261125_103005_team_page_cms_fields';
 import * as migration_20261125_115945_past_teams_story from './20261125_115945_past_teams_story';
 import * as migration_20261125_165046_partner_page from './20261125_165046_partner_page';
+import * as migration_20261125_183916_speaker_stage_hot_topics from './20261125_183916_speaker_stage_hot_topics';
 
 export const migrations = [
   {
@@ -118,6 +119,11 @@ export const migrations = [
   {
     up: migration_20261125_165046_partner_page.up,
     down: migration_20261125_165046_partner_page.down,
-    name: '20261125_165046_partner_page'
+    name: '20261125_165046_partner_page',
+  },
+  {
+    up: migration_20261125_183916_speaker_stage_hot_topics.up,
+    down: migration_20261125_183916_speaker_stage_hot_topics.down,
+    name: '20261125_183916_speaker_stage_hot_topics'
   },
 ];

@@ -38,13 +38,30 @@ export const PageSpeaker: GlobalConfig = pageGlobal({
   ownedBy: "PR + Concept",
   divisions: ["pr", "concept"],
   fields: [
-    { name: "heading", type: "text", required: true },
-    { name: "intro", type: "textarea", required: true },
+    {
+      name: "heading",
+      type: "text",
+      required: true,
+      admin: {
+        description: "Main heading over the stage, e.g. Voices on the main stage.",
+      },
+    },
+    {
+      name: "intro",
+      type: "textarea",
+      required: true,
+      admin: { description: "One sentence under the heading." },
+    },
     {
       name: "panels",
       type: "array",
       required: true,
-      admin: { description: "Main-stage panel topic cards." },
+      // Kept so the stored rows survive; the 2027 /speaker/ page shows the
+      // hot topics list instead (llms.txt still lists these panels).
+      admin: {
+        description:
+          "Main-stage panel topics. Not shown on the speakers page at the moment; the hot topics under Lists & people are.",
+      },
       fields: panelFields,
     },
     section("Search and social", seoFields("speaker"), {
