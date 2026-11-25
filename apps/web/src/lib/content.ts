@@ -100,6 +100,7 @@ export type {
   PartnerContact,
   PartnerCtaContact,
   SpeakerPanel,
+  SpeakerHotTopicsCopy,
   SpeakerPageContent,
   JobsPageContent,
   KickoffSocialIcon,

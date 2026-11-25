@@ -19,6 +19,7 @@ import * as migration_20261125_103005_team_page_cms_fields from './20261125_1030
 import * as migration_20261125_115945_past_teams_story from './20261125_115945_past_teams_story';
 import * as migration_20261125_165046_partner_page from './20261125_165046_partner_page';
 import * as migration_20261125_183916_speaker_stage_hot_topics from './20261125_183916_speaker_stage_hot_topics';
+import * as migration_20261125_190217_speaker_page_copy from './20261125_190217_speaker_page_copy';
 
 export const migrations = [
   {
@@ -124,6 +125,11 @@ export const migrations = [
   {
     up: migration_20261125_183916_speaker_stage_hot_topics.up,
     down: migration_20261125_183916_speaker_stage_hot_topics.down,
-    name: '20261125_183916_speaker_stage_hot_topics'
+    name: '20261125_183916_speaker_stage_hot_topics',
+  },
+  {
+    up: migration_20261125_190217_speaker_page_copy.up,
+    down: migration_20261125_190217_speaker_page_copy.down,
+    name: '20261125_190217_speaker_page_copy'
   },
 ];

@@ -64,6 +64,18 @@ if (stage.length === 0 && import.meta.env.DEV) {
     };
   });
 }
+
+// Editable in the CMS (page-speaker); empty fields keep this wording.
+const hotTopicsCopy = {
+  label: page.hotTopics?.label ?? `Hot topics ${NEXT_EDITION}`,
+  heading:
+    page.hotTopics?.heading ??
+    `Three topics set the ${NEXT_EDITION} main stage`,
+  intro:
+    page.hotTopics?.intro ??
+    `The ${NEXT_EDITION} line-up is announced step by step.`,
+};
+const lineupPill = page.lineupPill ?? `Line-up ${NEXT_EDITION} · Coming soon`;
 ---
 
 <Base
@@ -72,7 +84,7 @@ if (stage.length === 0 && import.meta.env.DEV) {
   livePreviewGlobal="page-speaker"
 >
   <div class="sp-page">
-    {topics.length > 0 && <HotTopics topics={topics} />}
+    {topics.length > 0 && <HotTopics topics={topics} {...hotTopicsCopy} />}
 
     <header class="sp-intro">
       <p class="sp-label">Speakers {STAGE_EDITION}</p>
@@ -82,7 +94,7 @@ if (stage.length === 0 && import.meta.env.DEV) {
 
     <SpeakerStage speakers={stage} edition={STAGE_EDITION} />
 
-    <p class="sp-pill">Line-up {NEXT_EDITION} · Coming soon</p>
+    <p class="sp-pill" data-lp="lineupPill">{lineupPill}</p>
   </div>
 </Base>
 

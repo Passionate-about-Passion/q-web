@@ -28,13 +28,20 @@ const topics = [
   topic("[WORD 3]", { title: "Human out of the loop" }),
 ];
 
+const copy = {
+  label: "Hot topics 2027",
+  heading: "Three topics set the 2027 main stage",
+  intro: "The 2027 line-up is announced step by step.",
+};
+
 export default {
   component: HotTopics,
   variants: {
-    default: { topics },
-    "option-8": { topics, layout: "option8" },
+    default: { topics, ...copy },
+    "option-8": { topics, ...copy, layout: "option8" },
     "long-keyword": {
       topics: [topic("SUSTAINABILITY", { title: "A long keyword" }), ...topics],
+      ...copy,
     },
   },
 };

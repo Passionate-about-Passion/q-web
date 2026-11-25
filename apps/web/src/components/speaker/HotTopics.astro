@@ -17,10 +17,20 @@ export const HOT_TOPICS_LAYOUT: "option2" | "option8" = "option2";
 
 interface Props {
   topics: HotTopic[];
+  /** Small label over the heading, e.g. "Hot topics 2027". */
+  label: string;
+  heading: string;
+  intro: string;
   layout?: "option2" | "option8";
 }
 
-const { topics, layout = HOT_TOPICS_LAYOUT } = Astro.props;
+const {
+  topics,
+  label,
+  heading,
+  intro,
+  layout = HOT_TOPICS_LAYOUT,
+} = Astro.props;
 const total = topics.length;
 const pad = (n: number) => String(n).padStart(2, "0");
 const src = (filename: string) => `/media/${filename}`;
@@ -40,9 +50,11 @@ const arrow = (dir: "prev" | "next") =>
   data-hot-topics
 >
   <header class="ht-head">
-    <p class="ht-label">Hot topics 2027</p>
-    <h2 id="ht-title" class="ht-title">Three topics set the 2027 main stage</h2>
-    <p class="ht-sub">The 2027 line-up is announced step by step.</p>
+    <p class="ht-label" data-lp="hotTopics.label">{label}</p>
+    <h2 id="ht-title" class="ht-title" data-lp="hotTopics.heading">
+      {heading}
+    </h2>
+    <p class="ht-sub" data-lp="hotTopics.intro">{intro}</p>
   </header>
 
   <div class="ht-card">

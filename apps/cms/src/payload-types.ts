@@ -1826,6 +1826,17 @@ export interface PageWhyq {
  */
 export interface PageSpeaker {
   id: number;
+  hotTopics?: {
+    /**
+     * Small label in capitals over the heading.
+     */
+    label?: string | null;
+    heading?: string | null;
+    /**
+     * One line under the heading.
+     */
+    intro?: string | null;
+  };
   /**
    * Main heading over the stage, e.g. Voices on the main stage.
    */
@@ -1834,6 +1845,10 @@ export interface PageSpeaker {
    * One sentence under the heading.
    */
   intro: string;
+  /**
+   * The small pill under the stage. Leave empty to keep the standard wording.
+   */
+  lineupPill?: string | null;
   /**
    * Main-stage panel topics. Not shown on the speakers page at the moment; the hot topics under Lists & people are.
    */
@@ -3721,8 +3736,16 @@ export interface PageWhyqSelect<T extends boolean = true> {
  * via the `definition` "page-speaker_select".
  */
 export interface PageSpeakerSelect<T extends boolean = true> {
+  hotTopics?:
+    | T
+    | {
+        label?: T;
+        heading?: T;
+        intro?: T;
+      };
   heading?: T;
   intro?: T;
+  lineupPill?: T;
   panels?:
     | T
     | {
