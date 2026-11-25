@@ -182,6 +182,14 @@ export interface Partner {
    */
   logo: number | Media;
   /**
+   * Optional. The partner's official white logo, as the company provides it for dark backgrounds. /partner/ shows every logo in white and light blue on dark blue, toned automatically from the regular logo; with this file the official white version is shown instead. Worth it when the automatic version looks wrong, for example a logo with a detailed picture inside.
+   */
+  logoOnDark?: (number | null) | Media;
+  /**
+   * Optional. Two or three sentences: what the company does and what it offers at Q-Summit. Shown in the pop-up that opens when a visitor picks this partner on /partner/. Without it the pop-up shows the logo and the website button only.
+   */
+  description?: string | null;
+  /**
    * Sponsorship level. Platinum logos are the largest and sit at the top of /partner/; Media logos are the smallest and sit last.
    */
   tier:
@@ -624,6 +632,8 @@ export interface PartnersSelect<T extends boolean = true> {
   name?: T;
   websiteUrl?: T;
   logo?: T;
+  logoOnDark?: T;
+  description?: T;
   tier?: T;
   order?: T;
   lastEditedBy?: T;
@@ -1774,15 +1784,277 @@ export interface PageSpeaker {
  */
 export interface PagePartner {
   id: number;
+  projector?: {
+    /**
+     * Small label under the heading, e.g. "Our partners 2026".
+     */
+    eyebrow?: string | null;
+    /**
+     * Main heading of the page. Until it is filled, the page title stands in.
+     */
+    heading?: string | null;
+    intro?: string | null;
+    /**
+     * Optional small note above the partner logos, e.g. "Pick a logo to learn more".
+     */
+    hint?: string | null;
+    /**
+     * Word after the tier name in every tier heading, e.g. "Partners" turns Gold into "Gold Partners". Leave it empty to show the tier name alone.
+     */
+    tierSuffix?: string | null;
+    /**
+     * Button in the pop-up that opens the partner's website, e.g. "Visit website". Leave it empty to show the website's address instead.
+     */
+    websiteLabel?: string | null;
+  };
+  /**
+   * Heading of the section with the partner photos and their quotes.
+   */
   heading: string;
+  /**
+   * Short line under that heading telling visitors how to read a quote, e.g. "Tap the quote mark on a photo to read what they said." Leave it empty to show no line.
+   */
+  quotesHint?: string | null;
   cta: {
     heading: string;
     text: string;
+    /**
+     * Optional. Short lines on what a partner gets, shown as a list under the text. Keep the order you want on the page.
+     */
+    points?:
+      | {
+          title: string;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Main button, e.g. "Send inquiry".
+     */
     buttonLabel: string;
     /**
-     * http(s) URL or mailto: address.
+     * Where the main button leads: the partner form as an http(s) URL or a path on this site, or a mailto: address.
      */
     buttonHref: string;
+    /**
+     * The person companies talk to. The card shows only once name and email are filled.
+     */
+    contact?: {
+      name?: string | null;
+      /**
+       * Optional, e.g. "Board Member Partner Relations".
+       */
+      role?: string | null;
+      email?: string | null;
+      /**
+       * Hint of the small copy icon next to the address, e.g. "Copy address". Leave it empty to hide the icon.
+       */
+      copyLabel?: string | null;
+      /**
+       * What the copy hint says for a moment after copying, e.g. "Copied".
+       */
+      copiedLabel?: string | null;
+      /**
+       * Optional. Without a photo the card shows the person's initials.
+       */
+      photo?: (number | null) | Media;
+    };
+  };
+  audiences?: {
+    /**
+     * The "Startup" field on /partner/ and the page /partner/startup/ it leads to. Both stay hidden until the title is filled; from then on every text here is required.
+     */
+    startup?: {
+      /**
+       * Title of the expandable field, e.g. "Startups".
+       */
+      label?: string | null;
+      /**
+       * Short text shown when the field is opened.
+       */
+      summary?: string | null;
+      /**
+       * Button in the opened field that leads to the page.
+       */
+      linkLabel?: string | null;
+      /**
+       * Main heading of the page.
+       */
+      heading?: string | null;
+      /**
+       * Opening text under the heading. Also the search snippet and share preview of the page.
+       */
+      intro?: string | null;
+      /**
+       * Heading above the benefits, e.g. "What you get".
+       */
+      benefitsHeading?: string | null;
+      /**
+       * What this partnership offers. One card per benefit, in this order.
+       */
+      benefits?:
+        | {
+            title: string;
+            description: string;
+            id?: string | null;
+          }[]
+        | null;
+      /**
+       * Heading above the contact cards, e.g. "Your contacts".
+       */
+      contactsHeading?: string | null;
+      /**
+       * Email button on every contact card, e.g. "Write an email". Keep it free of names.
+       */
+      contactLabel?: string | null;
+      /**
+       * The people a visitor writes to. Keep the order you want on the page.
+       */
+      contacts?:
+        | {
+            name: string;
+            /**
+             * Optional, e.g. "Startup Partnerships".
+             */
+            role?: string | null;
+            email: string;
+            /**
+             * Optional. Without a photo the card shows the person's initials.
+             */
+            photo?: (number | null) | Media;
+            id?: string | null;
+          }[]
+        | null;
+    };
+    /**
+     * The "Corporate" field on /partner/ and the page /partner/corporate/ it leads to. Both stay hidden until the title is filled; from then on every text here is required.
+     */
+    corporate?: {
+      /**
+       * Title of the expandable field, e.g. "Corporates".
+       */
+      label?: string | null;
+      /**
+       * Short text shown when the field is opened.
+       */
+      summary?: string | null;
+      /**
+       * Button in the opened field that leads to the page.
+       */
+      linkLabel?: string | null;
+      /**
+       * Main heading of the page.
+       */
+      heading?: string | null;
+      /**
+       * Opening text under the heading. Also the search snippet and share preview of the page.
+       */
+      intro?: string | null;
+      /**
+       * Heading above the benefits, e.g. "What you get".
+       */
+      benefitsHeading?: string | null;
+      /**
+       * What this partnership offers. One card per benefit, in this order.
+       */
+      benefits?:
+        | {
+            title: string;
+            description: string;
+            id?: string | null;
+          }[]
+        | null;
+      /**
+       * Heading above the contact cards, e.g. "Your contacts".
+       */
+      contactsHeading?: string | null;
+      /**
+       * Email button on every contact card, e.g. "Write an email". Keep it free of names.
+       */
+      contactLabel?: string | null;
+      /**
+       * The people a visitor writes to. Keep the order you want on the page.
+       */
+      contacts?:
+        | {
+            name: string;
+            /**
+             * Optional, e.g. "Startup Partnerships".
+             */
+            role?: string | null;
+            email: string;
+            /**
+             * Optional. Without a photo the card shows the person's initials.
+             */
+            photo?: (number | null) | Media;
+            id?: string | null;
+          }[]
+        | null;
+    };
+    /**
+     * The "Investor" field on /partner/ and the page /partner/investor/ it leads to. Both stay hidden until the title is filled; from then on every text here is required.
+     */
+    investor?: {
+      /**
+       * Title of the expandable field, e.g. "Investors".
+       */
+      label?: string | null;
+      /**
+       * Short text shown when the field is opened.
+       */
+      summary?: string | null;
+      /**
+       * Button in the opened field that leads to the page.
+       */
+      linkLabel?: string | null;
+      /**
+       * Main heading of the page.
+       */
+      heading?: string | null;
+      /**
+       * Opening text under the heading. Also the search snippet and share preview of the page.
+       */
+      intro?: string | null;
+      /**
+       * Heading above the benefits, e.g. "What you get".
+       */
+      benefitsHeading?: string | null;
+      /**
+       * What this partnership offers. One card per benefit, in this order.
+       */
+      benefits?:
+        | {
+            title: string;
+            description: string;
+            id?: string | null;
+          }[]
+        | null;
+      /**
+       * Heading above the contact cards, e.g. "Your contacts".
+       */
+      contactsHeading?: string | null;
+      /**
+       * Email button on every contact card, e.g. "Write an email". Keep it free of names.
+       */
+      contactLabel?: string | null;
+      /**
+       * The people a visitor writes to. Keep the order you want on the page.
+       */
+      contacts?:
+        | {
+            name: string;
+            /**
+             * Optional, e.g. "Startup Partnerships".
+             */
+            role?: string | null;
+            email: string;
+            /**
+             * Optional. Without a photo the card shows the person's initials.
+             */
+            photo?: (number | null) | Media;
+            id?: string | null;
+          }[]
+        | null;
+    };
   };
   /**
    * Browser tab and social-share title for the partner page (shown as "Q-Summit | …").
@@ -3389,14 +3661,129 @@ export interface PageSpeakerSelect<T extends boolean = true> {
  * via the `definition` "page-partner_select".
  */
 export interface PagePartnerSelect<T extends boolean = true> {
+  projector?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        intro?: T;
+        hint?: T;
+        tierSuffix?: T;
+        websiteLabel?: T;
+      };
   heading?: T;
+  quotesHint?: T;
   cta?:
     | T
     | {
         heading?: T;
         text?: T;
+        points?:
+          | T
+          | {
+              title?: T;
+              id?: T;
+            };
         buttonLabel?: T;
         buttonHref?: T;
+        contact?:
+          | T
+          | {
+              name?: T;
+              role?: T;
+              email?: T;
+              copyLabel?: T;
+              copiedLabel?: T;
+              photo?: T;
+            };
+      };
+  audiences?:
+    | T
+    | {
+        startup?:
+          | T
+          | {
+              label?: T;
+              summary?: T;
+              linkLabel?: T;
+              heading?: T;
+              intro?: T;
+              benefitsHeading?: T;
+              benefits?:
+                | T
+                | {
+                    title?: T;
+                    description?: T;
+                    id?: T;
+                  };
+              contactsHeading?: T;
+              contactLabel?: T;
+              contacts?:
+                | T
+                | {
+                    name?: T;
+                    role?: T;
+                    email?: T;
+                    photo?: T;
+                    id?: T;
+                  };
+            };
+        corporate?:
+          | T
+          | {
+              label?: T;
+              summary?: T;
+              linkLabel?: T;
+              heading?: T;
+              intro?: T;
+              benefitsHeading?: T;
+              benefits?:
+                | T
+                | {
+                    title?: T;
+                    description?: T;
+                    id?: T;
+                  };
+              contactsHeading?: T;
+              contactLabel?: T;
+              contacts?:
+                | T
+                | {
+                    name?: T;
+                    role?: T;
+                    email?: T;
+                    photo?: T;
+                    id?: T;
+                  };
+            };
+        investor?:
+          | T
+          | {
+              label?: T;
+              summary?: T;
+              linkLabel?: T;
+              heading?: T;
+              intro?: T;
+              benefitsHeading?: T;
+              benefits?:
+                | T
+                | {
+                    title?: T;
+                    description?: T;
+                    id?: T;
+                  };
+              contactsHeading?: T;
+              contactLabel?: T;
+              contacts?:
+                | T
+                | {
+                    name?: T;
+                    role?: T;
+                    email?: T;
+                    photo?: T;
+                    id?: T;
+                  };
+            };
       };
   title?: T;
   metaDescription?: T;

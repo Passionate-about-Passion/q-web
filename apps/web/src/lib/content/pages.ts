@@ -19,6 +19,10 @@ import {
   type PageLink,
 } from "./site-settings";
 import { CONTENT_SOURCE, readJson } from "./source";
+import {
+  PARTNER_AUDIENCE_KEYS,
+  type PartnerAudienceKey,
+} from "../partner-audiences";
 
 export interface PageStat {
   value: string;
@@ -678,16 +682,77 @@ export interface PastTeamsStory {
   closingButtonLabel: string;
 }
 
+export type { PartnerAudienceKey };
+
+export interface PartnerContact {
+  name: string;
+  role: string;
+  email: string;
+  /** Media filename; unset when the CMS has no portrait yet (initials show). */
+  photoFilename?: string;
+}
+
+/** The person behind Become a Partner; the card shows once name and email
+ * are filled. */
+export interface PartnerCtaContact {
+  name: string;
+  role: string;
+  email: string;
+  /** Hint of the copy-address icon; empty hides the icon. */
+  copyLabel: string;
+  copiedLabel: string;
+  /** Media filename; unset when the CMS has no portrait yet (initials show). */
+  photoFilename?: string;
+}
+
+export interface PartnerAudience {
+  /** Title of the expandable field on /partner/. */
+  label: string;
+  summary: string;
+  linkLabel: string;
+  heading: string;
+  intro: string;
+  benefitsHeading: string;
+  benefits: { title: string; description: string }[];
+  contactsHeading: string;
+  contactLabel: string;
+  contacts: PartnerContact[];
+}
+
 export interface PartnerPageContent {
   title: string;
   metaDescription: string;
+  projector: {
+    /** Small label above the heading and at the top of every slide. */
+    eyebrow: string;
+    heading: string;
+    intro: string;
+    hint: string;
+    /** Word after the tier name in each slide heading ("Partner" → "Gold
+     * Partner"); empty shows the tier name alone. Optional so a JSON
+     * snapshot from before the field still builds. */
+    tierSuffix?: string;
+    /** Label of the pop-up's website button; empty shows the site's host. */
+    websiteLabel?: string;
+  };
+  /** Heading of the partner photos and quotes section. */
   heading: string;
+  /** Line under that heading saying a quote opens from the quote mark;
+   * empty or missing shows none. */
+  quotesHint?: string;
+  /** The Become a Partner section: texts, the contact person and the main
+   * button to the partner form. points and contact are optional so a JSON
+   * snapshot from before these fields still builds. */
   cta: {
     heading: string;
     text: string;
+    /** What a partner gets, one short line each. */
+    points?: string[];
     buttonLabel: string;
     buttonHref: string;
+    contact?: PartnerCtaContact;
   };
+  audiences: Record<PartnerAudienceKey, PartnerAudience>;
 }
 
 export interface SpeakerPanel {
@@ -1952,25 +2017,145 @@ async function cmsGetPastTeams(): Promise<PastTeamsContent> {
   };
 }
 
+interface CmsPartnerAudienceDoc {
+  label?: string | null;
+  summary?: string | null;
+  linkLabel?: string | null;
+  heading?: string | null;
+  intro?: string | null;
+  benefitsHeading?: string | null;
+  benefits?: { title: string; description: string }[] | null;
+  contactsHeading?: string | null;
+  contactLabel?: string | null;
+  contacts?:
+    | {
+        name: string;
+        role?: string | null;
+        email: string;
+        photo?: CmsMediaRef | number | string | null;
+      }[]
+    | null;
+}
+
 interface CmsPartnerPageDoc {
   title: string;
   metaDescription?: string | null;
+  projector?: {
+    eyebrow?: string | null;
+    heading?: string | null;
+    intro?: string | null;
+    hint?: string | null;
+    tierSuffix?: string | null;
+    websiteLabel?: string | null;
+  } | null;
   heading: string;
+  quotesHint?: string | null;
   cta: {
     heading: string;
     text: string;
+    points?: { title: string }[] | null;
     buttonLabel: string;
     buttonHref: string;
+    contact?: {
+      name?: string | null;
+      role?: string | null;
+      email?: string | null;
+      copyLabel?: string | null;
+      copiedLabel?: string | null;
+      photo?: CmsMediaRef | number | string | null;
+    } | null;
+  };
+  audiences?: Partial<
+    Record<PartnerAudienceKey, CmsPartnerAudienceDoc | null>
+  > | null;
+}
+
+// A doc saved before the projector and the audience pages existed has these
+// groups empty, and every field in them is optional in the CMS; map them to
+// empty strings and lists instead of crashing. partner.astro then shows the
+// page title as the heading and no hint, and partnerAudiencePages leaves out
+// (and logs) every audience without a label or heading.
+async function cmsGetPartnerAudience(
+  key: PartnerAudienceKey,
+  doc: CmsPartnerAudienceDoc | null | undefined,
+): Promise<PartnerAudience> {
+  const contacts: PartnerContact[] = [];
+  for (const contact of doc?.contacts ?? []) {
+    const photoFilename = await resolveOptionalUploadFilename(
+      contact.photo,
+      `partner ${key} contact ${contact.name}`,
+    );
+    contacts.push({
+      name: contact.name,
+      role: contact.role ?? "",
+      email: contact.email,
+      ...(photoFilename ? { photoFilename } : {}),
+    });
+  }
+  return {
+    label: doc?.label ?? "",
+    summary: doc?.summary ?? "",
+    linkLabel: doc?.linkLabel ?? "",
+    heading: doc?.heading ?? "",
+    intro: doc?.intro ?? "",
+    benefitsHeading: doc?.benefitsHeading ?? "",
+    benefits: (doc?.benefits ?? []).map(({ title, description }) => ({
+      title,
+      description,
+    })),
+    contactsHeading: doc?.contactsHeading ?? "",
+    contactLabel: doc?.contactLabel ?? "",
+    contacts,
+  };
+}
+
+async function cmsGetPartnerCta(
+  cta: CmsPartnerPageDoc["cta"],
+): Promise<PartnerPageContent["cta"]> {
+  const contact = cta.contact;
+  const photoFilename = await resolveOptionalUploadFilename(
+    contact?.photo,
+    "partner cta contact",
+  );
+  return {
+    heading: cta.heading,
+    text: cta.text,
+    points: (cta.points ?? []).map(({ title }) => title),
+    buttonLabel: cta.buttonLabel,
+    buttonHref: cta.buttonHref,
+    contact: {
+      name: contact?.name ?? "",
+      role: contact?.role ?? "",
+      email: contact?.email ?? "",
+      copyLabel: contact?.copyLabel ?? "",
+      copiedLabel: contact?.copiedLabel ?? "",
+      ...(photoFilename ? { photoFilename } : {}),
+    },
   };
 }
 
 async function cmsGetPartnerPage(): Promise<PartnerPageContent> {
   const doc = await fetchGlobal<CmsPartnerPageDoc>("page-partner");
+  const [startup, corporate, investor] = await Promise.all(
+    PARTNER_AUDIENCE_KEYS.map((key) =>
+      cmsGetPartnerAudience(key, doc.audiences?.[key]),
+    ),
+  );
   return {
     title: doc.title,
     metaDescription: doc.metaDescription ?? "",
+    projector: {
+      eyebrow: doc.projector?.eyebrow ?? "",
+      heading: doc.projector?.heading ?? "",
+      intro: doc.projector?.intro ?? "",
+      hint: doc.projector?.hint ?? "",
+      tierSuffix: doc.projector?.tierSuffix ?? "",
+      websiteLabel: doc.projector?.websiteLabel ?? "",
+    },
     heading: doc.heading,
-    cta: doc.cta,
+    quotesHint: doc.quotesHint ?? "",
+    cta: await cmsGetPartnerCta(doc.cta),
+    audiences: { startup, corporate, investor },
   };
 }
 

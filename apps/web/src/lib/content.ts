@@ -92,6 +92,10 @@ export type {
   PastTeamsContent,
   PastTeamsStory,
   PartnerPageContent,
+  PartnerAudience,
+  PartnerAudienceKey,
+  PartnerContact,
+  PartnerCtaContact,
   SpeakerPanel,
   SpeakerPageContent,
   JobsPageContent,
@@ -105,6 +109,10 @@ export type {
   PageContent,
 } from "./content/pages";
 export { getPageContent } from "./content/pages";
+export {
+  PARTNER_AUDIENCE_KEYS,
+  partnerAudiencePages,
+} from "./partner-audiences";
 
 export type { LegalSlug } from "./content/legal";
 export { getLegal } from "./content/legal";
